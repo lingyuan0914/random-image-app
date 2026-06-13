@@ -1,0 +1,333 @@
+package com.randomimage.ui.viewmodel
+
+import android.app.Application
+import androidx.lifecycle.AndroidViewModel
+import androidx.lifecycle.viewModelScope
+import coil.ImageLoader
+import com.randomimage.data.remote.ApiManager
+import com.randomimage.data.repository.ImageRepository
+import com.randomimage.domain.model.ImageModel
+import com.randomimage.util.StatsManager
+import dagger.hilt.android.lifecycle.HiltViewModel
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.launch
+import javax.inject.Inject
+
+data class RecommendedTag(
+    val name: String,
+    val displayName: String
+)
+
+data class HomeUiState(
+    val images: List<ImageModel> = emptyList(),
+    val currentIndex: Int = 0,
+    val isLoading: Boolean = false,
+    val error: String? = null,
+    val currentApiName: String = "Lolicon",
+    val availableApis: List<String> = listOf("Lolicon", "萌图", "色图API", "Kori图库", "随机美图", "二次元风景"),
+    val isNSFW: Boolean = false,
+    val searchQuery: String = "",
+    val isSearching: Boolean = false,
+    val recommendedTags: List<RecommendedTag> = emptyList(),
+    val favorites: List<ImageModel> = emptyList(),
+    val history: List<ImageModel> = emptyList(),
+    val recentSearches: List<String> = emptyList(),
+    val isFavorite: Boolean = false
+)
+
+@HiltViewModel
+class HomeViewModel @Inject constructor(
+    application: Application,
+    private val apiManager: ApiManager,
+    private val repository: ImageRepository
+) : AndroidViewModel(application) {
+
+    private val loliconTags = listOf(
+        RecommendedTag("白丝", "白丝"),
+        RecommendedTag("黑丝", "黑丝"),
+        RecommendedTag("泳装", "泳装"),
+        RecommendedTag("比基尼", "比基尼"),
+        RecommendedTag("学校泳装", "学校泳装"),
+        RecommendedTag("女仆", "女仆"),
+        RecommendedTag("兔女郎", "兔女郎"),
+        RecommendedTag("原神", "原神"),
+        RecommendedTag("崩坏", "崩坏"),
+        RecommendedTag("Fate", "Fate"),
+        RecommendedTag("碧蓝航线", "碧蓝航线"),
+        RecommendedTag("舰队", "舰队Collection")
+    )
+
+    private val koriTags = listOf(
+        RecommendedTag("default", "默认"),
+        RecommendedTag("anime", "动漫"),
+        RecommendedTag("landscape", "风景"),
+        RecommendedTag("girl", "少女"),
+        RecommendedTag("R18", "R18")
+    )
+
+    private val sexPhotoTags = listOf(
+        RecommendedTag("碧蓝航线", "碧蓝航线"),
+        RecommendedTag("原神", "原神"),
+        RecommendedTag("Fate", "Fate"),
+        RecommendedTag("东方", "东方"),
+        RecommendedTag("舰队Collection", "舰队Collection"),
+        RecommendedTag("碧蓝档案", "碧蓝档案"),
+        RecommendedTag("少女前线", "少女前线"),
+        RecommendedTag("hololive", "hololive"),
+        RecommendedTag("初音未来", "初音未来"),
+        RecommendedTag("loli", "萝莉"),
+        RecommendedTag("泳装", "泳装"),
+        RecommendedTag("白丝", "白丝")
+    )
+
+    private val moeImgTags = listOf(
+        RecommendedTag("风景", "风景"),
+        RecommendedTag("动漫", "动漫"),
+        RecommendedTag("可爱", "可爱"),
+        RecommendedTag("唯美", "唯美")
+    )
+
+    private val xjhTags = listOf(
+        RecommendedTag("随机", "随机美图"),
+        RecommendedTag("二次元", "二次元"),
+        RecommendedTag("动漫", "动漫")
+    )
+
+    private val mwmTags = listOf(
+        RecommendedTag("风景", "二次元风景"),
+        RecommendedTag("壁纸", "壁纸"),
+        RecommendedTag("唯美", "唯美")
+    )
+
+    private val _uiState = MutableStateFlow(HomeUiState())
+    val uiState: StateFlow<HomeUiState> = _uiState.asStateFlow()
+
+    init {
+        _uiState.value = _uiState.value.copy(
+            availableApis = apiManager.availableApis.map { it.name },
+            recommendedTags = loliconTags
+        )
+        loadImages()
+        loadFavorites()
+        loadHistory()
+        loadRecentSearches()
+    }
+
+    private fun loadFavorites() {
+        viewModelScope.launch {
+            repository.getFavorites().collect { favorites ->
+                _uiState.value = _uiState.value.copy(favorites = favorites)
+            }
+        }
+    }
+
+    private fun loadHistory() {
+        viewModelScope.launch {
+            repository.getHistory().collect { history ->
+                _uiState.value = _uiState.value.copy(history = history)
+            }
+        }
+    }
+
+    private fun loadRecentSearches() {
+        viewModelScope.launch {
+            repository.getRecentSearches().collect { searches ->
+                _uiState.value = _uiState.value.copy(recentSearches = searches)
+            }
+        }
+    }
+
+    fun loadImages() {
+        viewModelScope.launch {
+            _uiState.value = _uiState.value.copy(isLoading = true, error = null)
+            try {
+                val images = if (_uiState.value.isNSFW) {
+                    repository.fetchRandomImagesNSFW(30)
+                } else {
+                    repository.fetchRandomImages(30)
+                }
+                _uiState.value = _uiState.value.copy(
+                    images = images,
+                    currentIndex = 0,
+                    isLoading = false,
+                    currentApiName = apiManager.currentApi.name
+                )
+                StatsManager.incrementViewCount(getApplication())
+            } catch (e: Exception) {
+                _uiState.value = _uiState.value.copy(
+                    isLoading = false,
+                    error = e.message ?: "未知错误"
+                )
+            }
+        }
+    }
+
+    fun loadMoreImages() {
+        viewModelScope.launch {
+            try {
+                _uiState.value = _uiState.value.copy(isLoading = true)
+                val newImages = if (_uiState.value.isNSFW) {
+                    repository.fetchRandomImagesNSFW(20)
+                } else {
+                    repository.fetchRandomImages(20)
+                }
+                val existingIds = _uiState.value.images.map { it.id }.toSet()
+                val uniqueNewImages = newImages.filter { it.id !in existingIds }
+                if (uniqueNewImages.isNotEmpty()) {
+                    _uiState.value = _uiState.value.copy(
+                        images = _uiState.value.images + uniqueNewImages,
+                        isLoading = false
+                    )
+                } else {
+                    _uiState.value = _uiState.value.copy(isLoading = false)
+                }
+            } catch (e: Exception) {
+                _uiState.value = _uiState.value.copy(isLoading = false)
+            }
+        }
+    }
+
+    fun searchImages(query: String) {
+        if (query.isBlank()) {
+            loadImages()
+            return
+        }
+        viewModelScope.launch {
+            _uiState.value = _uiState.value.copy(isLoading = true, error = null, isSearching = true)
+            try {
+                repository.addSearchHistory(query)
+                StatsManager.incrementSearchCount(getApplication())
+                val images = repository.searchImages(query)
+                _uiState.value = _uiState.value.copy(
+                    images = images,
+                    currentIndex = 0,
+                    isLoading = false,
+                    searchQuery = query
+                )
+            } catch (e: Exception) {
+                _uiState.value = _uiState.value.copy(
+                    isLoading = false,
+                    error = e.message ?: "搜索失败"
+                )
+            }
+        }
+    }
+
+    fun clearSearch() {
+        _uiState.value = _uiState.value.copy(searchQuery = "", isSearching = false)
+        loadImages()
+    }
+
+    fun switchApi(index: Int) {
+        apiManager.switchApi(index)
+        val tags = when (apiManager.currentApi.name) {
+            "Lolicon" -> loliconTags
+            "萌图" -> moeImgTags
+            "色图API" -> sexPhotoTags
+            "Kori图库" -> koriTags
+            "随机美图" -> xjhTags
+            "二次元风景" -> mwmTags
+            else -> emptyList()
+        }
+        _uiState.value = _uiState.value.copy(
+            currentApiName = apiManager.currentApi.name,
+            recommendedTags = tags
+        )
+        loadImages()
+    }
+
+    fun toggleNSFW() {
+        val newState = !_uiState.value.isNSFW
+        _uiState.value = _uiState.value.copy(isNSFW = newState)
+        loadImages()
+    }
+
+    fun swipeRight() {
+        val currentImage = getCurrentImage() ?: return
+        viewModelScope.launch {
+            repository.addToHistory(currentImage)
+            nextImage()
+        }
+    }
+
+    fun swipeLeft() {
+        val currentImage = getCurrentImage() ?: return
+        viewModelScope.launch {
+            repository.addToHistory(currentImage)
+            nextImage()
+        }
+    }
+
+    private fun nextImage() {
+        val state = _uiState.value
+        if (state.currentIndex < state.images.size - 1) {
+            _uiState.value = state.copy(currentIndex = state.currentIndex + 1)
+            checkFavorite()
+            loadMoreIfNeeded()
+        } else {
+            loadImages()
+        }
+    }
+
+    private fun loadMoreIfNeeded() {
+        val state = _uiState.value
+        if (state.currentIndex >= state.images.size - 5) {
+            loadMoreImages()
+        }
+    }
+
+    fun setCurrentIndex(index: Int) {
+        _uiState.value = _uiState.value.copy(currentIndex = index)
+        checkFavorite()
+    }
+
+    private fun checkFavorite() {
+        viewModelScope.launch {
+            val currentImage = getCurrentImage()
+            if (currentImage != null) {
+                val isFavorite = repository.isFavorite(currentImage.id)
+                _uiState.value = _uiState.value.copy(isFavorite = isFavorite)
+            }
+        }
+    }
+
+    fun toggleFavorite() {
+        val currentImage = getCurrentImage() ?: return
+        viewModelScope.launch {
+            if (_uiState.value.isFavorite) {
+                repository.removeFromFavorites(currentImage.id)
+                _uiState.value = _uiState.value.copy(isFavorite = false)
+            } else {
+                repository.addToFavorites(currentImage)
+                _uiState.value = _uiState.value.copy(isFavorite = true)
+                StatsManager.incrementFavoriteCount(getApplication())
+            }
+        }
+    }
+
+    fun clearHistory() {
+        viewModelScope.launch {
+            repository.clearHistory()
+        }
+    }
+
+    fun clearSearchHistory() {
+        viewModelScope.launch {
+            repository.clearSearchHistory()
+        }
+    }
+
+    fun clearCache() {
+        val context = getApplication<Application>()
+        val imageLoader = ImageLoader(context)
+        imageLoader.diskCache?.clear()
+        imageLoader.memoryCache?.clear()
+    }
+
+    fun getCurrentImage(): ImageModel? {
+        val state = _uiState.value
+        return state.images.getOrNull(state.currentIndex)
+    }
+}

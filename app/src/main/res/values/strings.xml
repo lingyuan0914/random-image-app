@@ -1,0 +1,13 @@
+<resources>
+    <string name="app_name">随机图片</string>
+    <string name="home">首页</string>
+    <string name="favorites">收藏</string>
+    <string name="like">点赞</string>
+    <string name="share">分享</string>
+    <string name="download">下载</string>
+    <string name="set_wallpaper">设为壁纸</string>
+    <string name="no_favorites">还没有收藏</string>
+    <string name="loading">加载中...</string>
+    <string name="error_network">网络错误，请重试</string>
+    <string name="retry">重试</string>
+</resources>
