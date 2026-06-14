@@ -24,14 +24,11 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.RadioButton
-import androidx.compose.material3.Slider
-import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableFloatStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
@@ -48,8 +45,7 @@ fun SettingsScreen(
     onBack: () -> Unit,
     onClearCache: () -> Unit,
     onClearHistory: () -> Unit,
-    onClearSearchHistory: () -> Unit,
-    onThemeChanged: () -> Unit = {}
+    onClearSearchHistory: () -> Unit
 ) {
     BackHandler {
         onBack()
@@ -61,8 +57,6 @@ fun SettingsScreen(
     var showThemeDialog by remember { mutableStateOf(false) }
 
     val themeMode = remember { mutableStateOf(ThemeManager.getThemeMode(context)) }
-    val autoRefresh by remember { mutableStateOf(false) }
-    var refreshInterval by remember { mutableFloatStateOf(30f) }
 
     Column(modifier = Modifier.fillMaxSize()) {
         TopAppBar(
@@ -83,7 +77,6 @@ fun SettingsScreen(
                 .verticalScroll(rememberScrollState())
                 .padding(16.dp)
         ) {
-            // 使用统计
             Card(
                 modifier = Modifier.fillMaxWidth(),
                 elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
@@ -138,7 +131,6 @@ fun SettingsScreen(
 
             Spacer(modifier = Modifier.height(16.dp))
 
-            // 主题设置
             Card(
                 modifier = Modifier.fillMaxWidth(),
                 elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
@@ -168,91 +160,11 @@ fun SettingsScreen(
                             )
                         }
                     }
-                    Spacer(modifier = Modifier.height(16.dp))
-                    Row(
-                        modifier = Modifier.fillMaxWidth(),
-                        verticalAlignment = Alignment.CenterVertically
-                    ) {
-                        Column(modifier = Modifier.weight(1f)) {
-                            Text(text = "自动刷新")
-                            Text(
-                                text = "定时自动更换图片",
-                                style = MaterialTheme.typography.bodySmall,
-                                color = MaterialTheme.colorScheme.onSurfaceVariant
-                            )
-                        }
-                        Switch(
-                            checked = autoRefresh,
-                            onCheckedChange = { }
-                        )
-                    }
-                    if (autoRefresh) {
-                        Spacer(modifier = Modifier.height(8.dp))
-                        Text(text = "刷新间隔: ${refreshInterval.toInt()} 秒")
-                        Slider(
-                            value = refreshInterval,
-                            onValueChange = { refreshInterval = it },
-                            valueRange = 10f..120f,
-                            steps = 10
-                        )
-                    }
                 }
             }
 
             Spacer(modifier = Modifier.height(16.dp))
 
-            // 图片设置
-            Card(
-                modifier = Modifier.fillMaxWidth(),
-                elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
-            ) {
-                Column(modifier = Modifier.padding(16.dp)) {
-                    Text(
-                        text = "图片设置",
-                        style = MaterialTheme.typography.titleMedium
-                    )
-                    Spacer(modifier = Modifier.height(8.dp))
-                    Row(
-                        modifier = Modifier.fillMaxWidth(),
-                        verticalAlignment = Alignment.CenterVertically
-                    ) {
-                        Column(modifier = Modifier.weight(1f)) {
-                            Text(text = "高清图片")
-                            Text(
-                                text = "加载原图（消耗更多流量）",
-                                style = MaterialTheme.typography.bodySmall,
-                                color = MaterialTheme.colorScheme.onSurfaceVariant
-                            )
-                        }
-                        Switch(
-                            checked = false,
-                            onCheckedChange = { }
-                        )
-                    }
-                    Spacer(modifier = Modifier.height(16.dp))
-                    Row(
-                        modifier = Modifier.fillMaxWidth(),
-                        verticalAlignment = Alignment.CenterVertically
-                    ) {
-                        Column(modifier = Modifier.weight(1f)) {
-                            Text(text = "预加载")
-                            Text(
-                                text = "提前加载下一张图片",
-                                style = MaterialTheme.typography.bodySmall,
-                                color = MaterialTheme.colorScheme.onSurfaceVariant
-                            )
-                        }
-                        Switch(
-                            checked = true,
-                            onCheckedChange = { }
-                        )
-                    }
-                }
-            }
-
-            Spacer(modifier = Modifier.height(16.dp))
-
-            // 数据管理
             Card(
                 modifier = Modifier.fillMaxWidth(),
                 elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
@@ -315,7 +227,6 @@ fun SettingsScreen(
 
             Spacer(modifier = Modifier.height(16.dp))
 
-            // 关于
             Card(
                 modifier = Modifier.fillMaxWidth(),
                 elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
@@ -331,7 +242,7 @@ fun SettingsScreen(
                         horizontalArrangement = Arrangement.SpaceBetween
                     ) {
                         Text(text = "版本")
-                        Text(text = "1.0.0")
+                        Text(text = "1.1.0")
                     }
                     Spacer(modifier = Modifier.height(4.dp))
                     Text(text = "随机图片 - 二次元图片浏览应用")
@@ -346,7 +257,6 @@ fun SettingsScreen(
         }
     }
 
-    // 主题选择对话框
     if (showThemeDialog) {
         AlertDialog(
             onDismissRequest = { showThemeDialog = false },
@@ -360,7 +270,6 @@ fun SettingsScreen(
                                 themeMode.value = ThemeManager.THEME_SYSTEM
                                 ThemeManager.setThemeMode(context, ThemeManager.THEME_SYSTEM)
                                 showThemeDialog = false
-                                onThemeChanged()
                             },
                         verticalAlignment = Alignment.CenterVertically
                     ) {
@@ -370,7 +279,6 @@ fun SettingsScreen(
                                 themeMode.value = ThemeManager.THEME_SYSTEM
                                 ThemeManager.setThemeMode(context, ThemeManager.THEME_SYSTEM)
                                 showThemeDialog = false
-                                onThemeChanged()
                             }
                         )
                         Spacer(modifier = Modifier.width(8.dp))
@@ -384,7 +292,6 @@ fun SettingsScreen(
                                 themeMode.value = ThemeManager.THEME_LIGHT
                                 ThemeManager.setThemeMode(context, ThemeManager.THEME_LIGHT)
                                 showThemeDialog = false
-                                onThemeChanged()
                             },
                         verticalAlignment = Alignment.CenterVertically
                     ) {
@@ -394,7 +301,6 @@ fun SettingsScreen(
                                 themeMode.value = ThemeManager.THEME_LIGHT
                                 ThemeManager.setThemeMode(context, ThemeManager.THEME_LIGHT)
                                 showThemeDialog = false
-                                onThemeChanged()
                             }
                         )
                         Spacer(modifier = Modifier.width(8.dp))
@@ -408,7 +314,6 @@ fun SettingsScreen(
                                 themeMode.value = ThemeManager.THEME_DARK
                                 ThemeManager.setThemeMode(context, ThemeManager.THEME_DARK)
                                 showThemeDialog = false
-                                onThemeChanged()
                             },
                         verticalAlignment = Alignment.CenterVertically
                     ) {
@@ -418,7 +323,6 @@ fun SettingsScreen(
                                 themeMode.value = ThemeManager.THEME_DARK
                                 ThemeManager.setThemeMode(context, ThemeManager.THEME_DARK)
                                 showThemeDialog = false
-                                onThemeChanged()
                             }
                         )
                         Spacer(modifier = Modifier.width(8.dp))
@@ -434,7 +338,6 @@ fun SettingsScreen(
         )
     }
 
-    // 清除缓存对话框
     if (showClearCacheDialog) {
         AlertDialog(
             onDismissRequest = { showClearCacheDialog = false },
@@ -457,7 +360,6 @@ fun SettingsScreen(
         )
     }
 
-    // 清除历史对话框
     if (showClearHistoryDialog) {
         AlertDialog(
             onDismissRequest = { showClearHistoryDialog = false },
@@ -480,7 +382,6 @@ fun SettingsScreen(
         )
     }
 
-    // 清除搜索历史对话框
     if (showClearSearchDialog) {
         AlertDialog(
             onDismissRequest = { showClearSearchDialog = false },
@@ -503,5 +404,3 @@ fun SettingsScreen(
         )
     }
 }
-
-

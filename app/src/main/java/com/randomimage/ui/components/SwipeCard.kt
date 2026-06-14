@@ -64,9 +64,11 @@ fun SwipeCard(
 ) {
     val context = LocalContext.current
     var offsetX by remember { mutableFloatStateOf(0f) }
+    var isAnimating by remember { mutableStateOf(false) }
     val rotation by animateFloatAsState(
         targetValue = offsetX / 20,
-        label = "rotation"
+        label = "rotation",
+        finishedListener = { isAnimating = false }
     )
 
     Card(
@@ -81,9 +83,11 @@ fun SwipeCard(
             .pointerInput(Unit) {
                 detectHorizontalDragGestures(
                     onDragEnd = {
-                        if (offsetX > 300) {
+                        if (offsetX > 300 && !isAnimating) {
+                            isAnimating = true
                             onSwipeRight()
-                        } else if (offsetX < -300) {
+                        } else if (offsetX < -300 && !isAnimating) {
+                            isAnimating = true
                             onSwipeLeft()
                         }
                         offsetX = 0f

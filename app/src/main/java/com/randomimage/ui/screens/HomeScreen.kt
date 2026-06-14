@@ -17,6 +17,7 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Clear
 import androidx.compose.material.icons.filled.Search
+import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -57,7 +58,7 @@ fun HomeScreen(
     val context = LocalContext.current
     val scope = rememberCoroutineScope()
     var expanded by remember { mutableStateOf(false) }
-    var searchQuery by remember { mutableStateOf("") }
+    var showNsfwDialog by remember { mutableStateOf(false) }
 
     Column(modifier = Modifier.fillMaxSize()) {
         Row(
@@ -109,7 +110,7 @@ fun HomeScreen(
                 Spacer(modifier = Modifier.width(4.dp))
                 Switch(
                     checked = uiState.isNSFW,
-                    onCheckedChange = { viewModel.toggleNSFW() }
+                    onCheckedChange = { showNsfwDialog = true }
                 )
             }
         }
@@ -121,8 +122,8 @@ fun HomeScreen(
             verticalAlignment = Alignment.CenterVertically
         ) {
             OutlinedTextField(
-                value = searchQuery,
-                onValueChange = { searchQuery = it },
+                value = uiState.searchQuery,
+                onValueChange = { viewModel.setSearchQuery(it) },
                 label = { Text("搜索标签", style = MaterialTheme.typography.labelSmall) },
                 placeholder = { Text("输入关键词...", style = MaterialTheme.typography.bodySmall) },
                 modifier = Modifier
@@ -131,9 +132,8 @@ fun HomeScreen(
                 singleLine = true,
                 textStyle = MaterialTheme.typography.bodyMedium,
                 trailingIcon = {
-                    if (searchQuery.isNotEmpty()) {
+                    if (uiState.searchQuery.isNotEmpty()) {
                         IconButton(onClick = {
-                            searchQuery = ""
                             viewModel.clearSearch()
                         }) {
                             Icon(Icons.Default.Clear, contentDescription = "清除")
@@ -146,8 +146,8 @@ fun HomeScreen(
 
             IconButton(
                 onClick = {
-                    if (searchQuery.isNotBlank()) {
-                        viewModel.searchImages(searchQuery)
+                    if (uiState.searchQuery.isNotBlank()) {
+                        viewModel.searchImages(uiState.searchQuery)
                     }
                 }
             ) {
@@ -177,7 +177,7 @@ fun HomeScreen(
                     uiState.recommendedTags.take(6).forEach { tag ->
                         SuggestionChip(
                             onClick = {
-                                searchQuery = tag.name
+                                viewModel.setSearchQuery(tag.name)
                                 viewModel.searchImages(tag.name)
                             },
                             label = { Text(tag.displayName, style = MaterialTheme.typography.labelSmall) }
@@ -254,5 +254,26 @@ fun HomeScreen(
                 }
             }
         }
+    }
+
+    if (showNsfwDialog) {
+        AlertDialog(
+            onDismissRequest = { showNsfwDialog = false },
+            title = { Text("NSFW 模式") },
+            text = { Text("开启后将显示成人内容，确定要继续吗？") },
+            confirmButton = {
+                TextButton(onClick = {
+                    viewModel.toggleNSFW()
+                    showNsfwDialog = false
+                }) {
+                    Text("确定")
+                }
+            },
+            dismissButton = {
+                TextButton(onClick = { showNsfwDialog = false }) {
+                    Text("取消")
+                }
+            }
+        )
     }
 }

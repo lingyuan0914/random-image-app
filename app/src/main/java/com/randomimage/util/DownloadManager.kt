@@ -27,11 +27,17 @@ object DownloadManager {
         data class Error(val message: String) : DownloadState()
     }
 
+    private var imageLoader: ImageLoader? = null
+
+    fun init(loader: ImageLoader) {
+        imageLoader = loader
+    }
+
     suspend fun downloadImage(context: Context, imageUrl: String): Boolean {
         return try {
             _downloadState.value = DownloadState.Downloading
 
-            val loader = ImageLoader(context)
+            val loader = imageLoader ?: return false
             val request = ImageRequest.Builder(context)
                 .data(imageUrl)
                 .allowHardware(false)
@@ -41,6 +47,7 @@ object DownloadManager {
             if (result is SuccessResult) {
                 val bitmap = (result.drawable as BitmapDrawable).bitmap
                 val filePath = saveBitmapToGallery(context, bitmap)
+                StatsManager.incrementDownloadCount(context)
                 _downloadState.value = DownloadState.Success(filePath)
                 true
             } else {

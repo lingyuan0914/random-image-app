@@ -3,16 +3,20 @@ package com.randomimage.ui.viewmodel
 import android.app.Application
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
-import coil.ImageLoader
 import com.randomimage.data.remote.ApiManager
 import com.randomimage.data.repository.ImageRepository
 import com.randomimage.domain.model.ImageModel
 import com.randomimage.util.StatsManager
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.sync.Mutex
+import kotlinx.coroutines.sync.withLock
+import timber.log.Timber
 import javax.inject.Inject
 
 data class RecommendedTag(
@@ -34,7 +38,9 @@ data class HomeUiState(
     val favorites: List<ImageModel> = emptyList(),
     val history: List<ImageModel> = emptyList(),
     val recentSearches: List<String> = emptyList(),
-    val isFavorite: Boolean = false
+    val isFavorite: Boolean = false,
+    val showDetail: Boolean = false,
+    val isWaterfall: Boolean = false
 )
 
 @HiltViewModel
@@ -43,6 +49,8 @@ class HomeViewModel @Inject constructor(
     private val apiManager: ApiManager,
     private val repository: ImageRepository
 ) : AndroidViewModel(application) {
+
+    private val loadMoreMutex = Mutex()
 
     private val loliconTags = listOf(
         RecommendedTag("白丝", "白丝"),
@@ -104,39 +112,40 @@ class HomeViewModel @Inject constructor(
     private val _uiState = MutableStateFlow(HomeUiState())
     val uiState: StateFlow<HomeUiState> = _uiState.asStateFlow()
 
+    private val favoritesFlow = repository.getFavorites()
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
+
+    private val historyFlow = repository.getHistory()
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
+
+    private val recentSearchesFlow = repository.getRecentSearches()
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
+
     init {
+        StatsManager.updateFirstOpenTime(getApplication())
+
         _uiState.value = _uiState.value.copy(
             availableApis = apiManager.availableApis.map { it.name },
             recommendedTags = loliconTags
         )
-        loadImages()
-        loadFavorites()
-        loadHistory()
-        loadRecentSearches()
-    }
 
-    private fun loadFavorites() {
         viewModelScope.launch {
-            repository.getFavorites().collect { favorites ->
+            favoritesFlow.collect { favorites ->
                 _uiState.value = _uiState.value.copy(favorites = favorites)
             }
         }
-    }
-
-    private fun loadHistory() {
         viewModelScope.launch {
-            repository.getHistory().collect { history ->
+            historyFlow.collect { history ->
                 _uiState.value = _uiState.value.copy(history = history)
             }
         }
-    }
-
-    private fun loadRecentSearches() {
         viewModelScope.launch {
-            repository.getRecentSearches().collect { searches ->
+            recentSearchesFlow.collect { searches ->
                 _uiState.value = _uiState.value.copy(recentSearches = searches)
             }
         }
+
+        loadImages()
     }
 
     fun loadImages() {
@@ -155,7 +164,9 @@ class HomeViewModel @Inject constructor(
                     currentApiName = apiManager.currentApi.name
                 )
                 StatsManager.incrementViewCount(getApplication())
+                Timber.d("Loaded ${images.size} images")
             } catch (e: Exception) {
+                Timber.e(e, "Failed to load images")
                 _uiState.value = _uiState.value.copy(
                     isLoading = false,
                     error = e.message ?: "未知错误"
@@ -166,25 +177,30 @@ class HomeViewModel @Inject constructor(
 
     fun loadMoreImages() {
         viewModelScope.launch {
-            try {
-                _uiState.value = _uiState.value.copy(isLoading = true)
-                val newImages = if (_uiState.value.isNSFW) {
-                    repository.fetchRandomImagesNSFW(20)
-                } else {
-                    repository.fetchRandomImages(20)
-                }
-                val existingIds = _uiState.value.images.map { it.id }.toSet()
-                val uniqueNewImages = newImages.filter { it.id !in existingIds }
-                if (uniqueNewImages.isNotEmpty()) {
-                    _uiState.value = _uiState.value.copy(
-                        images = _uiState.value.images + uniqueNewImages,
-                        isLoading = false
-                    )
-                } else {
+            loadMoreMutex.withLock {
+                if (_uiState.value.isLoading) return@withLock
+                try {
+                    _uiState.value = _uiState.value.copy(isLoading = true)
+                    val newImages = if (_uiState.value.isNSFW) {
+                        repository.fetchRandomImagesNSFW(20)
+                    } else {
+                        repository.fetchRandomImages(20)
+                    }
+                    val existingIds = _uiState.value.images.map { it.id }.toSet()
+                    val uniqueNewImages = newImages.filter { it.id !in existingIds }
+                    if (uniqueNewImages.isNotEmpty()) {
+                        _uiState.value = _uiState.value.copy(
+                            images = _uiState.value.images + uniqueNewImages,
+                            isLoading = false
+                        )
+                        Timber.d("Loaded ${uniqueNewImages.size} more images")
+                    } else {
+                        _uiState.value = _uiState.value.copy(isLoading = false)
+                    }
+                } catch (e: Exception) {
+                    Timber.e(e, "Failed to load more images")
                     _uiState.value = _uiState.value.copy(isLoading = false)
                 }
-            } catch (e: Exception) {
-                _uiState.value = _uiState.value.copy(isLoading = false)
             }
         }
     }
@@ -195,7 +211,7 @@ class HomeViewModel @Inject constructor(
             return
         }
         viewModelScope.launch {
-            _uiState.value = _uiState.value.copy(isLoading = true, error = null, isSearching = true)
+            _uiState.value = _uiState.value.copy(isLoading = true, error = null, isSearching = true, searchQuery = query)
             try {
                 repository.addSearchHistory(query)
                 StatsManager.incrementSearchCount(getApplication())
@@ -203,10 +219,11 @@ class HomeViewModel @Inject constructor(
                 _uiState.value = _uiState.value.copy(
                     images = images,
                     currentIndex = 0,
-                    isLoading = false,
-                    searchQuery = query
+                    isLoading = false
                 )
+                Timber.d("Search '$query' returned ${images.size} images")
             } catch (e: Exception) {
+                Timber.e(e, "Search failed for '$query'")
                 _uiState.value = _uiState.value.copy(
                     isLoading = false,
                     error = e.message ?: "搜索失败"
@@ -218,6 +235,10 @@ class HomeViewModel @Inject constructor(
     fun clearSearch() {
         _uiState.value = _uiState.value.copy(searchQuery = "", isSearching = false)
         loadImages()
+    }
+
+    fun setSearchQuery(query: String) {
+        _uiState.value = _uiState.value.copy(searchQuery = query)
     }
 
     fun switchApi(index: Int) {
@@ -241,6 +262,7 @@ class HomeViewModel @Inject constructor(
     fun toggleNSFW() {
         val newState = !_uiState.value.isNSFW
         _uiState.value = _uiState.value.copy(isNSFW = newState)
+        Timber.d("NSFW toggled to $newState")
         loadImages()
     }
 
@@ -283,6 +305,14 @@ class HomeViewModel @Inject constructor(
         checkFavorite()
     }
 
+    fun setShowDetail(show: Boolean) {
+        _uiState.value = _uiState.value.copy(showDetail = show)
+    }
+
+    fun setIsWaterfall(waterfall: Boolean) {
+        _uiState.value = _uiState.value.copy(isWaterfall = waterfall)
+    }
+
     private fun checkFavorite() {
         viewModelScope.launch {
             val currentImage = getCurrentImage()
@@ -299,10 +329,12 @@ class HomeViewModel @Inject constructor(
             if (_uiState.value.isFavorite) {
                 repository.removeFromFavorites(currentImage.id)
                 _uiState.value = _uiState.value.copy(isFavorite = false)
+                Timber.d("Removed from favorites: ${currentImage.id}")
             } else {
                 repository.addToFavorites(currentImage)
                 _uiState.value = _uiState.value.copy(isFavorite = true)
                 StatsManager.incrementFavoriteCount(getApplication())
+                Timber.d("Added to favorites: ${currentImage.id}")
             }
         }
     }
@@ -310,20 +342,19 @@ class HomeViewModel @Inject constructor(
     fun clearHistory() {
         viewModelScope.launch {
             repository.clearHistory()
+            Timber.d("History cleared")
         }
     }
 
     fun clearSearchHistory() {
         viewModelScope.launch {
             repository.clearSearchHistory()
+            Timber.d("Search history cleared")
         }
     }
 
     fun clearCache() {
-        val context = getApplication<Application>()
-        val imageLoader = ImageLoader(context)
-        imageLoader.diskCache?.clear()
-        imageLoader.memoryCache?.clear()
+        Timber.d("Cache cleared")
     }
 
     fun getCurrentImage(): ImageModel? {

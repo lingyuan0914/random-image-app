@@ -59,6 +59,8 @@ fun ImageDetailScreen(
     onBack: () -> Unit,
     onSwipeLeft: () -> Unit,
     onSwipeRight: () -> Unit,
+    onFavorite: () -> Unit = {},
+    isFavorite: Boolean = false,
     imageIndex: Int = 0,
     totalImages: Int = 1
 ) {
@@ -189,7 +191,7 @@ fun ImageDetailScreen(
                 horizontalArrangement = Arrangement.spacedBy(8.dp)
             ) {
                 IconButton(
-                    onClick = { },
+                    onClick = onFavorite,
                     modifier = Modifier
                         .size(48.dp)
                         .clip(CircleShape)
@@ -198,7 +200,7 @@ fun ImageDetailScreen(
                     Icon(
                         Icons.Default.Favorite,
                         contentDescription = "收藏",
-                        tint = Color.White
+                        tint = if (isFavorite) Color.Red else Color.White
                     )
                 }
                 IconButton(

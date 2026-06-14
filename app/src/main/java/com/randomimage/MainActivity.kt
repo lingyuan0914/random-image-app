@@ -4,7 +4,6 @@ import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
-import androidx.activity.OnBackPressedCallback
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material.icons.Icons
@@ -21,9 +20,6 @@ import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.compose.NavHost
@@ -34,8 +30,8 @@ import com.randomimage.ui.components.BottomNavBar
 import com.randomimage.ui.screens.FavoritesScreen
 import com.randomimage.ui.screens.HomeScreen
 import com.randomimage.ui.screens.ImageDetailScreen
+import com.randomimage.ui.screens.LogScreen
 import com.randomimage.ui.screens.SettingsScreen
-import com.randomimage.ui.screens.ToolboxScreen
 import com.randomimage.ui.screens.WaterfallScreen
 import com.randomimage.ui.theme.RandomImageTheme
 import com.randomimage.ui.viewmodel.HomeViewModel
@@ -52,24 +48,21 @@ class MainActivity : ComponentActivity() {
                 val navController = rememberNavController()
                 val homeViewModel: HomeViewModel = hiltViewModel()
                 val homeUiState by homeViewModel.uiState.collectAsState()
-                var showDetail by remember { mutableStateOf(false) }
-                var isWaterfall by remember { mutableStateOf(false) }
-                var showSettings by remember { mutableStateOf(false) }
 
                 Scaffold(
                     modifier = Modifier.fillMaxSize(),
                     topBar = {
-                        if (!showDetail && !showSettings) {
+                        if (!homeUiState.showDetail) {
                             TopAppBar(
                                 title = { Text("随机图片") },
                                 actions = {
-                                    IconButton(onClick = { isWaterfall = !isWaterfall }) {
+                                    IconButton(onClick = { homeViewModel.setIsWaterfall(!homeUiState.isWaterfall) }) {
                                         Icon(
-                                            imageVector = if (isWaterfall) Icons.Default.ViewCarousel else Icons.Default.GridView,
-                                            contentDescription = if (isWaterfall) "切换卡片" else "切换瀑布流"
+                                            imageVector = if (homeUiState.isWaterfall) Icons.Default.ViewCarousel else Icons.Default.GridView,
+                                            contentDescription = if (homeUiState.isWaterfall) "切换卡片" else "切换瀑布流"
                                         )
                                     }
-                                    IconButton(onClick = { showSettings = true }) {
+                                    IconButton(onClick = { navController.navigate("settings") }) {
                                         Icon(
                                             imageVector = Icons.Default.Settings,
                                             contentDescription = "设置"
@@ -83,7 +76,7 @@ class MainActivity : ComponentActivity() {
                         }
                     },
                     bottomBar = {
-                        if (!showDetail && !showSettings) {
+                        if (!homeUiState.showDetail) {
                             BottomNavBar(
                                 currentRoute = navController.currentBackStackEntryAsState().value?.destination?.route,
                                 onNavigate = { route ->
@@ -95,31 +88,25 @@ class MainActivity : ComponentActivity() {
                                         restoreState = true
                                     }
                                 },
-                                favoriteCount = 0
+                                favoriteCount = homeUiState.favorites.size
                             )
                         }
                     }
                 ) { innerPadding ->
-                    if (showSettings) {
-                        SettingsScreen(
-                            onBack = { showSettings = false },
-                            onClearCache = { homeViewModel.clearCache() },
-                            onClearHistory = { homeViewModel.clearHistory() },
-                            onClearSearchHistory = { homeViewModel.clearSearchHistory() },
-                            onThemeChanged = { recreate() }
-                        )
-                    } else if (showDetail) {
+                    if (homeUiState.showDetail) {
                         val currentImage = homeViewModel.getCurrentImage()
                         if (currentImage != null) {
                             ImageDetailScreen(
                                 image = currentImage,
-                                onBack = { showDetail = false },
+                                onBack = { homeViewModel.setShowDetail(false) },
                                 onSwipeLeft = {
                                     homeViewModel.swipeLeft()
                                 },
                                 onSwipeRight = {
                                     homeViewModel.swipeRight()
                                 },
+                                onFavorite = { homeViewModel.toggleFavorite() },
+                                isFavorite = homeUiState.isFavorite,
                                 imageIndex = homeUiState.currentIndex,
                                 totalImages = homeUiState.images.size
                             )
@@ -131,26 +118,34 @@ class MainActivity : ComponentActivity() {
                             modifier = Modifier.padding(innerPadding)
                         ) {
                             composable("home") {
-                                if (isWaterfall) {
+                                if (homeUiState.isWaterfall) {
                                     WaterfallScreen(
                                         viewModel = homeViewModel,
                                         onImageClick = { index ->
                                             homeViewModel.setCurrentIndex(index)
-                                            showDetail = true
+                                            homeViewModel.setShowDetail(true)
                                         }
                                     )
                                 } else {
                                     HomeScreen(
                                         viewModel = homeViewModel,
-                                        onImageClick = { showDetail = true }
+                                        onImageClick = { homeViewModel.setShowDetail(true) }
                                     )
                                 }
                             }
                             composable("favorites") {
                                 FavoritesScreen()
                             }
-                            composable("toolbox") {
-                                ToolboxScreen()
+                            composable("logs") {
+                                LogScreen(onBack = { navController.popBackStack() })
+                            }
+                            composable("settings") {
+                                SettingsScreen(
+                                    onBack = { navController.popBackStack() },
+                                    onClearCache = { homeViewModel.clearCache() },
+                                    onClearHistory = { homeViewModel.clearHistory() },
+                                    onClearSearchHistory = { homeViewModel.clearSearchHistory() }
+                                )
                             }
                         }
                     }

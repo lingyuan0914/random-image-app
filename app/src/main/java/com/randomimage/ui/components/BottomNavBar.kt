@@ -3,8 +3,10 @@ package com.randomimage.ui.components
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Favorite
 import androidx.compose.material.icons.filled.Home
+import androidx.compose.material.icons.filled.Info
 import androidx.compose.material.icons.outlined.FavoriteBorder
 import androidx.compose.material.icons.outlined.Home
+import androidx.compose.material.icons.outlined.Info
 import androidx.compose.material3.Badge
 import androidx.compose.material3.BadgedBox
 import androidx.compose.material3.Icon
@@ -22,6 +24,7 @@ sealed class Screen(
 ) {
     data object Home : Screen("home", "首页", Icons.Filled.Home, Icons.Outlined.Home)
     data object Favorites : Screen("favorites", "收藏", Icons.Filled.Favorite, Icons.Outlined.FavoriteBorder)
+    data object Logs : Screen("logs", "日志", Icons.Filled.Info, Icons.Outlined.Info)
 }
 
 @Composable
@@ -30,7 +33,7 @@ fun BottomNavBar(
     onNavigate: (String) -> Unit,
     favoriteCount: Int = 0
 ) {
-    val screens = listOf(Screen.Home, Screen.Favorites)
+    val screens = listOf(Screen.Home, Screen.Favorites, Screen.Logs)
 
     NavigationBar {
         screens.forEach { screen ->

@@ -63,9 +63,7 @@ fun WaterfallScreen(
     val uiState by viewModel.uiState.collectAsState()
     val context = LocalContext.current
     val configuration = LocalConfiguration.current
-    val screenWidth = configuration.screenWidthDp.dp
     var expanded by remember { mutableStateOf(false) }
-    var searchQuery by remember { mutableStateOf("") }
     val gridState = rememberLazyStaggeredGridState()
     var lastLoadTime by remember { mutableStateOf(0L) }
 
@@ -148,8 +146,8 @@ fun WaterfallScreen(
             verticalAlignment = Alignment.CenterVertically
         ) {
             OutlinedTextField(
-                value = searchQuery,
-                onValueChange = { searchQuery = it },
+                value = uiState.searchQuery,
+                onValueChange = { viewModel.setSearchQuery(it) },
                 label = { Text("搜索标签", style = MaterialTheme.typography.labelSmall) },
                 placeholder = { Text("输入关键词...", style = MaterialTheme.typography.bodySmall) },
                 modifier = Modifier
@@ -163,8 +161,8 @@ fun WaterfallScreen(
 
             IconButton(
                 onClick = {
-                    if (searchQuery.isNotBlank()) {
-                        viewModel.searchImages(searchQuery)
+                    if (uiState.searchQuery.isNotBlank()) {
+                        viewModel.searchImages(uiState.searchQuery)
                     }
                 }
             ) {
@@ -194,7 +192,7 @@ fun WaterfallScreen(
                     uiState.recommendedTags.take(6).forEach { tag ->
                         SuggestionChip(
                             onClick = {
-                                searchQuery = tag.name
+                                viewModel.setSearchQuery(tag.name)
                                 viewModel.searchImages(tag.name)
                             },
                             label = { Text(tag.displayName, style = MaterialTheme.typography.labelSmall) }
@@ -226,8 +224,8 @@ fun WaterfallScreen(
                 }
                 uiState.images.isNotEmpty() -> {
                     val columns = when {
-                        screenWidth < 400.dp -> 2
-                        screenWidth < 600.dp -> 3
+                        configuration.screenWidthDp < 400 -> 2
+                        configuration.screenWidthDp < 600 -> 3
                         else -> 4
                     }
 

@@ -38,10 +38,9 @@ data class LoliconItem(
     val urls: LoliconUrls
 ) {
     fun toImageModel(): ImageModel {
-        // 使用 original URL，因为 small/regular/thumb 可能不存在
         val imageUrl = urls.original ?: ""
         return ImageModel(
-            id = "lolicon_${pid}_${System.currentTimeMillis()}",
+            id = "lolicon_${pid}_${p}_${System.nanoTime()}",
             urls = ImageUrls(
                 raw = imageUrl,
                 full = imageUrl,

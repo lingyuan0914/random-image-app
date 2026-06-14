@@ -38,7 +38,8 @@ import com.randomimage.ui.viewmodel.FavoritesViewModel
 @OptIn(ExperimentalFoundationApi::class)
 @Composable
 fun FavoritesScreen(
-    viewModel: FavoritesViewModel = hiltViewModel()
+    viewModel: FavoritesViewModel = hiltViewModel(),
+    onImageClick: (ImageModel) -> Unit = {}
 ) {
     val uiState by viewModel.uiState.collectAsState()
     var selectedImage by remember { mutableStateOf<ImageModel?>(null) }
@@ -78,7 +79,7 @@ fun FavoritesScreen(
                             modifier = Modifier
                                 .clip(RoundedCornerShape(12.dp))
                                 .combinedClickable(
-                                    onClick = { },
+                                    onClick = { onImageClick(image) },
                                     onLongClick = { selectedImage = image }
                                 ),
                             shape = RoundedCornerShape(12.dp),

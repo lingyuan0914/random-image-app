@@ -10,8 +10,14 @@ import coil.request.SuccessResult
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
+import timber.log.Timber
 
 object ImageUtils {
+    private var imageLoader: ImageLoader? = null
+
+    fun init(loader: ImageLoader) {
+        imageLoader = loader
+    }
 
     suspend fun downloadImage(context: Context, imageUrl: String): Boolean {
         return DownloadManager.downloadImage(context, imageUrl)
@@ -33,7 +39,7 @@ object ImageUtils {
 
     suspend fun setWallpaper(context: Context, imageUrl: String): Boolean {
         return try {
-            val loader = ImageLoader(context)
+            val loader = imageLoader ?: return false
             val request = ImageRequest.Builder(context)
                 .data(imageUrl)
                 .allowHardware(false)
@@ -49,13 +55,14 @@ object ImageUtils {
                 false
             }
         } catch (e: Exception) {
+            Timber.e(e, "Failed to set wallpaper")
             false
         }
     }
 
     suspend fun getBitmap(context: Context, imageUrl: String): Bitmap? {
         return try {
-            val loader = ImageLoader(context)
+            val loader = imageLoader ?: return null
             val request = ImageRequest.Builder(context)
                 .data(imageUrl)
                 .allowHardware(false)
@@ -68,6 +75,7 @@ object ImageUtils {
                 null
             }
         } catch (e: Exception) {
+            Timber.e(e, "Failed to get bitmap")
             null
         }
     }
