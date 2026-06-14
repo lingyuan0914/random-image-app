@@ -78,14 +78,19 @@ class LoliconImageApi(
     override val supportsNSFW = true
 
     override suspend fun fetchRandomImages(count: Int): List<ImageModel> {
-        return try {
-            val response = service.getImages(r18 = 0, num = count)
-            Timber.d("Lolicon API response: error=${response.error}, data.size=${response.data.size}")
-            response.data.map { it.toImageModel() }
-        } catch (e: Exception) {
-            Timber.e(e, "Lolicon API failed")
-            emptyList()
+        repeat(3) { attempt ->
+            try {
+                val response = service.getImages(r18 = 0, num = count)
+                Timber.d("Lolicon API attempt ${attempt + 1}: error=${response.error}, data.size=${response.data.size}")
+                if (response.data.isNotEmpty()) {
+                    return response.data.map { it.toImageModel() }
+                }
+            } catch (e: Exception) {
+                Timber.e(e, "Lolicon API attempt ${attempt + 1} failed")
+            }
         }
+        Timber.w("Lolicon API: all 3 attempts returned empty")
+        return emptyList()
     }
 
     override suspend fun searchImages(query: String, count: Int): List<ImageModel> {
@@ -97,10 +102,17 @@ class LoliconImageApi(
     }
 
     override suspend fun fetchRandomImagesNSFW(count: Int): List<ImageModel> {
-        return try {
-            service.getImages(r18 = 1, num = count).data.map { it.toImageModel() }
-        } catch (e: Exception) {
-            emptyList()
+        repeat(3) { attempt ->
+            try {
+                val response = service.getImages(r18 = 1, num = count)
+                Timber.d("Lolicon NSFW attempt ${attempt + 1}: error=${response.error}, data.size=${response.data.size}")
+                if (response.data.isNotEmpty()) {
+                    return response.data.map { it.toImageModel() }
+                }
+            } catch (e: Exception) {
+                Timber.e(e, "Lolicon NSFW attempt ${attempt + 1} failed")
+            }
         }
+        return emptyList()
     }
 }
