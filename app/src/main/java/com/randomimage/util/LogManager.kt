@@ -16,7 +16,8 @@ object LogManager {
 
     fun init(context: Context) {
         logFile = File(context.filesDir, "app_logs.txt")
-        Timber.d("LogManager initialized")
+        logFile?.createNewFile()
+        addLog("INFO", "LogManager", "LogManager initialized")
     }
 
     fun addLog(level: String, tag: String, message: String) {

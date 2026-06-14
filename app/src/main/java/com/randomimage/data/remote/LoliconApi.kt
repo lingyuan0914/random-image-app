@@ -6,6 +6,7 @@ import com.randomimage.domain.model.User
 import com.squareup.moshi.JsonClass
 import retrofit2.http.GET
 import retrofit2.http.Query
+import timber.log.Timber
 
 interface LoliconService {
     @GET("setu/v2")
@@ -78,8 +79,11 @@ class LoliconImageApi(
 
     override suspend fun fetchRandomImages(count: Int): List<ImageModel> {
         return try {
-            service.getImages(r18 = 0, num = count).data.map { it.toImageModel() }
+            val response = service.getImages(r18 = 0, num = count)
+            Timber.d("Lolicon API response: error=${response.error}, data.size=${response.data.size}")
+            response.data.map { it.toImageModel() }
         } catch (e: Exception) {
+            Timber.e(e, "Lolicon API failed")
             emptyList()
         }
     }
