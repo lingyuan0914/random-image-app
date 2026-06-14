@@ -1,6 +1,7 @@
 package com.randomimage
 
 import android.app.Application
+import android.util.Log
 import coil.ImageLoader
 import com.randomimage.util.DownloadManager
 import com.randomimage.util.ImageUtils
@@ -17,10 +18,26 @@ class RandomImageApp : Application() {
 
     override fun onCreate() {
         super.onCreate()
-        Timber.plant(Timber.DebugTree())
         LogManager.init(this)
+        Timber.plant(Timber.DebugTree())
+        Timber.plant(LogManagerTree())
         ImageUtils.init(imageLoader)
         DownloadManager.init(imageLoader)
         Timber.d("Application started")
+    }
+
+    private class LogManagerTree : Timber.Tree() {
+        override fun log(priority: Int, tag: String?, message: String, t: Throwable?) {
+            val level = when (priority) {
+                Log.VERBOSE -> "VERBOSE"
+                Log.DEBUG -> "DEBUG"
+                Log.INFO -> "INFO"
+                Log.WARN -> "WARN"
+                Log.ERROR -> "ERROR"
+                Log.ASSERT -> "ASSERT"
+                else -> "UNKNOWN"
+            }
+            LogManager.addLog(level, tag ?: "App", message)
+        }
     }
 }
