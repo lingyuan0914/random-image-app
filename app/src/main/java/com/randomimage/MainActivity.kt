@@ -105,7 +105,8 @@ class MainActivity : ComponentActivity() {
                             onBack = { showSettings = false },
                             onClearCache = { homeViewModel.clearCache() },
                             onClearHistory = { homeViewModel.clearHistory() },
-                            onClearSearchHistory = { homeViewModel.clearSearchHistory() }
+                            onClearSearchHistory = { homeViewModel.clearSearchHistory() },
+                            onThemeChanged = { recreate() }
                         )
                     } else if (showDetail) {
                         val currentImage = homeViewModel.getCurrentImage()

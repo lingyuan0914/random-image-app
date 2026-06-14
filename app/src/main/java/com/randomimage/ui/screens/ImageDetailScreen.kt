@@ -1,6 +1,7 @@
 package com.randomimage.ui.screens
 
 import android.widget.Toast
+import androidx.activity.compose.BackHandler
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.foundation.background
 import androidx.compose.foundation.gestures.detectHorizontalDragGestures
@@ -71,6 +72,10 @@ fun ImageDetailScreen(
         targetValue = offsetXAnim,
         label = "offsetX"
     )
+
+    BackHandler {
+        onBack()
+    }
 
     Box(modifier = Modifier.fillMaxSize()) {
         AsyncImage(

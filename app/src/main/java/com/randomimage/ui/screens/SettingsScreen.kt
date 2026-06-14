@@ -48,7 +48,8 @@ fun SettingsScreen(
     onBack: () -> Unit,
     onClearCache: () -> Unit,
     onClearHistory: () -> Unit,
-    onClearSearchHistory: () -> Unit
+    onClearSearchHistory: () -> Unit,
+    onThemeChanged: () -> Unit = {}
 ) {
     BackHandler {
         onBack()
@@ -359,6 +360,7 @@ fun SettingsScreen(
                                 themeMode.value = ThemeManager.THEME_SYSTEM
                                 ThemeManager.setThemeMode(context, ThemeManager.THEME_SYSTEM)
                                 showThemeDialog = false
+                                onThemeChanged()
                             },
                         verticalAlignment = Alignment.CenterVertically
                     ) {
@@ -368,6 +370,7 @@ fun SettingsScreen(
                                 themeMode.value = ThemeManager.THEME_SYSTEM
                                 ThemeManager.setThemeMode(context, ThemeManager.THEME_SYSTEM)
                                 showThemeDialog = false
+                                onThemeChanged()
                             }
                         )
                         Spacer(modifier = Modifier.width(8.dp))
@@ -381,6 +384,7 @@ fun SettingsScreen(
                                 themeMode.value = ThemeManager.THEME_LIGHT
                                 ThemeManager.setThemeMode(context, ThemeManager.THEME_LIGHT)
                                 showThemeDialog = false
+                                onThemeChanged()
                             },
                         verticalAlignment = Alignment.CenterVertically
                     ) {
@@ -390,6 +394,7 @@ fun SettingsScreen(
                                 themeMode.value = ThemeManager.THEME_LIGHT
                                 ThemeManager.setThemeMode(context, ThemeManager.THEME_LIGHT)
                                 showThemeDialog = false
+                                onThemeChanged()
                             }
                         )
                         Spacer(modifier = Modifier.width(8.dp))
@@ -403,6 +408,7 @@ fun SettingsScreen(
                                 themeMode.value = ThemeManager.THEME_DARK
                                 ThemeManager.setThemeMode(context, ThemeManager.THEME_DARK)
                                 showThemeDialog = false
+                                onThemeChanged()
                             },
                         verticalAlignment = Alignment.CenterVertically
                     ) {
@@ -412,6 +418,7 @@ fun SettingsScreen(
                                 themeMode.value = ThemeManager.THEME_DARK
                                 ThemeManager.setThemeMode(context, ThemeManager.THEME_DARK)
                                 showThemeDialog = false
+                                onThemeChanged()
                             }
                         )
                         Spacer(modifier = Modifier.width(8.dp))

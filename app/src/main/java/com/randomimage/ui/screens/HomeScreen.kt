@@ -189,20 +189,32 @@ fun HomeScreen(
 
         Spacer(modifier = Modifier.height(4.dp))
 
-        Box(modifier = Modifier.weight(1f)) {
+        Box(
+            modifier = Modifier
+                .weight(1f)
+                .fillMaxWidth(),
+            contentAlignment = Alignment.Center
+        ) {
             when {
                 uiState.isLoading -> {
-                    CircularProgressIndicator(
-                        modifier = Modifier.align(Alignment.Center)
-                    )
+                    CircularProgressIndicator()
                 }
                 uiState.error != null -> {
                     TextButton(
-                        onClick = { viewModel.loadImages() },
-                        modifier = Modifier.align(Alignment.Center)
+                        onClick = { viewModel.loadImages() }
                     ) {
                         Text(
                             text = uiState.error ?: "错误",
+                            style = MaterialTheme.typography.bodyLarge
+                        )
+                    }
+                }
+                uiState.images.isEmpty() -> {
+                    TextButton(
+                        onClick = { viewModel.loadImages() }
+                    ) {
+                        Text(
+                            text = "点击加载图片",
                             style = MaterialTheme.typography.bodyLarge
                         )
                     }
