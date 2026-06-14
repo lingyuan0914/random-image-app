@@ -4,6 +4,7 @@ import com.randomimage.domain.model.ImageModel
 import com.randomimage.domain.model.ImageUrls
 import com.randomimage.domain.model.User
 import com.squareup.moshi.JsonClass
+import kotlinx.coroutines.delay
 import retrofit2.http.GET
 import retrofit2.http.Query
 import timber.log.Timber
@@ -79,6 +80,9 @@ class LoliconImageApi(
 
     override suspend fun fetchRandomImages(count: Int): List<ImageModel> {
         repeat(3) { attempt ->
+            if (attempt > 0) {
+                delay(2000L)
+            }
             try {
                 val response = service.getImages(r18 = 0, num = count)
                 Timber.d("Lolicon API attempt ${attempt + 1}: error=${response.error}, data.size=${response.data.size}")
@@ -103,6 +107,9 @@ class LoliconImageApi(
 
     override suspend fun fetchRandomImagesNSFW(count: Int): List<ImageModel> {
         repeat(3) { attempt ->
+            if (attempt > 0) {
+                delay(2000L)
+            }
             try {
                 val response = service.getImages(r18 = 1, num = count)
                 Timber.d("Lolicon NSFW attempt ${attempt + 1}: error=${response.error}, data.size=${response.data.size}")
