@@ -9,11 +9,13 @@ import coil.request.ImageRequest
 import coil.request.SuccessResult
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.launch
 import timber.log.Timber
 
 object ImageUtils {
     private var imageLoader: ImageLoader? = null
+    private val scope = CoroutineScope(SupervisorJob() + Dispatchers.IO)
 
     fun init(loader: ImageLoader) {
         imageLoader = loader
@@ -24,7 +26,7 @@ object ImageUtils {
     }
 
     fun shareImage(context: Context, imageUrl: String) {
-        CoroutineScope(Dispatchers.IO).launch {
+        scope.launch {
             ShareUtils.shareImage(context, imageUrl)
         }
     }

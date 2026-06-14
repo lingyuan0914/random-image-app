@@ -2,6 +2,8 @@ package com.randomimage.util
 
 import android.content.Context
 import android.content.SharedPreferences
+import java.util.concurrent.atomic.AtomicInteger
+import java.util.concurrent.atomic.AtomicLong
 
 object StatsManager {
     private const val PREFS_NAME = "stats_prefs"

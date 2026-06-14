@@ -23,6 +23,7 @@ import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Search
+import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -35,6 +36,7 @@ import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.SuggestionChip
 import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
@@ -64,6 +66,7 @@ fun WaterfallScreen(
     val context = LocalContext.current
     val configuration = LocalConfiguration.current
     var expanded by remember { mutableStateOf(false) }
+    var showNsfwDialog by remember { mutableStateOf(false) }
     val gridState = rememberLazyStaggeredGridState()
     var lastLoadTime by remember { mutableStateOf(0L) }
 
@@ -134,7 +137,7 @@ fun WaterfallScreen(
                 Spacer(modifier = Modifier.width(4.dp))
                 Switch(
                     checked = uiState.isNSFW,
-                    onCheckedChange = { viewModel.toggleNSFW() }
+                    onCheckedChange = { showNsfwDialog = true }
                 )
             }
         }
@@ -265,5 +268,26 @@ fun WaterfallScreen(
                 }
             }
         }
+    }
+
+    if (showNsfwDialog) {
+        AlertDialog(
+            onDismissRequest = { showNsfwDialog = false },
+            title = { Text("NSFW 模式") },
+            text = { Text("开启后将显示成人内容，确定要继续吗？") },
+            confirmButton = {
+                TextButton(onClick = {
+                    viewModel.toggleNSFW()
+                    showNsfwDialog = false
+                }) {
+                    Text("确定")
+                }
+            },
+            dismissButton = {
+                TextButton(onClick = { showNsfwDialog = false }) {
+                    Text("取消")
+                }
+            }
+        )
     }
 }

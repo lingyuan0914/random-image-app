@@ -3,4 +3,7 @@
     <files-path
         name="logs"
         path="." />
+    <cache-path
+        name="shared_images"
+        path="shared_images/" />
 </paths>

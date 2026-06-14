@@ -3,6 +3,7 @@ package com.randomimage.ui.viewmodel
 import android.app.Application
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
+import coil.ImageLoader
 import com.randomimage.data.remote.ApiManager
 import com.randomimage.data.repository.ImageRepository
 import com.randomimage.domain.model.ImageModel
@@ -354,6 +355,9 @@ class HomeViewModel @Inject constructor(
     }
 
     fun clearCache() {
+        val context = getApplication<Application>()
+        val cacheDir = context.cacheDir.resolve("image_cache")
+        cacheDir.deleteRecursively()
         Timber.d("Cache cleared")
     }
 

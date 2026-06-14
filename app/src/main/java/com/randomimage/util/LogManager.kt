@@ -5,13 +5,14 @@ import android.content.Intent
 import androidx.core.content.FileProvider
 import timber.log.Timber
 import java.io.File
-import java.text.SimpleDateFormat
-import java.util.*
+import java.time.LocalDateTime
+import java.time.format.DateTimeFormatter
+import java.util.concurrent.ConcurrentLinkedQueue
 
 object LogManager {
     private var logFile: File? = null
-    private val logBuffer = mutableListOf<String>()
-    private val dateFormat = SimpleDateFormat("yyyy-MM-dd HH:mm:ss", Locale.getDefault())
+    private val logBuffer = ConcurrentLinkedQueue<String>()
+    private val formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss")
 
     fun init(context: Context) {
         logFile = File(context.filesDir, "app_logs.txt")
@@ -19,7 +20,7 @@ object LogManager {
     }
 
     fun addLog(level: String, tag: String, message: String) {
-        val timestamp = dateFormat.format(Date())
+        val timestamp = LocalDateTime.now().format(formatter)
         val logEntry = "[$timestamp] $level/$tag: $message"
         logBuffer.add(logEntry)
 
@@ -29,10 +30,13 @@ object LogManager {
     }
 
     fun flushLogs() {
-        logBuffer.forEach { entry ->
-            logFile?.appendText("$entry\n")
+        val entries = mutableListOf<String>()
+        while (logBuffer.isNotEmpty()) {
+            logBuffer.poll()?.let { entries.add(it) }
         }
-        logBuffer.clear()
+        if (entries.isNotEmpty()) {
+            logFile?.appendText(entries.joinToString("\n") + "\n")
+        }
     }
 
     fun getLogs(): String {
