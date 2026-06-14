@@ -4,6 +4,7 @@ import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
+import androidx.activity.OnBackPressedCallback
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material.icons.Icons
@@ -101,6 +102,7 @@ class MainActivity : ComponentActivity() {
                 ) { innerPadding ->
                     if (showSettings) {
                         SettingsScreen(
+                            onBack = { showSettings = false },
                             onClearCache = { homeViewModel.clearCache() },
                             onClearHistory = { homeViewModel.clearHistory() },
                             onClearSearchHistory = { homeViewModel.clearSearchHistory() }
