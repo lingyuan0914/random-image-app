@@ -134,9 +134,7 @@ fun HomeScreen(
                 textStyle = MaterialTheme.typography.bodyMedium,
                 trailingIcon = {
                     if (uiState.searchQuery.isNotEmpty()) {
-                        IconButton(onClick = {
-                            viewModel.clearSearch()
-                        }) {
+                        IconButton(onClick = { viewModel.clearSearch() }) {
                             Icon(Icons.Default.Clear, contentDescription = "清除")
                         }
                     }
@@ -153,6 +151,33 @@ fun HomeScreen(
                 }
             ) {
                 Icon(Icons.Default.Search, contentDescription = "搜索")
+            }
+        }
+
+        if (uiState.searchQuery.isEmpty() && uiState.recentSearches.isNotEmpty()) {
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = 12.dp, vertical = 2.dp),
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Text("历史:", style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                Spacer(modifier = Modifier.width(8.dp))
+                FlowRow(
+                    modifier = Modifier.weight(1f),
+                    horizontalArrangement = Arrangement.spacedBy(4.dp),
+                    verticalArrangement = Arrangement.spacedBy(2.dp)
+                ) {
+                    uiState.recentSearches.take(5).forEach { search ->
+                        SuggestionChip(
+                            onClick = {
+                                viewModel.setSearchQuery(search)
+                                viewModel.searchImages(search)
+                            },
+                            label = { Text(search, style = MaterialTheme.typography.labelSmall) }
+                        )
+                    }
+                }
             }
         }
 

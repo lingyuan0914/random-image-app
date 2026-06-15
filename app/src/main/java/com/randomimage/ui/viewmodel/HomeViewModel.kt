@@ -1,6 +1,7 @@
 package com.randomimage.ui.viewmodel
 
 import android.app.Application
+import android.content.Context
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
 import coil.ImageLoader
@@ -8,6 +9,7 @@ import com.randomimage.data.remote.ApiManager
 import com.randomimage.data.repository.ImageRepository
 import com.randomimage.domain.model.ImageModel
 import com.randomimage.util.StatsManager
+import com.randomimage.util.ThemeManager
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
@@ -405,5 +407,16 @@ class HomeViewModel @Inject constructor(
     fun getCurrentImage(): ImageModel? {
         val state = _uiState.value
         return state.images.getOrNull(state.currentIndex)
+    }
+
+    fun toggleTheme(context: Context) {
+        val currentMode = ThemeManager.getThemeMode(context)
+        val newMode = if (currentMode == ThemeManager.THEME_DARK) {
+            ThemeManager.THEME_LIGHT
+        } else {
+            ThemeManager.THEME_DARK
+        }
+        ThemeManager.setThemeMode(context, newMode)
+        Timber.d("Theme toggled to ${if (newMode == ThemeManager.THEME_DARK) "dark" else "light"}")
     }
 }

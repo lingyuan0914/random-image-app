@@ -7,7 +7,9 @@ import androidx.activity.enableEdgeToEdge
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.DarkMode
 import androidx.compose.material.icons.filled.GridView
+import androidx.compose.material.icons.filled.LightMode
 import androidx.compose.material.icons.filled.Refresh
 import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material.icons.filled.ViewCarousel
@@ -37,6 +39,7 @@ import com.randomimage.ui.screens.SettingsScreen
 import com.randomimage.ui.screens.WaterfallScreen
 import com.randomimage.ui.theme.RandomImageTheme
 import com.randomimage.ui.viewmodel.HomeViewModel
+import com.randomimage.util.ThemeManager
 import dagger.hilt.android.AndroidEntryPoint
 
 @AndroidEntryPoint
@@ -60,6 +63,13 @@ class MainActivity : ComponentActivity() {
                                 actions = {
                                     IconButton(onClick = { homeViewModel.loadImages() }) {
                                         Icon(Icons.Default.Refresh, contentDescription = "刷新")
+                                    }
+                                    IconButton(onClick = { homeViewModel.toggleTheme(this@MainActivity) }) {
+                                        val isDark = ThemeManager.getThemeMode(this@MainActivity) == ThemeManager.THEME_DARK
+                                        Icon(
+                                            imageVector = if (isDark) Icons.Default.LightMode else Icons.Default.DarkMode,
+                                            contentDescription = if (isDark) "浅色模式" else "深色模式"
+                                        )
                                     }
                                     IconButton(onClick = { homeViewModel.setIsWaterfall(!homeUiState.isWaterfall) }) {
                                         Icon(
