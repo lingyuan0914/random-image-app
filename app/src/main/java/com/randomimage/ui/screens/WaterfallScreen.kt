@@ -1,6 +1,5 @@
 package com.randomimage.ui.screens
 
-import android.widget.Toast
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -16,7 +15,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.staggeredgrid.LazyVerticalStaggeredGrid
 import androidx.compose.foundation.lazy.staggeredgrid.StaggeredGridCells
-import androidx.compose.foundation.lazy.staggeredgrid.items
+import androidx.compose.foundation.lazy.staggeredgrid.itemsIndexed
 import androidx.compose.foundation.lazy.staggeredgrid.rememberLazyStaggeredGridState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Card
@@ -47,6 +46,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalConfiguration
@@ -54,6 +54,7 @@ import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import coil.compose.AsyncImage
 import coil.request.ImageRequest
+import coil.size.Size
 import com.randomimage.ui.viewmodel.HomeViewModel
 
 @OptIn(ExperimentalMaterial3Api::class, ExperimentalLayoutApi::class)
@@ -75,8 +76,7 @@ fun WaterfallScreen(
             val lastVisibleItem = gridState.layoutInfo.visibleItemsInfo.lastOrNull()?.index ?: 0
             val totalItems = gridState.layoutInfo.totalItemsCount
             val currentTime = System.currentTimeMillis()
-            // 只有向下滚动到底部时才加载更多
-            lastVisibleItem >= totalItems - 4 && totalItems > 0 && currentTime - lastLoadTime > 2000
+            lastVisibleItem >= totalItems - 6 && totalItems > 0 && currentTime - lastLoadTime > 1500
         }
     }
 
@@ -130,10 +130,7 @@ fun WaterfallScreen(
             Spacer(modifier = Modifier.width(8.dp))
 
             Row(verticalAlignment = Alignment.CenterVertically) {
-                Text(
-                    text = "NSFW",
-                    style = MaterialTheme.typography.labelSmall
-                )
+                Text("NSFW", style = MaterialTheme.typography.labelSmall)
                 Spacer(modifier = Modifier.width(4.dp))
                 Switch(
                     checked = uiState.isNSFW,
@@ -181,11 +178,7 @@ fun WaterfallScreen(
                     .height(36.dp),
                 verticalAlignment = Alignment.CenterVertically
             ) {
-                Text(
-                    text = "推荐:",
-                    style = MaterialTheme.typography.labelSmall,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant
-                )
+                Text("推荐:", style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
                 Spacer(modifier = Modifier.width(8.dp))
                 FlowRow(
                     modifier = Modifier.weight(1f),
@@ -194,10 +187,7 @@ fun WaterfallScreen(
                 ) {
                     uiState.recommendedTags.take(6).forEach { tag ->
                         SuggestionChip(
-                            onClick = {
-                                viewModel.setSearchQuery(tag.name)
-                                viewModel.searchImages(tag.name)
-                            },
+                            onClick = { viewModel.setSearchQuery(tag.name); viewModel.searchImages(tag.name) },
                             label = { Text(tag.displayName, style = MaterialTheme.typography.labelSmall) }
                         )
                     }
@@ -210,19 +200,11 @@ fun WaterfallScreen(
         Box(modifier = Modifier.weight(1f)) {
             when {
                 uiState.isLoading && uiState.images.isEmpty() -> {
-                    CircularProgressIndicator(
-                        modifier = Modifier.align(Alignment.Center)
-                    )
+                    CircularProgressIndicator(modifier = Modifier.align(Alignment.Center))
                 }
                 uiState.error != null && uiState.images.isEmpty() -> {
-                    androidx.compose.material3.TextButton(
-                        onClick = { viewModel.loadImages() },
-                        modifier = Modifier.align(Alignment.Center)
-                    ) {
-                        Text(
-                            text = uiState.error ?: "错误",
-                            style = MaterialTheme.typography.bodyLarge
-                        )
+                    TextButton(onClick = { viewModel.loadImages() }, modifier = Modifier.align(Alignment.Center)) {
+                        Text(uiState.error ?: "错误", style = MaterialTheme.typography.bodyLarge)
                     }
                 }
                 uiState.images.isNotEmpty() -> {
@@ -236,31 +218,32 @@ fun WaterfallScreen(
                         columns = StaggeredGridCells.Fixed(columns),
                         state = gridState,
                         modifier = Modifier.fillMaxSize(),
-                        horizontalArrangement = Arrangement.spacedBy(6.dp),
-                        verticalItemSpacing = 6.dp
+                        horizontalArrangement = Arrangement.spacedBy(4.dp),
+                        verticalItemSpacing = 4.dp
                     ) {
-                        items(
+                        itemsIndexed(
                             items = uiState.images,
-                            key = { it.id }
-                        ) { image ->
+                            key = { index, image -> "${image.id}_$index" }
+                        ) { index, image ->
                             Card(
                                 modifier = Modifier
                                     .fillMaxWidth()
-                                    .clickable {
-                                        val globalIndex = uiState.images.indexOf(image)
-                                        onImageClick(globalIndex)
-                                    },
+                                    .clickable { onImageClick(index) },
                                 shape = RoundedCornerShape(8.dp),
-                                elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
+                                elevation = CardDefaults.cardElevation(defaultElevation = 1.dp)
                             ) {
                                 AsyncImage(
                                     model = ImageRequest.Builder(context)
                                         .data(image.urls.regular)
-                                        .crossfade(true)
+                                        .crossfade(false)
+                                        .size(Size.ORIGINAL)
+                                        .memoryCacheKey("${image.id}_$index")
                                         .build(),
                                     contentDescription = image.description,
                                     contentScale = ContentScale.FillWidth,
-                                    modifier = Modifier.fillMaxWidth()
+                                    modifier = Modifier
+                                        .fillMaxWidth()
+                                        .clip(RoundedCornerShape(8.dp))
                                 )
                             }
                         }
@@ -276,17 +259,10 @@ fun WaterfallScreen(
             title = { Text("NSFW 模式") },
             text = { Text("开启后将显示成人内容，确定要继续吗？") },
             confirmButton = {
-                TextButton(onClick = {
-                    viewModel.toggleNSFW()
-                    showNsfwDialog = false
-                }) {
-                    Text("确定")
-                }
+                TextButton(onClick = { viewModel.toggleNSFW(); showNsfwDialog = false }) { Text("确定") }
             },
             dismissButton = {
-                TextButton(onClick = { showNsfwDialog = false }) {
-                    Text("取消")
-                }
+                TextButton(onClick = { showNsfwDialog = false }) { Text("取消") }
             }
         )
     }
