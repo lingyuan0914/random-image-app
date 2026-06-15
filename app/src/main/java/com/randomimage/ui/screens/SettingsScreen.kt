@@ -46,7 +46,8 @@ fun SettingsScreen(
     onBack: () -> Unit,
     onClearCache: () -> Unit,
     onClearHistory: () -> Unit,
-    onClearSearchHistory: () -> Unit
+    onClearSearchHistory: () -> Unit,
+    onPreviewCache: () -> Unit = {}
 ) {
     BackHandler {
         onBack()
@@ -182,6 +183,22 @@ fun SettingsScreen(
                     ) {
                         Text(text = "图片缓存大小")
                         Text(text = CacheManager.formatSize(CacheManager.getCacheSize(context)))
+                    }
+                    Spacer(modifier = Modifier.height(8.dp))
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .clickable { onPreviewCache() },
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Column(modifier = Modifier.weight(1f)) {
+                            Text(text = "预览缓存图片")
+                            Text(
+                                text = "查看和管理已缓存的图片",
+                                style = MaterialTheme.typography.bodySmall,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant
+                            )
+                        }
                     }
                     Spacer(modifier = Modifier.height(8.dp))
                     Row(

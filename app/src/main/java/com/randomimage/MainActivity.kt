@@ -27,6 +27,7 @@ import androidx.navigation.compose.composable
 import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
 import com.randomimage.ui.components.BottomNavBar
+import com.randomimage.ui.screens.CachePreviewScreen
 import com.randomimage.ui.screens.FavoritesScreen
 import com.randomimage.ui.screens.HomeScreen
 import com.randomimage.ui.screens.ImageDetailScreen
@@ -144,8 +145,12 @@ class MainActivity : ComponentActivity() {
                                     onBack = { navController.popBackStack() },
                                     onClearCache = { homeViewModel.clearCache() },
                                     onClearHistory = { homeViewModel.clearHistory() },
-                                    onClearSearchHistory = { homeViewModel.clearSearchHistory() }
+                                    onClearSearchHistory = { homeViewModel.clearSearchHistory() },
+                                    onPreviewCache = { navController.navigate("cache_preview") }
                                 )
+                            }
+                            composable("cache_preview") {
+                                CachePreviewScreen(onBack = { navController.popBackStack() })
                             }
                         }
                     }
