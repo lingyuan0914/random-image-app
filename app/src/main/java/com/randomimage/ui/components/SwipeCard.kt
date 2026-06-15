@@ -46,7 +46,7 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import coil.compose.AsyncImage
 import coil.request.ImageRequest
-import coil.size.Scale
+import coil.size.Size
 import com.randomimage.domain.model.ImageModel
 
 @Composable
@@ -74,7 +74,7 @@ fun SwipeCard(
     Card(
         modifier = modifier
             .fillMaxSize()
-            .padding(16.dp)
+            .padding(8.dp)
             .graphicsLayer {
                 translationX = offsetX
                 rotationZ = rotation
@@ -83,10 +83,10 @@ fun SwipeCard(
             .pointerInput(Unit) {
                 detectHorizontalDragGestures(
                     onDragEnd = {
-                        if (offsetX > 300 && !isAnimating) {
+                        if (offsetX > 200 && !isAnimating) {
                             isAnimating = true
                             onSwipeRight()
-                        } else if (offsetX < -300 && !isAnimating) {
+                        } else if (offsetX < -200 && !isAnimating) {
                             isAnimating = true
                             onSwipeLeft()
                         }
@@ -98,26 +98,26 @@ fun SwipeCard(
                 )
             }
             .clickable { onClick() },
-        shape = RoundedCornerShape(24.dp),
-        elevation = CardDefaults.cardElevation(defaultElevation = 8.dp)
+        shape = RoundedCornerShape(16.dp),
+        elevation = CardDefaults.cardElevation(defaultElevation = 4.dp)
     ) {
         Box(modifier = Modifier.fillMaxSize()) {
             AsyncImage(
                 model = ImageRequest.Builder(context)
-                    .data(image.urls.regular)
-                    .crossfade(true)
-                    .size(coil.size.Size.ORIGINAL)
+                    .data(image.urls.small)
+                    .crossfade(false)
+                    .size(Size.ORIGINAL)
+                    .allowHardware(true)
                     .build(),
                 contentDescription = image.description,
                 contentScale = ContentScale.Crop,
                 modifier = Modifier.fillMaxSize()
             )
 
-            // Gradient overlay at bottom
             Box(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .height(200.dp)
+                    .height(150.dp)
                     .align(Alignment.BottomCenter)
                     .background(
                         brush = androidx.compose.ui.graphics.Brush.verticalGradient(
@@ -126,87 +126,61 @@ fun SwipeCard(
                     )
             )
 
-            // Image info
             Column(
                 modifier = Modifier
                     .align(Alignment.BottomStart)
-                    .padding(16.dp)
+                    .padding(12.dp)
             ) {
                 Text(
                     text = image.user.name,
-                    style = MaterialTheme.typography.titleLarge,
+                    style = MaterialTheme.typography.titleMedium,
                     color = Color.White
                 )
                 if (image.description != null) {
-                    Spacer(modifier = Modifier.height(4.dp))
+                    Spacer(modifier = Modifier.height(2.dp))
                     Text(
                         text = image.description,
-                        style = MaterialTheme.typography.bodyMedium,
+                        style = MaterialTheme.typography.bodySmall,
                         color = Color.White.copy(alpha = 0.8f),
-                        maxLines = 2,
+                        maxLines = 1,
                         overflow = TextOverflow.Ellipsis
                     )
                 }
             }
 
-            // Action buttons
             Row(
                 modifier = Modifier
                     .align(Alignment.BottomEnd)
-                    .padding(16.dp),
-                horizontalArrangement = Arrangement.spacedBy(8.dp)
+                    .padding(12.dp),
+                horizontalArrangement = Arrangement.spacedBy(4.dp)
             ) {
                 IconButton(
                     onClick = onLike,
-                    modifier = Modifier
-                        .size(48.dp)
-                        .clip(CircleShape)
-                        .background(Color.White.copy(alpha = 0.2f))
+                    modifier = Modifier.size(40.dp)
                 ) {
                     Icon(
                         imageVector = if (isFavorite) Icons.Default.Favorite else Icons.Default.FavoriteBorder,
-                        contentDescription = "Like",
+                        contentDescription = "收藏",
                         tint = if (isFavorite) Color.Red else Color.White
                     )
                 }
                 IconButton(
                     onClick = onShare,
-                    modifier = Modifier
-                        .size(48.dp)
-                        .clip(CircleShape)
-                        .background(Color.White.copy(alpha = 0.2f))
+                    modifier = Modifier.size(40.dp)
                 ) {
-                    Icon(
-                        Icons.Default.Share,
-                        contentDescription = "Share",
-                        tint = Color.White
-                    )
+                    Icon(Icons.Default.Share, contentDescription = "分享", tint = Color.White)
                 }
                 IconButton(
                     onClick = onDownload,
-                    modifier = Modifier
-                        .size(48.dp)
-                        .clip(CircleShape)
-                        .background(Color.White.copy(alpha = 0.2f))
+                    modifier = Modifier.size(40.dp)
                 ) {
-                    Icon(
-                        Icons.Default.Download,
-                        contentDescription = "Download",
-                        tint = Color.White
-                    )
+                    Icon(Icons.Default.Download, contentDescription = "下载", tint = Color.White)
                 }
                 IconButton(
                     onClick = onSetWallpaper,
-                    modifier = Modifier
-                        .size(48.dp)
-                        .clip(CircleShape)
-                        .background(Color.White.copy(alpha = 0.2f))
+                    modifier = Modifier.size(40.dp)
                 ) {
-                    Icon(
-                        Icons.Default.Image,
-                        contentDescription = "Set Wallpaper",
-                        tint = Color.White
-                    )
+                    Icon(Icons.Default.Image, contentDescription = "壁纸", tint = Color.White)
                 }
             }
         }

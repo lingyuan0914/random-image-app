@@ -21,14 +21,14 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowBack
 import androidx.compose.material.icons.filled.Download
 import androidx.compose.material.icons.filled.Favorite
+import androidx.compose.material.icons.filled.FavoriteBorder
 import androidx.compose.material.icons.filled.Share
+import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
-import androidx.compose.material3.TopAppBar
-import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableFloatStateOf
@@ -47,7 +47,9 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import coil.compose.AsyncImage
+import coil.compose.SubcomposeAsyncImage
 import coil.request.ImageRequest
+import coil.size.Size
 import com.randomimage.domain.model.ImageModel
 import com.randomimage.util.ImageUtils
 import kotlinx.coroutines.launch
@@ -66,53 +68,67 @@ fun ImageDetailScreen(
 ) {
     val context = LocalContext.current
     val scope = rememberCoroutineScope()
-    var offsetX by remember { mutableFloatStateOf(0f) }
     var scale by remember { mutableFloatStateOf(1f) }
     var offsetXAnim by remember { mutableFloatStateOf(0f) }
+    var offsetY by remember { mutableFloatStateOf(0f) }
 
     val animatedOffsetX by animateFloatAsState(
         targetValue = offsetXAnim,
         label = "offsetX"
     )
 
-    BackHandler {
-        onBack()
-    }
+    BackHandler { onBack() }
 
-    Box(modifier = Modifier.fillMaxSize()) {
-        AsyncImage(
+    Box(
+        modifier = Modifier
+            .fillMaxSize()
+            .background(Color.Black)
+    ) {
+        SubcomposeAsyncImage(
             model = ImageRequest.Builder(context)
                 .data(image.urls.regular)
-                .crossfade(true)
-                .size(coil.size.Size.ORIGINAL)
+                .crossfade(false)
+                .size(Size.ORIGINAL)
+                .allowHardware(true)
                 .build(),
             contentDescription = image.description,
             contentScale = ContentScale.Fit,
+            loading = {
+                CircularProgressIndicator(
+                    modifier = Modifier.align(Alignment.Center),
+                    color = Color.White
+                )
+            },
             modifier = Modifier
                 .fillMaxSize()
                 .graphicsLayer {
                     translationX = animatedOffsetX
+                    translationY = offsetY
                     scaleX = scale
                     scaleY = scale
                 }
                 .pointerInput(Unit) {
                     detectTransformGestures { _, pan, zoom, _ ->
-                        scale = (scale * zoom).coerceIn(0.5f, 3f)
-                        offsetX = pan.x
+                        scale = (scale * zoom).coerceIn(0.5f, 5f)
+                        offsetY += pan.y
                     }
                 }
                 .pointerInput(Unit) {
                     detectHorizontalDragGestures(
                         onDragEnd = {
-                            if (offsetXAnim > 100) {
-                                onSwipeRight()
-                            } else if (offsetXAnim < -100) {
-                                onSwipeLeft()
+                            if (scale <= 1f) {
+                                if (offsetXAnim > 100) {
+                                    onSwipeRight()
+                                } else if (offsetXAnim < -100) {
+                                    onSwipeLeft()
+                                }
+                                offsetXAnim = 0f
                             }
-                            offsetXAnim = 0f
                         },
                         onHorizontalDrag = { _, dragAmount ->
-                            offsetXAnim += dragAmount
+                            if (scale <= 1f) {
+                                offsetXAnim += dragAmount
+                            }
                         }
                     )
                 }
@@ -121,7 +137,7 @@ fun ImageDetailScreen(
         Box(
             modifier = Modifier
                 .fillMaxWidth()
-                .height(100.dp)
+                .height(80.dp)
                 .align(Alignment.TopCenter)
                 .background(
                     brush = androidx.compose.ui.graphics.Brush.verticalGradient(
@@ -129,27 +145,28 @@ fun ImageDetailScreen(
                     )
                 )
         ) {
-            TopAppBar(
-                title = { },
-                navigationIcon = {
-                    IconButton(onClick = onBack) {
-                        Icon(
-                            Icons.Default.ArrowBack,
-                            contentDescription = "返回",
-                            tint = Color.White
-                        )
-                    }
-                },
-                colors = TopAppBarDefaults.topAppBarColors(
-                    containerColor = Color.Transparent
+            Row(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .padding(horizontal = 8.dp),
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                IconButton(onClick = onBack) {
+                    Icon(Icons.Default.ArrowBack, contentDescription = "返回", tint = Color.White)
+                }
+                Text(
+                    text = "${image.user.name} · ${imageIndex + 1}/$totalImages",
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = Color.White,
+                    modifier = Modifier.weight(1f)
                 )
-            )
+            }
         }
 
         Box(
             modifier = Modifier
                 .fillMaxWidth()
-                .height(150.dp)
+                .height(100.dp)
                 .align(Alignment.BottomCenter)
                 .background(
                     brush = androidx.compose.ui.graphics.Brush.verticalGradient(
@@ -157,100 +174,48 @@ fun ImageDetailScreen(
                     )
                 )
         ) {
-            Column(
-                modifier = Modifier
-                    .align(Alignment.BottomStart)
-                    .padding(16.dp)
-            ) {
-                Text(
-                    text = image.user.name,
-                    style = MaterialTheme.typography.titleMedium,
-                    color = Color.White
-                )
-                if (image.description != null) {
-                    Spacer(modifier = Modifier.height(4.dp))
-                    Text(
-                        text = image.description,
-                        style = MaterialTheme.typography.bodyMedium,
-                        color = Color.White.copy(alpha = 0.8f),
-                        textAlign = TextAlign.Start
-                    )
-                }
-                Spacer(modifier = Modifier.height(4.dp))
-                Row(
-                    horizontalArrangement = Arrangement.spacedBy(12.dp)
-                ) {
-                    Text(
-                        text = "${imageIndex + 1} / $totalImages",
-                        style = MaterialTheme.typography.bodySmall,
-                        color = Color.White.copy(alpha = 0.6f)
-                    )
-                    if (image.width > 0 && image.height > 0) {
-                        Text(
-                            text = "${image.width} x ${image.height}",
-                            style = MaterialTheme.typography.bodySmall,
-                            color = Color.White.copy(alpha = 0.6f)
-                        )
-                    }
-                }
-            }
-
             Row(
                 modifier = Modifier
-                    .align(Alignment.BottomEnd)
-                    .padding(16.dp),
-                horizontalArrangement = Arrangement.spacedBy(8.dp)
+                    .fillMaxSize()
+                    .padding(horizontal = 16.dp),
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.SpaceEvenly
             ) {
-                IconButton(
-                    onClick = onFavorite,
-                    modifier = Modifier
-                        .size(48.dp)
-                        .clip(CircleShape)
-                        .background(Color.White.copy(alpha = 0.2f))
-                ) {
+                IconButton(onClick = onFavorite) {
                     Icon(
-                        Icons.Default.Favorite,
+                        if (isFavorite) Icons.Default.Favorite else Icons.Default.FavoriteBorder,
                         contentDescription = "收藏",
-                        tint = if (isFavorite) Color.Red else Color.White
+                        tint = if (isFavorite) Color.Red else Color.White,
+                        modifier = Modifier.size(28.dp)
                     )
                 }
-                IconButton(
-                    onClick = {
-                        ImageUtils.shareImage(context, image.urls.regular)
-                    },
-                    modifier = Modifier
-                        .size(48.dp)
-                        .clip(CircleShape)
-                        .background(Color.White.copy(alpha = 0.2f))
-                ) {
-                    Icon(
-                        Icons.Default.Share,
-                        contentDescription = "分享",
-                        tint = Color.White
-                    )
+                IconButton(onClick = { ImageUtils.shareImage(context, image.urls.regular) }) {
+                    Icon(Icons.Default.Share, contentDescription = "分享", tint = Color.White, modifier = Modifier.size(28.dp))
                 }
-                IconButton(
-                    onClick = {
-                        scope.launch {
-                            val success = ImageUtils.downloadImage(context, image.urls.regular)
-                            Toast.makeText(
-                                context,
-                                if (success) "下载成功" else "下载失败",
-                                Toast.LENGTH_SHORT
-                            ).show()
-                        }
-                    },
-                    modifier = Modifier
-                        .size(48.dp)
-                        .clip(CircleShape)
-                        .background(Color.White.copy(alpha = 0.2f))
-                ) {
-                    Icon(
-                        Icons.Default.Download,
-                        contentDescription = "下载",
-                        tint = Color.White
-                    )
+                IconButton(onClick = {
+                    scope.launch {
+                        val success = ImageUtils.downloadImage(context, image.urls.regular)
+                        Toast.makeText(context, if (success) "下载成功" else "下载失败", Toast.LENGTH_SHORT).show()
+                    }
+                }) {
+                    Icon(Icons.Default.Download, contentDescription = "下载", tint = Color.White, modifier = Modifier.size(28.dp))
                 }
+            }
+        }
+
+        if (image.description != null) {
+            Box(
+                modifier = Modifier
+                    .align(Alignment.BottomCenter)
+                    .padding(bottom = 110.dp, start = 16.dp, end = 16.dp)
+            ) {
+                Text(
+                    text = image.description,
+                    style = MaterialTheme.typography.bodySmall,
+                    color = Color.White.copy(alpha = 0.7f),
+                    textAlign = TextAlign.Center,
+                    maxLines = 2
+                )
             }
         }
     }

@@ -8,6 +8,7 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.GridView
+import androidx.compose.material.icons.filled.Refresh
 import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material.icons.filled.ViewCarousel
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -57,6 +58,9 @@ class MainActivity : ComponentActivity() {
                             TopAppBar(
                                 title = { Text("随机图片") },
                                 actions = {
+                                    IconButton(onClick = { homeViewModel.loadImages() }) {
+                                        Icon(Icons.Default.Refresh, contentDescription = "刷新")
+                                    }
                                     IconButton(onClick = { homeViewModel.setIsWaterfall(!homeUiState.isWaterfall) }) {
                                         Icon(
                                             imageVector = if (homeUiState.isWaterfall) Icons.Default.ViewCarousel else Icons.Default.GridView,
@@ -64,10 +68,7 @@ class MainActivity : ComponentActivity() {
                                         )
                                     }
                                     IconButton(onClick = { navController.navigate("settings") }) {
-                                        Icon(
-                                            imageVector = Icons.Default.Settings,
-                                            contentDescription = "设置"
-                                        )
+                                        Icon(Icons.Default.Settings, contentDescription = "设置")
                                     }
                                 },
                                 colors = TopAppBarDefaults.topAppBarColors(

@@ -165,7 +165,7 @@ fun SettingsScreen(
                     Text("关于", style = MaterialTheme.typography.titleMedium)
                     Spacer(modifier = Modifier.height(8.dp))
                     Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
-                        Text("版本"); Text("1.2.0")
+                        Text("版本"); Text("1.3.0")
                     }
                     Spacer(modifier = Modifier.height(4.dp))
                     Text("随机图片 - 二次元图片浏览应用")
