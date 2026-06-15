@@ -49,15 +49,12 @@ fun SettingsScreen(
     onClearSearchHistory: () -> Unit,
     onPreviewCache: () -> Unit = {}
 ) {
-    BackHandler {
-        onBack()
-    }
+    BackHandler { onBack() }
     val context = LocalContext.current
     var showClearCacheDialog by remember { mutableStateOf(false) }
     var showClearHistoryDialog by remember { mutableStateOf(false) }
     var showClearSearchDialog by remember { mutableStateOf(false) }
     var showThemeDialog by remember { mutableStateOf(false) }
-
     val themeMode = remember { mutableStateOf(ThemeManager.getThemeMode(context)) }
 
     Column(modifier = Modifier.fillMaxSize()) {
@@ -65,10 +62,7 @@ fun SettingsScreen(
             title = { Text("设置") },
             navigationIcon = {
                 IconButton(onClick = { onBack() }) {
-                    Icon(
-                        imageVector = Icons.Default.ArrowBack,
-                        contentDescription = "返回"
-                    )
+                    Icon(Icons.Default.ArrowBack, contentDescription = "返回")
                 }
             }
         )
@@ -79,86 +73,44 @@ fun SettingsScreen(
                 .verticalScroll(rememberScrollState())
                 .padding(16.dp)
         ) {
-            Card(
-                modifier = Modifier.fillMaxWidth(),
-                elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
-            ) {
+            Card(modifier = Modifier.fillMaxWidth(), elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)) {
                 Column(modifier = Modifier.padding(16.dp)) {
-                    Text(
-                        text = "使用统计",
-                        style = MaterialTheme.typography.titleMedium
-                    )
+                    Text("使用统计", style = MaterialTheme.typography.titleMedium)
                     Spacer(modifier = Modifier.height(8.dp))
-                    Row(
-                        modifier = Modifier.fillMaxWidth(),
-                        horizontalArrangement = Arrangement.SpaceBetween
-                    ) {
-                        Text(text = "浏览图片")
-                        Text(text = "${StatsManager.getViewCount(context)} 张")
+                    Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
+                        Text("浏览图片"); Text("${StatsManager.getViewCount(context)} 张")
                     }
                     Spacer(modifier = Modifier.height(4.dp))
-                    Row(
-                        modifier = Modifier.fillMaxWidth(),
-                        horizontalArrangement = Arrangement.SpaceBetween
-                    ) {
-                        Text(text = "收藏图片")
-                        Text(text = "${StatsManager.getFavoriteCount(context)} 张")
+                    Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
+                        Text("收藏图片"); Text("${StatsManager.getFavoriteCount(context)} 张")
                     }
                     Spacer(modifier = Modifier.height(4.dp))
-                    Row(
-                        modifier = Modifier.fillMaxWidth(),
-                        horizontalArrangement = Arrangement.SpaceBetween
-                    ) {
-                        Text(text = "下载图片")
-                        Text(text = "${StatsManager.getDownloadCount(context)} 张")
+                    Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
+                        Text("下载图片"); Text("${StatsManager.getDownloadCount(context)} 张")
                     }
                     Spacer(modifier = Modifier.height(4.dp))
-                    Row(
-                        modifier = Modifier.fillMaxWidth(),
-                        horizontalArrangement = Arrangement.SpaceBetween
-                    ) {
-                        Text(text = "搜索次数")
-                        Text(text = "${StatsManager.getSearchCount(context)} 次")
+                    Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
+                        Text("搜索次数"); Text("${StatsManager.getSearchCount(context)} 次")
                     }
                     Spacer(modifier = Modifier.height(4.dp))
-                    Row(
-                        modifier = Modifier.fillMaxWidth(),
-                        horizontalArrangement = Arrangement.SpaceBetween
-                    ) {
-                        Text(text = "使用天数")
-                        Text(text = "${StatsManager.getDaysSinceFirstOpen(context)} 天")
+                    Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
+                        Text("使用天数"); Text("${StatsManager.getDaysSinceFirstOpen(context)} 天")
                     }
                 }
             }
 
             Spacer(modifier = Modifier.height(16.dp))
 
-            Card(
-                modifier = Modifier.fillMaxWidth(),
-                elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
-            ) {
+            Card(modifier = Modifier.fillMaxWidth(), elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)) {
                 Column(modifier = Modifier.padding(16.dp)) {
-                    Text(
-                        text = "外观设置",
-                        style = MaterialTheme.typography.titleMedium
-                    )
+                    Text("外观设置", style = MaterialTheme.typography.titleMedium)
                     Spacer(modifier = Modifier.height(8.dp))
-                    Row(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .clickable { showThemeDialog = true },
-                        verticalAlignment = Alignment.CenterVertically
-                    ) {
+                    Row(modifier = Modifier.fillMaxWidth().clickable { showThemeDialog = true }, verticalAlignment = Alignment.CenterVertically) {
                         Column(modifier = Modifier.weight(1f)) {
-                            Text(text = "主题模式")
+                            Text("主题模式")
                             Text(
-                                text = when (themeMode.value) {
-                                    ThemeManager.THEME_LIGHT -> "浅色模式"
-                                    ThemeManager.THEME_DARK -> "深色模式"
-                                    else -> "跟随系统"
-                                },
-                                style = MaterialTheme.typography.bodySmall,
-                                color = MaterialTheme.colorScheme.onSurfaceVariant
+                                when (themeMode.value) { ThemeManager.THEME_LIGHT -> "浅色模式"; ThemeManager.THEME_DARK -> "深色模式"; else -> "跟随系统" },
+                                style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant
                             )
                         }
                     }
@@ -167,86 +119,40 @@ fun SettingsScreen(
 
             Spacer(modifier = Modifier.height(16.dp))
 
-            Card(
-                modifier = Modifier.fillMaxWidth(),
-                elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
-            ) {
+            Card(modifier = Modifier.fillMaxWidth(), elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)) {
                 Column(modifier = Modifier.padding(16.dp)) {
-                    Text(
-                        text = "数据管理",
-                        style = MaterialTheme.typography.titleMedium
-                    )
+                    Text("数据管理", style = MaterialTheme.typography.titleMedium)
                     Spacer(modifier = Modifier.height(8.dp))
                     val cacheStats = CacheManager.getCacheStats(context)
-                    Row(
-                        modifier = Modifier.fillMaxWidth(),
-                        horizontalArrangement = Arrangement.SpaceBetween
-                    ) {
-                        Text(text = "图片缓存")
-                        Text(text = "${cacheStats.imageCount} 张 / ${CacheManager.formatSize(cacheStats.imageSize)}")
+                    Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
+                        Text("图片缓存"); Text("${cacheStats.imageCount} 张 / ${CacheManager.formatSize(cacheStats.imageSize)}")
                     }
                     Spacer(modifier = Modifier.height(8.dp))
-                    Row(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .clickable { onPreviewCache() },
-                        verticalAlignment = Alignment.CenterVertically
-                    ) {
+                    Row(modifier = Modifier.fillMaxWidth().clickable { onPreviewCache() }, verticalAlignment = Alignment.CenterVertically) {
                         Column(modifier = Modifier.weight(1f)) {
-                            Text(text = "预览缓存图片")
-                            Text(
-                                text = "查看和管理已缓存的图片",
-                                style = MaterialTheme.typography.bodySmall,
-                                color = MaterialTheme.colorScheme.onSurfaceVariant
-                            )
+                            Text("预览缓存图片")
+                            Text("查看和管理已缓存的图片", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
                         }
                     }
                     Spacer(modifier = Modifier.height(8.dp))
-                    Row(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .clickable { showClearCacheDialog = true },
-                        verticalAlignment = Alignment.CenterVertically
-                    ) {
+                    Row(modifier = Modifier.fillMaxWidth().clickable { showClearCacheDialog = true }, verticalAlignment = Alignment.CenterVertically) {
                         Column(modifier = Modifier.weight(1f)) {
-                            Text(text = "清除图片缓存")
-                            Text(
-                                text = "清除已缓存的图片，下次加载会重新下载",
-                                style = MaterialTheme.typography.bodySmall,
-                                color = MaterialTheme.colorScheme.onSurfaceVariant
-                            )
+                            Text("清除图片缓存")
+                            Text("清除已缓存的图片，下次加载会重新下载", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
                         }
                     }
                     Spacer(modifier = Modifier.height(16.dp))
-                    Row(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .clickable { showClearHistoryDialog = true },
-                        verticalAlignment = Alignment.CenterVertically
-                    ) {
+                    Row(modifier = Modifier.fillMaxWidth().clickable { showClearHistoryDialog = true }, verticalAlignment = Alignment.CenterVertically) {
                         Column(modifier = Modifier.weight(1f)) {
-                            Text(text = "清除浏览历史")
-                            Text(
-                                text = "清除所有浏览过的图片记录",
-                                style = MaterialTheme.typography.bodySmall,
-                                color = MaterialTheme.colorScheme.onSurfaceVariant
-                            )
+                            Text("清除浏览历史")
+                            Text("清除所有浏览过的图片记录", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
                         }
                     }
                     Spacer(modifier = Modifier.height(16.dp))
-                    Row(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .clickable { showClearSearchDialog = true },
-                        verticalAlignment = Alignment.CenterVertically
-                    ) {
+                    Row(modifier = Modifier.fillMaxWidth().clickable { showClearSearchDialog = true }, verticalAlignment = Alignment.CenterVertically) {
                         Column(modifier = Modifier.weight(1f)) {
-                            Text(text = "清除搜索历史")
-                            Text(
-                                text = "清除所有搜索记录",
-                                style = MaterialTheme.typography.bodySmall,
-                                color = MaterialTheme.colorScheme.onSurfaceVariant
-                            )
+                            Text("清除搜索历史")
+                            Text("清除所有搜索记录", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
                         }
                     }
                 }
@@ -254,180 +160,58 @@ fun SettingsScreen(
 
             Spacer(modifier = Modifier.height(16.dp))
 
-            Card(
-                modifier = Modifier.fillMaxWidth(),
-                elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
-            ) {
+            Card(modifier = Modifier.fillMaxWidth(), elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)) {
                 Column(modifier = Modifier.padding(16.dp)) {
-                    Text(
-                        text = "关于",
-                        style = MaterialTheme.typography.titleMedium
-                    )
+                    Text("关于", style = MaterialTheme.typography.titleMedium)
                     Spacer(modifier = Modifier.height(8.dp))
-                    Row(
-                        modifier = Modifier.fillMaxWidth(),
-                        horizontalArrangement = Arrangement.SpaceBetween
-                    ) {
-                        Text(text = "版本")
-                        Text(text = "1.1.0")
+                    Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
+                        Text("版本"); Text("1.2.0")
                     }
                     Spacer(modifier = Modifier.height(4.dp))
-                    Text(text = "随机图片 - 二次元图片浏览应用")
+                    Text("随机图片 - 二次元图片浏览应用")
                     Spacer(modifier = Modifier.height(4.dp))
-                    Text(
-                        text = "支持API: Lolicon, 萌图, 色图API, Kori图库, 随机美图, 二次元风景",
-                        style = MaterialTheme.typography.bodySmall,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant
-                    )
+                    Text("支持API: Lolicon, 萌图, 色图API, Kori图库, 随机美图, 二次元风景", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
                 }
             }
         }
     }
 
     if (showThemeDialog) {
-        AlertDialog(
-            onDismissRequest = { showThemeDialog = false },
-            title = { Text("主题模式") },
-            text = {
-                Column {
-                    Row(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .clickable {
-                                themeMode.value = ThemeManager.THEME_SYSTEM
-                                ThemeManager.setThemeMode(context, ThemeManager.THEME_SYSTEM)
-                                showThemeDialog = false
-                            },
-                        verticalAlignment = Alignment.CenterVertically
-                    ) {
-                        RadioButton(
-                            selected = themeMode.value == ThemeManager.THEME_SYSTEM,
-                            onClick = {
-                                themeMode.value = ThemeManager.THEME_SYSTEM
-                                ThemeManager.setThemeMode(context, ThemeManager.THEME_SYSTEM)
-                                showThemeDialog = false
-                            }
-                        )
-                        Spacer(modifier = Modifier.width(8.dp))
-                        Text("跟随系统")
-                    }
-                    Spacer(modifier = Modifier.height(8.dp))
-                    Row(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .clickable {
-                                themeMode.value = ThemeManager.THEME_LIGHT
-                                ThemeManager.setThemeMode(context, ThemeManager.THEME_LIGHT)
-                                showThemeDialog = false
-                            },
-                        verticalAlignment = Alignment.CenterVertically
-                    ) {
-                        RadioButton(
-                            selected = themeMode.value == ThemeManager.THEME_LIGHT,
-                            onClick = {
-                                themeMode.value = ThemeManager.THEME_LIGHT
-                                ThemeManager.setThemeMode(context, ThemeManager.THEME_LIGHT)
-                                showThemeDialog = false
-                            }
-                        )
-                        Spacer(modifier = Modifier.width(8.dp))
-                        Text("浅色模式")
-                    }
-                    Spacer(modifier = Modifier.height(8.dp))
-                    Row(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .clickable {
-                                themeMode.value = ThemeManager.THEME_DARK
-                                ThemeManager.setThemeMode(context, ThemeManager.THEME_DARK)
-                                showThemeDialog = false
-                            },
-                        verticalAlignment = Alignment.CenterVertically
-                    ) {
-                        RadioButton(
-                            selected = themeMode.value == ThemeManager.THEME_DARK,
-                            onClick = {
-                                themeMode.value = ThemeManager.THEME_DARK
-                                ThemeManager.setThemeMode(context, ThemeManager.THEME_DARK)
-                                showThemeDialog = false
-                            }
-                        )
-                        Spacer(modifier = Modifier.width(8.dp))
-                        Text("深色模式")
-                    }
+        AlertDialog(onDismissRequest = { showThemeDialog = false }, title = { Text("主题模式") }, text = {
+            Column {
+                Row(modifier = Modifier.fillMaxWidth().clickable { themeMode.value = ThemeManager.THEME_SYSTEM; ThemeManager.setThemeMode(context, ThemeManager.THEME_SYSTEM); showThemeDialog = false }, verticalAlignment = Alignment.CenterVertically) {
+                    RadioButton(selected = themeMode.value == ThemeManager.THEME_SYSTEM, onClick = { themeMode.value = ThemeManager.THEME_SYSTEM; ThemeManager.setThemeMode(context, ThemeManager.THEME_SYSTEM); showThemeDialog = false })
+                    Spacer(modifier = Modifier.width(8.dp)); Text("跟随系统")
                 }
-            },
-            confirmButton = {
-                TextButton(onClick = { showThemeDialog = false }) {
-                    Text("取消")
+                Spacer(modifier = Modifier.height(8.dp))
+                Row(modifier = Modifier.fillMaxWidth().clickable { themeMode.value = ThemeManager.THEME_LIGHT; ThemeManager.setThemeMode(context, ThemeManager.THEME_LIGHT); showThemeDialog = false }, verticalAlignment = Alignment.CenterVertically) {
+                    RadioButton(selected = themeMode.value == ThemeManager.THEME_LIGHT, onClick = { themeMode.value = ThemeManager.THEME_LIGHT; ThemeManager.setThemeMode(context, ThemeManager.THEME_LIGHT); showThemeDialog = false })
+                    Spacer(modifier = Modifier.width(8.dp)); Text("浅色模式")
+                }
+                Spacer(modifier = Modifier.height(8.dp))
+                Row(modifier = Modifier.fillMaxWidth().clickable { themeMode.value = ThemeManager.THEME_DARK; ThemeManager.setThemeMode(context, ThemeManager.THEME_DARK); showThemeDialog = false }, verticalAlignment = Alignment.CenterVertically) {
+                    RadioButton(selected = themeMode.value == ThemeManager.THEME_DARK, onClick = { themeMode.value = ThemeManager.THEME_DARK; ThemeManager.setThemeMode(context, ThemeManager.THEME_DARK); showThemeDialog = false })
+                    Spacer(modifier = Modifier.width(8.dp)); Text("深色模式")
                 }
             }
-        )
+        }, confirmButton = { TextButton(onClick = { showThemeDialog = false }) { Text("取消") } })
     }
 
     if (showClearCacheDialog) {
-        AlertDialog(
-            onDismissRequest = { showClearCacheDialog = false },
-            title = { Text("清除缓存") },
-            text = { Text("确定要清除所有图片缓存吗？") },
-            confirmButton = {
-                TextButton(onClick = {
-                    onClearCache()
-                    showClearCacheDialog = false
-                    Toast.makeText(context, "缓存已清除", Toast.LENGTH_SHORT).show()
-                }) {
-                    Text("确定")
-                }
-            },
-            dismissButton = {
-                TextButton(onClick = { showClearCacheDialog = false }) {
-                    Text("取消")
-                }
-            }
-        )
+        AlertDialog(onDismissRequest = { showClearCacheDialog = false }, title = { Text("清除缓存") }, text = { Text("确定要清除所有图片缓存吗？") }, confirmButton = {
+            TextButton(onClick = { onClearCache(); showClearCacheDialog = false; Toast.makeText(context, "缓存已清除", Toast.LENGTH_SHORT).show() }) { Text("确定") }
+        }, dismissButton = { TextButton(onClick = { showClearCacheDialog = false }) { Text("取消") } })
     }
 
     if (showClearHistoryDialog) {
-        AlertDialog(
-            onDismissRequest = { showClearHistoryDialog = false },
-            title = { Text("清除历史") },
-            text = { Text("确定要清除所有浏览历史吗？") },
-            confirmButton = {
-                TextButton(onClick = {
-                    onClearHistory()
-                    showClearHistoryDialog = false
-                    Toast.makeText(context, "历史已清除", Toast.LENGTH_SHORT).show()
-                }) {
-                    Text("确定")
-                }
-            },
-            dismissButton = {
-                TextButton(onClick = { showClearHistoryDialog = false }) {
-                    Text("取消")
-                }
-            }
-        )
+        AlertDialog(onDismissRequest = { showClearHistoryDialog = false }, title = { Text("清除历史") }, text = { Text("确定要清除所有浏览历史吗？") }, confirmButton = {
+            TextButton(onClick = { onClearHistory(); showClearHistoryDialog = false; Toast.makeText(context, "历史已清除", Toast.LENGTH_SHORT).show() }) { Text("确定") }
+        }, dismissButton = { TextButton(onClick = { showClearHistoryDialog = false }) { Text("取消") } })
     }
 
     if (showClearSearchDialog) {
-        AlertDialog(
-            onDismissRequest = { showClearSearchDialog = false },
-            title = { Text("清除搜索历史") },
-            text = { Text("确定要清除所有搜索历史吗？") },
-            confirmButton = {
-                TextButton(onClick = {
-                    onClearSearchHistory()
-                    showClearSearchDialog = false
-                    Toast.makeText(context, "搜索历史已清除", Toast.LENGTH_SHORT).show()
-                }) {
-                    Text("确定")
-                }
-            },
-            dismissButton = {
-                TextButton(onClick = { showClearSearchDialog = false }) {
-                    Text("取消")
-                }
-            }
-        )
+        AlertDialog(onDismissRequest = { showClearSearchDialog = false }, title = { Text("清除搜索历史") }, text = { Text("确定要清除所有搜索历史吗？") }, confirmButton = {
+            TextButton(onClick = { onClearSearchHistory(); showClearSearchDialog = false; Toast.makeText(context, "搜索历史已清除", Toast.LENGTH_SHORT).show() }) { Text("确定") }
+        }, dismissButton = { TextButton(onClick = { showClearSearchDialog = false }) { Text("取消") } })
     }
 }

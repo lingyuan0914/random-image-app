@@ -25,7 +25,14 @@ object DatabaseModule {
             context,
             AppDatabase::class.java,
             "random_image_db"
-        ).fallbackToDestructiveMigration().build()
+        )
+        .addMigrations(
+            AppDatabase.MIGRATION_1_2,
+            AppDatabase.MIGRATION_2_3,
+            AppDatabase.MIGRATION_3_4
+        )
+        .fallbackToDestructiveMigration()
+        .build()
     }
 
     @Provides
