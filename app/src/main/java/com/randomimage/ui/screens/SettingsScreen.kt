@@ -177,12 +177,13 @@ fun SettingsScreen(
                         style = MaterialTheme.typography.titleMedium
                     )
                     Spacer(modifier = Modifier.height(8.dp))
+                    val cacheStats = CacheManager.getCacheStats(context)
                     Row(
                         modifier = Modifier.fillMaxWidth(),
                         horizontalArrangement = Arrangement.SpaceBetween
                     ) {
-                        Text(text = "图片缓存大小")
-                        Text(text = CacheManager.formatSize(CacheManager.getCacheSize(context)))
+                        Text(text = "图片缓存")
+                        Text(text = "${cacheStats.imageCount} 张 / ${CacheManager.formatSize(cacheStats.imageSize)}")
                     }
                     Spacer(modifier = Modifier.height(8.dp))
                     Row(

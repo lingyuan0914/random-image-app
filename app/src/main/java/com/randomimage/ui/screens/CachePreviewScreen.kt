@@ -23,6 +23,7 @@ import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
+import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -44,6 +45,7 @@ import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
 import com.randomimage.util.CacheManager
+import com.randomimage.util.CacheStats
 import timber.log.Timber
 import java.io.File
 
@@ -60,12 +62,14 @@ fun CachePreviewScreen(
 ) {
     val context = LocalContext.current
     var cachedImages by remember { mutableStateOf<List<CachedImage>>(emptyList()) }
+    var cacheStats by remember { mutableStateOf(CacheStats(0, 0, 0, 0)) }
     var showDeleteDialog by remember { mutableStateOf(false) }
     var selectedImage by remember { mutableStateOf<CachedImage?>(null) }
     var showClearAllDialog by remember { mutableStateOf(false) }
 
     LaunchedEffect(Unit) {
         cachedImages = loadCachedImages(context)
+        cacheStats = CacheManager.getCacheStats(context)
     }
 
     BackHandler { onBack() }
@@ -85,12 +89,20 @@ fun CachePreviewScreen(
             }
         )
 
-        Text(
-            text = "共 ${cachedImages.size} 张图片，${CacheManager.formatSize(CacheManager.getCacheSize(context))}",
-            modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp),
-            style = MaterialTheme.typography.bodyMedium,
-            color = MaterialTheme.colorScheme.onSurfaceVariant
-        )
+        Column(
+            modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp)
+        ) {
+            Text(
+                text = "共 ${cacheStats.imageCount} 张图片",
+                style = MaterialTheme.typography.bodyMedium,
+                color = MaterialTheme.colorScheme.onSurfaceVariant
+            )
+            Text(
+                text = "总: ${CacheManager.formatSize(cacheStats.totalSize)}  图片: ${CacheManager.formatSize(cacheStats.imageSize)}  元数据: ${CacheManager.formatSize(cacheStats.metadataSize)}",
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant
+            )
+        }
 
         if (cachedImages.isEmpty()) {
             Box(
@@ -137,23 +149,6 @@ fun CachePreviewScreen(
                                 contentScale = ContentScale.Crop,
                                 modifier = Modifier.fillMaxSize()
                             )
-                        } else {
-                            Box(
-                                modifier = Modifier.fillMaxSize(),
-                                contentAlignment = Alignment.Center
-                            ) {
-                                Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                                    Text(
-                                        text = CacheManager.formatSize(cachedImage.size),
-                                        style = MaterialTheme.typography.bodySmall
-                                    )
-                                    Text(
-                                        text = cachedImage.name.takeLast(10),
-                                        style = MaterialTheme.typography.bodySmall,
-                                        color = MaterialTheme.colorScheme.onSurfaceVariant
-                                    )
-                                }
-                            }
                         }
                     }
                 }
@@ -174,6 +169,7 @@ fun CachePreviewScreen(
                     onClick = {
                         selectedImage?.file?.delete()
                         cachedImages = cachedImages.filter { it.file != selectedImage?.file }
+                        cacheStats = CacheManager.getCacheStats(context)
                         showDeleteDialog = false
                         selectedImage = null
                     }
@@ -202,6 +198,7 @@ fun CachePreviewScreen(
                     onClick = {
                         CacheManager.clearDiskCache(context)
                         cachedImages = emptyList()
+                        cacheStats = CacheStats(0, 0, 0, 0)
                         showClearAllDialog = false
                     }
                 ) {
@@ -220,24 +217,26 @@ fun CachePreviewScreen(
 private fun loadCachedImages(context: Context): List<CachedImage> {
     val cacheDir = File(context.cacheDir, "image_cache")
     Timber.d("Cache dir: ${cacheDir.absolutePath}, exists: ${cacheDir.exists()}")
-    
+
     if (!cacheDir.exists()) {
         cacheDir.mkdirs()
         return emptyList()
     }
 
-    val files = cacheDir.walkTopDown()
-        .filter { it.isFile && it.length() > 0 }
+    return cacheDir.walkTopDown()
+        .filter { file ->
+            file.isFile &&
+            file.name != "journal" &&
+            file.name.endsWith(".1") &&
+            file.length() > 1000
+        }
+        .map { file ->
+            CachedImage(
+                file = file,
+                name = file.name,
+                size = file.length()
+            )
+        }
+        .sortedByDescending { it.file.lastModified() }
         .toList()
-    
-    Timber.d("Found ${files.size} files in cache")
-    files.forEach { Timber.d("Cache file: ${it.name}, size: ${it.length()}") }
-
-    return files.map { file ->
-        CachedImage(
-            file = file,
-            name = file.name,
-            size = file.length()
-        )
-    }.sortedByDescending { it.file.lastModified() }
 }
