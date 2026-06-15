@@ -29,6 +29,7 @@ data class HomeUiState(
     val images: List<ImageModel> = emptyList(),
     val currentIndex: Int = 0,
     val isLoading: Boolean = false,
+    val isDownloading: Boolean = false,
     val error: String? = null,
     val currentApiName: String = "Lolicon",
     val availableApis: List<String> = listOf("Lolicon", "萌图", "色图API", "Kori图库", "随机美图", "二次元风景"),
@@ -378,6 +379,27 @@ class HomeViewModel @Inject constructor(
         val cacheDir = context.cacheDir.resolve("image_cache")
         cacheDir.deleteRecursively()
         Timber.d("Cache cleared")
+    }
+
+    fun downloadCurrentImage() {
+        val currentImage = getCurrentImage() ?: return
+        viewModelScope.launch {
+            _uiState.value = _uiState.value.copy(isDownloading = true)
+            try {
+                val success = com.randomimage.util.ImageUtils.downloadImage(
+                    getApplication(),
+                    currentImage.urls.regular
+                )
+                if (success) {
+                    StatsManager.incrementDownloadCount(getApplication())
+                }
+                _uiState.value = _uiState.value.copy(isDownloading = false)
+                Timber.d("Download ${if (success) "success" else "failed"}")
+            } catch (e: Exception) {
+                _uiState.value = _uiState.value.copy(isDownloading = false)
+                Timber.e(e, "Download failed")
+            }
+        }
     }
 
     fun getCurrentImage(): ImageModel? {

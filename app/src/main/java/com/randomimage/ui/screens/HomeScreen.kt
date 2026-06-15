@@ -43,6 +43,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
+import com.randomimage.ui.components.DownloadProgress
 import com.randomimage.ui.components.SwipeCard
 import com.randomimage.ui.viewmodel.HomeViewModel
 import com.randomimage.util.ImageUtils
@@ -221,36 +222,35 @@ fun HomeScreen(
                 }
                 uiState.images.isNotEmpty() -> {
                     val currentImage = uiState.images[uiState.currentIndex]
-                    SwipeCard(
-                        image = currentImage,
-                        onSwipeRight = { viewModel.swipeRight() },
-                        onSwipeLeft = { viewModel.swipeLeft() },
-                        onLike = { viewModel.toggleFavorite() },
-                        onShare = { ImageUtils.shareImage(context, currentImage.urls.regular) },
-                        onDownload = {
-                            scope.launch {
-                                val success = ImageUtils.downloadImage(context, currentImage.urls.regular)
-                                Toast.makeText(
-                                    context,
-                                    if (success) "下载成功" else "下载失败",
-                                    Toast.LENGTH_SHORT
-                                ).show()
-                            }
-                        },
-                        onSetWallpaper = {
-                            scope.launch {
-                                val success = ImageUtils.setWallpaper(context, currentImage.urls.regular)
-                                Toast.makeText(
-                                    context,
-                                    if (success) "壁纸设置成功" else "壁纸设置失败",
-                                    Toast.LENGTH_SHORT
-                                ).show()
-                            }
-                        },
-                        onClick = { onImageClick() },
-                        isFavorite = uiState.isFavorite,
-                        modifier = Modifier.fillMaxSize()
-                    )
+                    Box(modifier = Modifier.fillMaxSize()) {
+                        SwipeCard(
+                            image = currentImage,
+                            onSwipeRight = { viewModel.swipeRight() },
+                            onSwipeLeft = { viewModel.swipeLeft() },
+                            onLike = { viewModel.toggleFavorite() },
+                            onShare = { ImageUtils.shareImage(context, currentImage.urls.regular) },
+                            onDownload = { viewModel.downloadCurrentImage() },
+                            onSetWallpaper = {
+                                scope.launch {
+                                    val success = ImageUtils.setWallpaper(context, currentImage.urls.regular)
+                                    Toast.makeText(
+                                        context,
+                                        if (success) "壁纸设置成功" else "壁纸设置失败",
+                                        Toast.LENGTH_SHORT
+                                    ).show()
+                                }
+                            },
+                            onClick = { onImageClick() },
+                            isFavorite = uiState.isFavorite,
+                            modifier = Modifier.fillMaxSize()
+                        )
+                        if (uiState.isDownloading) {
+                            DownloadProgress(
+                                isVisible = true,
+                                modifier = Modifier.fillMaxSize()
+                            )
+                        }
+                    }
                 }
             }
         }
