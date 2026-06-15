@@ -126,7 +126,6 @@ fun CachePreviewScreen(
                             try {
                                 BitmapFactory.decodeFile(cachedImage.file.absolutePath)
                             } catch (e: Exception) {
-                                Timber.e(e, "Failed to decode cached image")
                                 null
                             }
                         }
@@ -143,10 +142,17 @@ fun CachePreviewScreen(
                                 modifier = Modifier.fillMaxSize(),
                                 contentAlignment = Alignment.Center
                             ) {
-                                Text(
-                                    text = "无法加载",
-                                    style = MaterialTheme.typography.bodySmall
-                                )
+                                Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                                    Text(
+                                        text = CacheManager.formatSize(cachedImage.size),
+                                        style = MaterialTheme.typography.bodySmall
+                                    )
+                                    Text(
+                                        text = cachedImage.name.takeLast(10),
+                                        style = MaterialTheme.typography.bodySmall,
+                                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                                    )
+                                }
                             }
                         }
                     }
@@ -213,17 +219,25 @@ fun CachePreviewScreen(
 
 private fun loadCachedImages(context: Context): List<CachedImage> {
     val cacheDir = File(context.cacheDir, "image_cache")
-    if (!cacheDir.exists()) return emptyList()
+    Timber.d("Cache dir: ${cacheDir.absolutePath}, exists: ${cacheDir.exists()}")
+    
+    if (!cacheDir.exists()) {
+        cacheDir.mkdirs()
+        return emptyList()
+    }
 
-    return cacheDir.walkTopDown()
-        .filter { it.isFile && it.extension in listOf("jpg", "jpeg", "png", "webp") }
-        .map { file ->
-            CachedImage(
-                file = file,
-                name = file.name,
-                size = file.length()
-            )
-        }
-        .sortedByDescending { it.file.lastModified() }
+    val files = cacheDir.walkTopDown()
+        .filter { it.isFile && it.length() > 0 }
         .toList()
+    
+    Timber.d("Found ${files.size} files in cache")
+    files.forEach { Timber.d("Cache file: ${it.name}, size: ${it.length()}") }
+
+    return files.map { file ->
+        CachedImage(
+            file = file,
+            name = file.name,
+            size = file.length()
+        )
+    }.sortedByDescending { it.file.lastModified() }
 }
