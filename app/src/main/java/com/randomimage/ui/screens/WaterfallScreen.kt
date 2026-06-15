@@ -218,8 +218,8 @@ fun WaterfallScreen(
                         columns = StaggeredGridCells.Fixed(columns),
                         state = gridState,
                         modifier = Modifier.fillMaxSize(),
-                        horizontalArrangement = Arrangement.spacedBy(4.dp),
-                        verticalItemSpacing = 4.dp
+                        horizontalArrangement = Arrangement.spacedBy(3.dp),
+                        verticalItemSpacing = 3.dp
                     ) {
                         itemsIndexed(
                             items = uiState.images,
@@ -229,21 +229,22 @@ fun WaterfallScreen(
                                 modifier = Modifier
                                     .fillMaxWidth()
                                     .clickable { onImageClick(index) },
-                                shape = RoundedCornerShape(8.dp),
-                                elevation = CardDefaults.cardElevation(defaultElevation = 1.dp)
+                                shape = RoundedCornerShape(4.dp),
+                                elevation = CardDefaults.cardElevation(defaultElevation = 0.dp)
                             ) {
                                 AsyncImage(
                                     model = ImageRequest.Builder(context)
-                                        .data(image.urls.regular)
+                                        .data(image.urls.thumb)
                                         .crossfade(false)
-                                        .size(Size.ORIGINAL)
+                                        .size(300, 400)
                                         .memoryCacheKey("${image.id}_$index")
+                                        .allowHardware(true)
                                         .build(),
                                     contentDescription = image.description,
-                                    contentScale = ContentScale.FillWidth,
+                                    contentScale = ContentScale.Crop,
                                     modifier = Modifier
                                         .fillMaxWidth()
-                                        .clip(RoundedCornerShape(8.dp))
+                                        .clip(RoundedCornerShape(4.dp))
                                 )
                             }
                         }

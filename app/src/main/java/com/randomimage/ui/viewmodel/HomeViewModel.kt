@@ -154,9 +154,9 @@ class HomeViewModel @Inject constructor(
             _uiState.value = _uiState.value.copy(isLoading = true, error = null)
             try {
                 val images = if (_uiState.value.isNSFW) {
-                    repository.fetchRandomImagesNSFW(30)
+                    repository.fetchRandomImagesNSFW(20)
                 } else {
-                    repository.fetchRandomImages(30)
+                    repository.fetchRandomImages(20)
                 }
                 _uiState.value = _uiState.value.copy(
                     images = images,
@@ -183,9 +183,9 @@ class HomeViewModel @Inject constructor(
                 try {
                     _uiState.value = _uiState.value.copy(isLoading = true)
                     val newImages = if (_uiState.value.isNSFW) {
-                        repository.fetchRandomImagesNSFW(20)
+                        repository.fetchRandomImagesNSFW(10)
                     } else {
-                        repository.fetchRandomImages(20)
+                        repository.fetchRandomImages(10)
                     }
                     val existingIds = _uiState.value.images.map { it.id }.toSet()
                     val uniqueNewImages = newImages.filter { it.id !in existingIds }

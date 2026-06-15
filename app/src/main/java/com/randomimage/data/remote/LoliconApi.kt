@@ -40,15 +40,17 @@ data class LoliconItem(
     val urls: LoliconUrls
 ) {
     fun toImageModel(): ImageModel {
-        val imageUrl = urls.original ?: ""
+        val originalUrl = urls.original ?: ""
+        val smallUrl = urls.small ?: originalUrl
+        val thumbUrl = urls.thumb ?: smallUrl
         return ImageModel(
             id = "lolicon_${pid}_${p}_${System.nanoTime()}",
             urls = ImageUrls(
-                raw = imageUrl,
-                full = imageUrl,
-                regular = imageUrl,
-                small = imageUrl,
-                thumb = imageUrl
+                raw = originalUrl,
+                full = originalUrl,
+                regular = originalUrl,
+                small = smallUrl,
+                thumb = thumbUrl
             ),
             user = User(
                 id = uid.toString(),
