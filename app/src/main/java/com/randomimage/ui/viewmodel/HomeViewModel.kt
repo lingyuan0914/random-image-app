@@ -299,6 +299,25 @@ class HomeViewModel @Inject constructor(
         if (state.currentIndex >= state.images.size - 5) {
             loadMoreImages()
         }
+        preloadNextImages()
+    }
+
+    private fun preloadNextImages() {
+        val state = _uiState.value
+        val nextIndices = listOf(
+            state.currentIndex + 1,
+            state.currentIndex + 2,
+            state.currentIndex + 3
+        ).filter { it < state.images.size }
+
+        nextIndices.forEach { index ->
+            val image = state.images[index]
+            val request = coil.request.ImageRequest.Builder(getApplication())
+                .data(image.urls.regular)
+                .memoryCacheKey("preload_${image.id}")
+                .build()
+            coil.ImageLoader(getApplication()).enqueue(request)
+        }
     }
 
     fun setCurrentIndex(index: Int) {

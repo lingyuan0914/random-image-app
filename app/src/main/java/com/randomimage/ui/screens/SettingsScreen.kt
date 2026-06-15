@@ -36,6 +36,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
+import com.randomimage.util.CacheManager
 import com.randomimage.util.StatsManager
 import com.randomimage.util.ThemeManager
 
@@ -174,6 +175,14 @@ fun SettingsScreen(
                         text = "数据管理",
                         style = MaterialTheme.typography.titleMedium
                     )
+                    Spacer(modifier = Modifier.height(8.dp))
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.SpaceBetween
+                    ) {
+                        Text(text = "图片缓存大小")
+                        Text(text = CacheManager.formatSize(CacheManager.getCacheSize(context)))
+                    }
                     Spacer(modifier = Modifier.height(8.dp))
                     Row(
                         modifier = Modifier

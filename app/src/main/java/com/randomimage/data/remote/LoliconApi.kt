@@ -81,7 +81,8 @@ class LoliconImageApi(
     override suspend fun fetchRandomImages(count: Int): List<ImageModel> {
         repeat(3) { attempt ->
             if (attempt > 0) {
-                delay(2000L)
+                val delayMs = 1000L * (1 shl attempt)
+                delay(delayMs)
             }
             try {
                 val response = service.getImages(r18 = 0, num = count)

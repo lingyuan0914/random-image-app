@@ -7,6 +7,7 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
@@ -16,12 +17,17 @@ import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.FilterChip
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.ScrollableTabRow
+import androidx.compose.material3.Tab
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
@@ -35,7 +41,7 @@ import coil.compose.AsyncImage
 import com.randomimage.domain.model.ImageModel
 import com.randomimage.ui.viewmodel.FavoritesViewModel
 
-@OptIn(ExperimentalFoundationApi::class)
+@OptIn(ExperimentalFoundationApi::class, ExperimentalMaterial3Api::class)
 @Composable
 fun FavoritesScreen(
     viewModel: FavoritesViewModel = hiltViewModel(),
@@ -43,54 +49,81 @@ fun FavoritesScreen(
 ) {
     val uiState by viewModel.uiState.collectAsState()
     var selectedImage by remember { mutableStateOf<ImageModel?>(null) }
+    var selectedGroupIndex by remember { mutableIntStateOf(0) }
 
-    Box(modifier = Modifier.fillMaxSize()) {
-        when {
-            uiState.isLoading -> {
-                CircularProgressIndicator(
-                    modifier = Modifier.align(Alignment.Center)
-                )
-            }
-            uiState.favorites.isEmpty() -> {
-                Column(
-                    modifier = Modifier.align(Alignment.Center),
-                    horizontalAlignment = Alignment.CenterHorizontally
-                ) {
-                    Text(
-                        text = "还没有收藏",
-                        style = MaterialTheme.typography.headlineSmall
-                    )
-                    Text(
-                        text = "在首页右滑图片即可收藏",
-                        style = MaterialTheme.typography.bodyMedium,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant
+    val groups = listOf("全部") + uiState.groups.map { it.name }
+    val filteredFavorites = if (selectedGroupIndex == 0) {
+        uiState.favorites
+    } else {
+        val groupId = uiState.groups[selectedGroupIndex - 1].id
+        uiState.favorites.filter { it.id.startsWith("group_") || selectedGroupIndex == 0 }
+    }
+
+    Column(modifier = Modifier.fillMaxSize()) {
+        if (uiState.groups.isNotEmpty()) {
+            ScrollableTabRow(
+                selectedTabIndex = selectedGroupIndex,
+                modifier = Modifier.fillMaxWidth(),
+                edgePadding = 8.dp
+            ) {
+                groups.forEachIndexed { index, groupName ->
+                    Tab(
+                        selected = selectedGroupIndex == index,
+                        onClick = { selectedGroupIndex = index },
+                        text = { Text(groupName) }
                     )
                 }
             }
-            else -> {
-                LazyVerticalGrid(
-                    columns = GridCells.Fixed(2),
-                    contentPadding = PaddingValues(8.dp),
-                    horizontalArrangement = Arrangement.spacedBy(8.dp),
-                    verticalArrangement = Arrangement.spacedBy(8.dp)
-                ) {
-                    items(uiState.favorites) { image ->
-                        Card(
-                            modifier = Modifier
-                                .clip(RoundedCornerShape(12.dp))
-                                .combinedClickable(
-                                    onClick = { onImageClick(image) },
-                                    onLongClick = { selectedImage = image }
-                                ),
-                            shape = RoundedCornerShape(12.dp),
-                            elevation = CardDefaults.cardElevation(defaultElevation = 4.dp)
-                        ) {
-                            AsyncImage(
-                                model = image.urls.thumb,
-                                contentDescription = image.description,
-                                contentScale = ContentScale.Crop,
-                                modifier = Modifier.fillMaxSize()
-                            )
+        }
+
+        Box(modifier = Modifier.weight(1f)) {
+            when {
+                uiState.isLoading -> {
+                    CircularProgressIndicator(
+                        modifier = Modifier.align(Alignment.Center)
+                    )
+                }
+                uiState.favorites.isEmpty() -> {
+                    Column(
+                        modifier = Modifier.align(Alignment.Center),
+                        horizontalAlignment = Alignment.CenterHorizontally
+                    ) {
+                        Text(
+                            text = "还没有收藏",
+                            style = MaterialTheme.typography.headlineSmall
+                        )
+                        Text(
+                            text = "在首页点击收藏按钮即可添加",
+                            style = MaterialTheme.typography.bodyMedium,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                    }
+                }
+                else -> {
+                    LazyVerticalGrid(
+                        columns = GridCells.Fixed(2),
+                        contentPadding = PaddingValues(8.dp),
+                        horizontalArrangement = Arrangement.spacedBy(8.dp),
+                        verticalArrangement = Arrangement.spacedBy(8.dp)
+                    ) {
+                        items(filteredFavorites) { image ->
+                            Card(
+                                modifier = Modifier
+                                    .clip(RoundedCornerShape(12.dp))
+                                    .combinedClickable(
+                                        onClick = { onImageClick(image) },
+                                        onLongClick = { selectedImage = image }
+                                    ),
+                                shape = RoundedCornerShape(12.dp),
+                                elevation = CardDefaults.cardElevation(defaultElevation = 4.dp)
+                            ) {
+                                AsyncImage(
+                                    model = image.urls.thumb,
+                                    contentDescription = image.description,
+                                    contentScale = ContentScale.Crop,
+                                    modifier = Modifier.fillMaxSize()
+                                )
+                            }
                         }
                     }
                 }
