@@ -57,6 +57,58 @@ object ShareUtils {
         )
     }
 
+    suspend fun shareImageToWechat(context: Context, imageUrl: String) {
+        try {
+            val loader = ImageLoader(context)
+            val request = ImageRequest.Builder(context)
+                .data(imageUrl)
+                .allowHardware(false)
+                .build()
+
+            val result = loader.execute(request)
+            if (result is SuccessResult) {
+                val bitmap = (result.drawable as BitmapDrawable).bitmap
+                val uri = saveBitmapToCache(context, bitmap)
+
+                val intent = Intent(Intent.ACTION_SEND).apply {
+                    type = "image/*"
+                    setPackage("com.tencent.mm")
+                    putExtra(Intent.EXTRA_STREAM, uri)
+                    addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
+                }
+                context.startActivity(intent)
+            }
+        } catch (e: Exception) {
+            // 微信未安装或分享失败
+        }
+    }
+
+    suspend fun shareImageToQQ(context: Context, imageUrl: String) {
+        try {
+            val loader = ImageLoader(context)
+            val request = ImageRequest.Builder(context)
+                .data(imageUrl)
+                .allowHardware(false)
+                .build()
+
+            val result = loader.execute(request)
+            if (result is SuccessResult) {
+                val bitmap = (result.drawable as BitmapDrawable).bitmap
+                val uri = saveBitmapToCache(context, bitmap)
+
+                val intent = Intent(Intent.ACTION_SEND).apply {
+                    type = "image/*"
+                    setPackage("com.tencent.mobileqq")
+                    putExtra(Intent.EXTRA_STREAM, uri)
+                    addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
+                }
+                context.startActivity(intent)
+            }
+        } catch (e: Exception) {
+            // QQ未安装或分享失败
+        }
+    }
+
     fun shareToWechat(context: Context, imageUrl: String) {
         val intent = Intent(Intent.ACTION_SEND).apply {
             type = "text/plain"

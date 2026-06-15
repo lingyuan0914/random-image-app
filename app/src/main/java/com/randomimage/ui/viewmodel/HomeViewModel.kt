@@ -44,8 +44,15 @@ data class HomeUiState(
     val recentSearches: List<String> = emptyList(),
     val isFavorite: Boolean = false,
     val showDetail: Boolean = false,
-    val isWaterfall: Boolean = false
+    val isWaterfall: Boolean = false,
+    val imageQuality: ImageQuality = ImageQuality.MEDIUM
 )
+
+enum class ImageQuality(val label: String, val size: Int) {
+    THUMBNAIL("缩略图", 200),
+    MEDIUM("中等", 400),
+    ORIGINAL("原图", 0)
+}
 
 @HiltViewModel
 class HomeViewModel @Inject constructor(
@@ -418,5 +425,10 @@ class HomeViewModel @Inject constructor(
         }
         ThemeManager.setThemeMode(context, newMode)
         Timber.d("Theme toggled to ${if (newMode == ThemeManager.THEME_DARK) "dark" else "light"}")
+    }
+
+    fun setImageQuality(quality: ImageQuality) {
+        _uiState.value = _uiState.value.copy(imageQuality = quality)
+        Timber.d("Image quality set to ${quality.label}")
     }
 }

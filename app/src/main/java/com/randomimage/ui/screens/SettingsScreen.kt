@@ -36,6 +36,8 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
+import com.randomimage.ui.components.StatsChart
+import com.randomimage.ui.components.StatsItem
 import com.randomimage.util.CacheManager
 import com.randomimage.util.StatsManager
 import com.randomimage.util.ThemeManager
@@ -55,7 +57,9 @@ fun SettingsScreen(
     var showClearHistoryDialog by remember { mutableStateOf(false) }
     var showClearSearchDialog by remember { mutableStateOf(false) }
     var showThemeDialog by remember { mutableStateOf(false) }
+    var showQualityDialog by remember { mutableStateOf(false) }
     val themeMode = remember { mutableStateOf(ThemeManager.getThemeMode(context)) }
+    var imageQuality by remember { mutableStateOf("中等") }
 
     Column(modifier = Modifier.fillMaxSize()) {
         TopAppBar(
@@ -96,6 +100,15 @@ fun SettingsScreen(
                     Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
                         Text("使用天数"); Text("${StatsManager.getDaysSinceFirstOpen(context)} 天")
                     }
+                    Spacer(modifier = Modifier.height(12.dp))
+                    StatsChart(
+                        items = listOf(
+                            StatsItem("浏览", StatsManager.getViewCount(context), MaterialTheme.colorScheme.primary),
+                            StatsItem("收藏", StatsManager.getFavoriteCount(context), MaterialTheme.colorScheme.error),
+                            StatsItem("下载", StatsManager.getDownloadCount(context), MaterialTheme.colorScheme.tertiary),
+                            StatsItem("搜索", StatsManager.getSearchCount(context), MaterialTheme.colorScheme.secondary)
+                        )
+                    )
                 }
             }
 
@@ -110,6 +123,16 @@ fun SettingsScreen(
                             Text("主题模式")
                             Text(
                                 when (themeMode.value) { ThemeManager.THEME_LIGHT -> "浅色模式"; ThemeManager.THEME_DARK -> "深色模式"; else -> "跟随系统" },
+                                style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant
+                            )
+                        }
+                    }
+                    Spacer(modifier = Modifier.height(8.dp))
+                    Row(modifier = Modifier.fillMaxWidth().clickable { showQualityDialog = true }, verticalAlignment = Alignment.CenterVertically) {
+                        Column(modifier = Modifier.weight(1f)) {
+                            Text("图片质量")
+                            Text(
+                                imageQuality,
                                 style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant
                             )
                         }
@@ -213,5 +236,18 @@ fun SettingsScreen(
         AlertDialog(onDismissRequest = { showClearSearchDialog = false }, title = { Text("清除搜索历史") }, text = { Text("确定要清除所有搜索历史吗？") }, confirmButton = {
             TextButton(onClick = { onClearSearchHistory(); showClearSearchDialog = false; Toast.makeText(context, "搜索历史已清除", Toast.LENGTH_SHORT).show() }) { Text("确定") }
         }, dismissButton = { TextButton(onClick = { showClearSearchDialog = false }) { Text("取消") } })
+    }
+
+    if (showQualityDialog) {
+        AlertDialog(onDismissRequest = { showQualityDialog = false }, title = { Text("图片质量") }, text = {
+            Column {
+                listOf("缩略图", "中等", "原图").forEach { quality ->
+                    Row(modifier = Modifier.fillMaxWidth().clickable { imageQuality = quality; showQualityDialog = false }, verticalAlignment = Alignment.CenterVertically) {
+                        RadioButton(selected = imageQuality == quality, onClick = { imageQuality = quality; showQualityDialog = false })
+                        Spacer(modifier = Modifier.width(8.dp)); Text(quality)
+                    }
+                }
+            }
+        }, confirmButton = { TextButton(onClick = { showQualityDialog = false }) { Text("取消") } })
     }
 }

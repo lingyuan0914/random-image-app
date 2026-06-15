@@ -177,7 +177,7 @@ fun ImageDetailScreen(
             Row(
                 modifier = Modifier
                     .fillMaxSize()
-                    .padding(horizontal = 16.dp),
+                    .padding(horizontal = 12.dp),
                 verticalAlignment = Alignment.CenterVertically,
                 horizontalArrangement = Arrangement.SpaceEvenly
             ) {
@@ -186,11 +186,25 @@ fun ImageDetailScreen(
                         if (isFavorite) Icons.Default.Favorite else Icons.Default.FavoriteBorder,
                         contentDescription = "收藏",
                         tint = if (isFavorite) Color.Red else Color.White,
-                        modifier = Modifier.size(28.dp)
+                        modifier = Modifier.size(24.dp)
                     )
                 }
+                IconButton(onClick = {
+                    scope.launch {
+                        com.randomimage.util.ShareUtils.shareImageToWechat(context, image.urls.regular)
+                    }
+                }) {
+                    Text("微", color = Color.White, style = MaterialTheme.typography.titleSmall)
+                }
+                IconButton(onClick = {
+                    scope.launch {
+                        com.randomimage.util.ShareUtils.shareImageToQQ(context, image.urls.regular)
+                    }
+                }) {
+                    Text("Q", color = Color.White, style = MaterialTheme.typography.titleSmall)
+                }
                 IconButton(onClick = { ImageUtils.shareImage(context, image.urls.regular) }) {
-                    Icon(Icons.Default.Share, contentDescription = "分享", tint = Color.White, modifier = Modifier.size(28.dp))
+                    Icon(Icons.Default.Share, contentDescription = "分享", tint = Color.White, modifier = Modifier.size(24.dp))
                 }
                 IconButton(onClick = {
                     scope.launch {
@@ -198,7 +212,7 @@ fun ImageDetailScreen(
                         Toast.makeText(context, if (success) "下载成功" else "下载失败", Toast.LENGTH_SHORT).show()
                     }
                 }) {
-                    Icon(Icons.Default.Download, contentDescription = "下载", tint = Color.White, modifier = Modifier.size(28.dp))
+                    Icon(Icons.Default.Download, contentDescription = "下载", tint = Color.White, modifier = Modifier.size(24.dp))
                 }
             }
         }
