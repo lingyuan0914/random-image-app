@@ -13,18 +13,27 @@ android {
         applicationId = "com.randomimage"
         minSdk = 26
         targetSdk = 34
-        versionCode = 1
-        versionName = "1.0"
+        versionCode = 2
+        versionName = "1.9.0"
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
 
-        // Unsplash API Key (需要替换为真实的 key)
         buildConfigField("String", "UNSPLASH_API_KEY", "\"YOUR_API_KEY_HERE\"")
+    }
+
+    signingConfigs {
+        create("release") {
+            storeFile = file("release-key.jks")
+            storePassword = "random123"
+            keyAlias = "randomimage"
+            keyPassword = "random123"
+        }
     }
 
     buildTypes {
         release {
             isMinifyEnabled = false
+            signingConfig = signingConfigs.getByName("release")
             proguardFiles(
                 getDefaultProguardFile("proguard-android-optimize.txt"),
                 "proguard-rules.pro"
