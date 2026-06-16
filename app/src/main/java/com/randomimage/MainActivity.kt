@@ -31,6 +31,7 @@ import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
 import com.randomimage.ui.components.BottomNavBar
 import com.randomimage.ui.screens.CachePreviewScreen
+import com.randomimage.ui.screens.CloudSyncScreen
 import com.randomimage.ui.screens.FavoritesScreen
 import com.randomimage.ui.screens.HomeScreen
 import com.randomimage.ui.screens.ImageCropScreen
@@ -158,7 +159,8 @@ class MainActivity : ComponentActivity() {
                                     onClearCache = { homeViewModel.clearCache() },
                                     onClearHistory = { homeViewModel.clearHistory() },
                                     onClearSearchHistory = { homeViewModel.clearSearchHistory() },
-                                    onPreviewCache = { navController.navigate("cache_preview") }
+                                    onPreviewCache = { navController.navigate("cache_preview") },
+                                    onCloudSync = { navController.navigate("cloud_sync") }
                                 )
                             }
                             composable("cache_preview") {
@@ -171,6 +173,9 @@ class MainActivity : ComponentActivity() {
                                     onBack = { navController.popBackStack() },
                                     onCropped = { navController.popBackStack() }
                                 )
+                            }
+                            composable("cloud_sync") {
+                                CloudSyncScreen(onBack = { navController.popBackStack() })
                             }
                         }
                     }

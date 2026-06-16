@@ -49,7 +49,8 @@ fun SettingsScreen(
     onClearCache: () -> Unit,
     onClearHistory: () -> Unit,
     onClearSearchHistory: () -> Unit,
-    onPreviewCache: () -> Unit = {}
+    onPreviewCache: () -> Unit = {},
+    onCloudSync: () -> Unit = {}
 ) {
     BackHandler { onBack() }
     val context = LocalContext.current
@@ -176,6 +177,13 @@ fun SettingsScreen(
                         Column(modifier = Modifier.weight(1f)) {
                             Text("清除搜索历史")
                             Text("清除所有搜索记录", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                        }
+                    }
+                    Spacer(modifier = Modifier.height(16.dp))
+                    Row(modifier = Modifier.fillMaxWidth().clickable { onCloudSync() }, verticalAlignment = Alignment.CenterVertically) {
+                        Column(modifier = Modifier.weight(1f)) {
+                            Text("云同步")
+                            Text("备份和恢复收藏数据", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
                         }
                     }
                 }
