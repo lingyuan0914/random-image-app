@@ -31,7 +31,8 @@ data class FavoriteEntity(
                 username = photographerUsername,
                 name = photographerName
             ),
-            description = description
+            description = description,
+            groupId = groupId
         )
     }
 

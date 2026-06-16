@@ -148,7 +148,12 @@ class MainActivity : ComponentActivity() {
                                 }
                             }
                             composable("favorites") {
-                                FavoritesScreen()
+                                FavoritesScreen(
+                                    onImageClick = { image ->
+                                        homeViewModel.setCurrentImage(image)
+                                        homeViewModel.setShowDetail(true)
+                                    }
+                                )
                             }
                             composable("logs") {
                                 LogScreen(onBack = { navController.popBackStack() })

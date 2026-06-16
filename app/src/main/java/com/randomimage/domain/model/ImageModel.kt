@@ -7,7 +7,8 @@ data class ImageModel(
     val description: String? = null,
     val likes: Int = 0,
     val width: Int = 0,
-    val height: Int = 0
+    val height: Int = 0,
+    val groupId: Long = 0
 ) {
     val aspectRatio: Float
         get() = if (width > 0 && height > 0) width.toFloat() / height.toFloat() else 1f

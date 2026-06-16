@@ -67,7 +67,7 @@ fun FavoritesScreen(
     } else {
         val group = uiState.groups.getOrNull(selectedGroupIndex - 1)
         if (group != null) {
-            uiState.favorites.filter { it.id.startsWith("group_${group.id}_") || it.id.contains("_g${group.id}_") }
+            uiState.favorites.filter { it.groupId == group.id }
         } else {
             uiState.favorites
         }

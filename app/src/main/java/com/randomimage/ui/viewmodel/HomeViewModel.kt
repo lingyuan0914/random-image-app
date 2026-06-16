@@ -445,4 +445,15 @@ class HomeViewModel @Inject constructor(
         _uiState.value = _uiState.value.copy(imageQuality = quality)
         Timber.d("Image quality set to ${quality.label}")
     }
+
+    fun setCurrentImage(image: ImageModel) {
+        val index = _uiState.value.images.indexOfFirst { it.id == image.id }
+        if (index >= 0) {
+            _uiState.value = _uiState.value.copy(currentIndex = index)
+        } else {
+            val newImages = _uiState.value.images.toMutableList()
+            newImages.add(0, image)
+            _uiState.value = _uiState.value.copy(images = newImages, currentIndex = 0)
+        }
+    }
 }
