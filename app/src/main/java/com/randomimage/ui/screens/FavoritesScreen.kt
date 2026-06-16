@@ -19,7 +19,6 @@ import androidx.compose.foundation.lazy.grid.items
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
-import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
@@ -61,8 +60,6 @@ fun FavoritesScreen(
     var selectedGroupIndex by remember { mutableIntStateOf(0) }
     var showAddGroupDialog by remember { mutableStateOf(false) }
     var newGroupName by remember { mutableStateOf("") }
-    var showDeleteGroupDialog by remember { mutableStateOf(false) }
-    var groupToDelete by remember { mutableStateOf<String?>(null) }
 
     val groups = listOf("全部") + uiState.groups.map { it.name }
     val filteredFavorites = if (selectedGroupIndex == 0) {
@@ -70,7 +67,7 @@ fun FavoritesScreen(
     } else {
         val group = uiState.groups.getOrNull(selectedGroupIndex - 1)
         if (group != null) {
-            uiState.favorites.filter { it.id.startsWith("group_${group.id}_") || it.id == group.id.toString() }
+            uiState.favorites.filter { it.id.startsWith("group_${group.id}_") || it.id.contains("_g${group.id}_") }
         } else {
             uiState.favorites
         }
@@ -82,19 +79,17 @@ fun FavoritesScreen(
             verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.SpaceBetween
         ) {
-            if (uiState.groups.isNotEmpty()) {
-                ScrollableTabRow(
-                    selectedTabIndex = selectedGroupIndex,
-                    modifier = Modifier.weight(1f),
-                    edgePadding = 8.dp
-                ) {
-                    groups.forEachIndexed { index, groupName ->
-                        Tab(
-                            selected = selectedGroupIndex == index,
-                            onClick = { selectedGroupIndex = index },
-                            text = { Text(groupName) }
-                        )
-                    }
+            ScrollableTabRow(
+                selectedTabIndex = selectedGroupIndex,
+                modifier = Modifier.weight(1f),
+                edgePadding = 8.dp
+            ) {
+                groups.forEachIndexed { index, groupName ->
+                    Tab(
+                        selected = selectedGroupIndex == index,
+                        onClick = { selectedGroupIndex = index },
+                        text = { Text(groupName) }
+                    )
                 }
             }
             IconButton(onClick = { showAddGroupDialog = true }) {
@@ -107,7 +102,7 @@ fun FavoritesScreen(
                 uiState.isLoading -> {
                     CircularProgressIndicator(modifier = Modifier.align(Alignment.Center))
                 }
-                uiState.favorites.isEmpty() -> {
+                filteredFavorites.isEmpty() -> {
                     Column(
                         modifier = Modifier.align(Alignment.Center),
                         horizontalAlignment = Alignment.CenterHorizontally
@@ -171,27 +166,6 @@ fun FavoritesScreen(
             },
             dismissButton = {
                 TextButton(onClick = { showAddGroupDialog = false; newGroupName = "" }) { Text("取消") }
-            }
-        )
-    }
-
-    if (showDeleteGroupDialog && groupToDelete != null) {
-        AlertDialog(
-            onDismissRequest = { showDeleteGroupDialog = false },
-            title = { Text("删除分组") },
-            text = { Text("确定要删除分组「$groupToDelete」吗？") },
-            confirmButton = {
-                TextButton(onClick = {
-                    val group = uiState.groups.find { it.name == groupToDelete }
-                    if (group != null) {
-                        viewModel.deleteGroup(group)
-                    }
-                    showDeleteGroupDialog = false
-                    groupToDelete = null
-                }) { Text("删除") }
-            },
-            dismissButton = {
-                TextButton(onClick = { showDeleteGroupDialog = false; groupToDelete = null }) { Text("取消") }
             }
         )
     }
