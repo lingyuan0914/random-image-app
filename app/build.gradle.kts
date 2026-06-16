@@ -22,9 +22,19 @@ android {
         buildConfigField("String", "UNSPLASH_API_KEY", "\"YOUR_API_KEY_HERE\"")
     }
 
+    signingConfigs {
+        create("release") {
+            storeFile = file("release-key.jks")
+            storePassword = "random123"
+            keyAlias = "randomimage"
+            keyPassword = "random123"
+        }
+    }
+
     buildTypes {
         release {
             isMinifyEnabled = false
+            signingConfig = signingConfigs.getByName("release")
             proguardFiles(
                 getDefaultProguardFile("proguard-android-optimize.txt"),
                 "proguard-rules.pro"
