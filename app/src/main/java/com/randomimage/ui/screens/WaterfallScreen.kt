@@ -242,7 +242,7 @@ fun WaterfallScreen(
                                         .allowHardware(true)
                                         .build(),
                                     contentDescription = image.description,
-                                    contentScale = ContentScale.Crop,
+                                    contentScale = ContentScale.FillWidth,
                                     modifier = Modifier
                                         .fillMaxWidth()
                                         .clip(RoundedCornerShape(4.dp))

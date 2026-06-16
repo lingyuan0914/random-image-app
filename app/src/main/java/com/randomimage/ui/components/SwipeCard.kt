@@ -110,7 +110,7 @@ fun SwipeCard(
                     .allowHardware(true)
                     .build(),
                 contentDescription = image.description,
-                contentScale = ContentScale.Crop,
+                contentScale = ContentScale.FillWidth,
                 modifier = Modifier.fillMaxSize()
             )
 

@@ -38,6 +38,7 @@ import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.blur
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.graphicsLayer
@@ -84,6 +85,21 @@ fun ImageDetailScreen(
             .fillMaxSize()
             .background(Color.Black)
     ) {
+        AsyncImage(
+            model = ImageRequest.Builder(context)
+                .data(image.urls.regular)
+                .crossfade(false)
+                .size(Size.ORIGINAL)
+                .allowHardware(true)
+                .build(),
+            contentDescription = null,
+            contentScale = ContentScale.Crop,
+            modifier = Modifier
+                .fillMaxSize()
+                .blur(20.dp)
+                .graphicsLayer { alpha = 0.6f }
+        )
+
         SubcomposeAsyncImage(
             model = ImageRequest.Builder(context)
                 .data(image.urls.regular)
