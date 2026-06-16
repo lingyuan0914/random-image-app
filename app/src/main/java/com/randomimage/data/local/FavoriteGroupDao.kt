@@ -8,6 +8,9 @@ interface FavoriteGroupDao {
     @Query("SELECT * FROM favorite_groups ORDER BY createdAt DESC")
     fun getAllGroups(): Flow<List<FavoriteGroupEntity>>
 
+    @Query("SELECT * FROM favorite_groups ORDER BY createdAt DESC")
+    suspend fun getAllGroupsSync(): List<FavoriteGroupEntity>
+
     @Insert
     suspend fun insertGroup(group: FavoriteGroupEntity): Long
 

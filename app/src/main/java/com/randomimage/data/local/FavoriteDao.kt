@@ -30,6 +30,9 @@ interface FavoriteDao {
     @Query("DELETE FROM favorites WHERE id = :imageId")
     suspend fun deleteFavoriteById(imageId: String)
 
+    @Query("UPDATE favorites SET groupId = :groupId WHERE id = :imageId")
+    suspend fun updateGroupById(imageId: String, groupId: Long)
+
     @Query("SELECT COUNT(*) FROM favorites")
     fun getFavoriteCount(): Flow<Int>
 }

@@ -48,6 +48,10 @@ class ImageRepository @Inject constructor(
         favoriteDao.insertFavorite(FavoriteEntity.fromImageModel(image))
     }
 
+    suspend fun addToFavoritesWithGroup(image: ImageModel, groupId: Long) {
+        favoriteDao.insertFavorite(FavoriteEntity.fromImageModel(image, groupId))
+    }
+
     suspend fun removeFromFavorites(imageId: String) {
         favoriteDao.deleteFavoriteById(imageId)
     }
@@ -90,5 +94,9 @@ class ImageRepository @Inject constructor(
 
     suspend fun clearSearchHistory() {
         searchHistoryDao.clearSearchHistory()
+    }
+
+    suspend fun moveImageToGroup(imageId: String, groupId: Long) {
+        favoriteDao.updateGroupById(imageId, groupId)
     }
 }

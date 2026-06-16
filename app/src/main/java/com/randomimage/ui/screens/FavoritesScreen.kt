@@ -68,8 +68,12 @@ fun FavoritesScreen(
     val filteredFavorites = if (selectedGroupIndex == 0) {
         uiState.favorites
     } else {
-        val groupId = uiState.groups.getOrNull(selectedGroupIndex - 1)?.id ?: 0
-        uiState.favorites.filter { true }
+        val group = uiState.groups.getOrNull(selectedGroupIndex - 1)
+        if (group != null) {
+            uiState.favorites.filter { it.id.startsWith("group_${group.id}_") || it.id == group.id.toString() }
+        } else {
+            uiState.favorites
+        }
     }
 
     Column(modifier = Modifier.fillMaxSize()) {
@@ -195,13 +199,33 @@ fun FavoritesScreen(
     selectedImage?.let { image ->
         AlertDialog(
             onDismissRequest = { selectedImage = null },
-            title = { Text("删除收藏") },
-            text = { Text("确定要删除这张图片吗？") },
+            title = { Text("收藏操作") },
+            text = {
+                Column {
+                    Text("选择操作：")
+                    Spacer(modifier = Modifier.height(8.dp))
+                    if (uiState.groups.isNotEmpty()) {
+                        Text("移动到分组：", style = MaterialTheme.typography.bodySmall)
+                        uiState.groups.forEach { group ->
+                            TextButton(
+                                onClick = {
+                                    viewModel.moveImageToGroup(image.id, group.id)
+                                    selectedImage = null
+                                },
+                                modifier = Modifier.fillMaxWidth()
+                            ) {
+                                Text(group.name)
+                            }
+                        }
+                        Spacer(modifier = Modifier.height(8.dp))
+                    }
+                }
+            },
             confirmButton = {
                 TextButton(onClick = {
                     viewModel.removeFavorite(image.id)
                     selectedImage = null
-                }) { Text("删除") }
+                }) { Text("删除", color = MaterialTheme.colorScheme.error) }
             },
             dismissButton = {
                 TextButton(onClick = { selectedImage = null }) { Text("取消") }

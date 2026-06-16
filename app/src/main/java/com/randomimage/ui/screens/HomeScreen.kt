@@ -32,6 +32,7 @@ import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -47,7 +48,9 @@ import com.randomimage.ui.components.DownloadProgress
 import com.randomimage.ui.components.SwipeCard
 import com.randomimage.ui.viewmodel.HomeViewModel
 import com.randomimage.util.ImageUtils
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 
 @OptIn(ExperimentalMaterial3Api::class, ExperimentalLayoutApi::class)
 @Composable
@@ -60,6 +63,12 @@ fun HomeScreen(
     val scope = rememberCoroutineScope()
     var expanded by remember { mutableStateOf(false) }
     var showNsfwDialog by remember { mutableStateOf(false) }
+    var showGroupDialog by remember { mutableStateOf(false) }
+    var groups by remember { mutableStateOf<List<com.randomimage.data.local.FavoriteGroupEntity>>(emptyList()) }
+
+    LaunchedEffect(Unit) {
+        groups = with(kotlinx.coroutines.Dispatchers.IO) { viewModel.getGroups() }
+    }
 
     Column(modifier = Modifier.fillMaxSize()) {
         Row(
@@ -252,7 +261,13 @@ fun HomeScreen(
                             image = currentImage,
                             onSwipeRight = { viewModel.swipeRight() },
                             onSwipeLeft = { viewModel.swipeLeft() },
-                            onLike = { viewModel.toggleFavorite() },
+                            onLike = {
+                                if (uiState.isFavorite) {
+                                    viewModel.toggleFavorite()
+                                } else {
+                                    showGroupDialog = true
+                                }
+                            },
                             onShare = { ImageUtils.shareImage(context, currentImage.urls.regular) },
                             onDownload = { viewModel.downloadCurrentImage() },
                             onSetWallpaper = {
@@ -298,6 +313,46 @@ fun HomeScreen(
                 TextButton(onClick = { showNsfwDialog = false }) {
                     Text("取消")
                 }
+            }
+        )
+    }
+
+    if (showGroupDialog) {
+        val currentImage = uiState.images.getOrNull(uiState.currentIndex)
+        AlertDialog(
+            onDismissRequest = { showGroupDialog = false },
+            title = { Text("选择收藏分组") },
+            text = {
+                Column {
+                    TextButton(
+                        onClick = {
+                            if (currentImage != null) {
+                                viewModel.addToFavoritesWithGroup(currentImage, 0)
+                            }
+                            showGroupDialog = false
+                        },
+                        modifier = Modifier.fillMaxWidth()
+                    ) {
+                        Text("未分组")
+                    }
+                    groups.forEach { group ->
+                        TextButton(
+                            onClick = {
+                                if (currentImage != null) {
+                                    viewModel.addToFavoritesWithGroup(currentImage, group.id)
+                                }
+                                showGroupDialog = false
+                            },
+                            modifier = Modifier.fillMaxWidth()
+                        ) {
+                            Text(group.name)
+                        }
+                    }
+                }
+            },
+            confirmButton = {},
+            dismissButton = {
+                TextButton(onClick = { showGroupDialog = false }) { Text("取消") }
             }
         )
     }

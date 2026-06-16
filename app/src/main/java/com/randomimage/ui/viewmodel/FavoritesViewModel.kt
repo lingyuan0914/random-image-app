@@ -70,4 +70,10 @@ class FavoritesViewModel @Inject constructor(
             repository.removeFromFavorites(imageId)
         }
     }
+
+    fun moveImageToGroup(imageId: String, groupId: Long) {
+        viewModelScope.launch {
+            repository.moveImageToGroup(imageId, groupId)
+        }
+    }
 }

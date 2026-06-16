@@ -58,7 +58,8 @@ enum class ImageQuality(val label: String, val size: Int) {
 class HomeViewModel @Inject constructor(
     application: Application,
     private val apiManager: ApiManager,
-    private val repository: ImageRepository
+    private val repository: ImageRepository,
+    private val favoriteGroupDao: com.randomimage.data.local.FavoriteGroupDao
 ) : AndroidViewModel(application) {
 
     private val loadMoreMutex = Mutex()
@@ -367,6 +368,19 @@ class HomeViewModel @Inject constructor(
                 Timber.d("Added to favorites: ${currentImage.id}")
             }
         }
+    }
+
+    fun addToFavoritesWithGroup(image: ImageModel, groupId: Long) {
+        viewModelScope.launch {
+            repository.addToFavoritesWithGroup(image, groupId)
+            _uiState.value = _uiState.value.copy(isFavorite = true)
+            StatsManager.incrementFavoriteCount(getApplication())
+            Timber.d("Added to favorites with group $groupId: ${image.id}")
+        }
+    }
+
+    suspend fun getGroups(): List<com.randomimage.data.local.FavoriteGroupEntity> {
+        return favoriteGroupDao.getAllGroupsSync()
     }
 
     fun clearHistory() {
