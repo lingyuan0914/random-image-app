@@ -3,7 +3,6 @@ package com.randomimage.util
 import android.content.Context
 import android.content.SharedPreferences
 import java.util.concurrent.atomic.AtomicInteger
-import java.util.concurrent.atomic.AtomicLong
 
 object StatsManager {
     private const val PREFS_NAME = "stats_prefs"
@@ -14,8 +13,21 @@ object StatsManager {
     private const val KEY_FIRST_OPEN_TIME = "first_open_time"
     private const val KEY_LAST_OPEN_TIME = "last_open_time"
 
+    private val viewCount = AtomicInteger(0)
+    private val favoriteCount = AtomicInteger(0)
+    private val downloadCount = AtomicInteger(0)
+    private val searchCount = AtomicInteger(0)
+
     private fun getPrefs(context: Context): SharedPreferences {
         return context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
+    }
+
+    fun init(context: Context) {
+        val prefs = getPrefs(context)
+        viewCount.set(prefs.getInt(KEY_VIEW_COUNT, 0))
+        favoriteCount.set(prefs.getInt(KEY_FAVORITE_COUNT, 0))
+        downloadCount.set(prefs.getInt(KEY_DOWNLOAD_COUNT, 0))
+        searchCount.set(prefs.getInt(KEY_SEARCH_COUNT, 0))
     }
 
     fun updateFirstOpenTime(context: Context) {
@@ -27,29 +39,29 @@ object StatsManager {
     }
 
     fun incrementViewCount(context: Context) {
-        val prefs = getPrefs(context)
-        prefs.edit().putInt(KEY_VIEW_COUNT, prefs.getInt(KEY_VIEW_COUNT, 0) + 1).apply()
+        val newCount = viewCount.incrementAndGet()
+        getPrefs(context).edit().putInt(KEY_VIEW_COUNT, newCount).apply()
     }
 
     fun incrementFavoriteCount(context: Context) {
-        val prefs = getPrefs(context)
-        prefs.edit().putInt(KEY_FAVORITE_COUNT, prefs.getInt(KEY_FAVORITE_COUNT, 0) + 1).apply()
+        val newCount = favoriteCount.incrementAndGet()
+        getPrefs(context).edit().putInt(KEY_FAVORITE_COUNT, newCount).apply()
     }
 
     fun incrementDownloadCount(context: Context) {
-        val prefs = getPrefs(context)
-        prefs.edit().putInt(KEY_DOWNLOAD_COUNT, prefs.getInt(KEY_DOWNLOAD_COUNT, 0) + 1).apply()
+        val newCount = downloadCount.incrementAndGet()
+        getPrefs(context).edit().putInt(KEY_DOWNLOAD_COUNT, newCount).apply()
     }
 
     fun incrementSearchCount(context: Context) {
-        val prefs = getPrefs(context)
-        prefs.edit().putInt(KEY_SEARCH_COUNT, prefs.getInt(KEY_SEARCH_COUNT, 0) + 1).apply()
+        val newCount = searchCount.incrementAndGet()
+        getPrefs(context).edit().putInt(KEY_SEARCH_COUNT, newCount).apply()
     }
 
-    fun getViewCount(context: Context): Int = getPrefs(context).getInt(KEY_VIEW_COUNT, 0)
-    fun getFavoriteCount(context: Context): Int = getPrefs(context).getInt(KEY_FAVORITE_COUNT, 0)
-    fun getDownloadCount(context: Context): Int = getPrefs(context).getInt(KEY_DOWNLOAD_COUNT, 0)
-    fun getSearchCount(context: Context): Int = getPrefs(context).getInt(KEY_SEARCH_COUNT, 0)
+    fun getViewCount(): Int = viewCount.get()
+    fun getFavoriteCount(): Int = favoriteCount.get()
+    fun getDownloadCount(): Int = downloadCount.get()
+    fun getSearchCount(): Int = searchCount.get()
     fun getFirstOpenTime(context: Context): Long = getPrefs(context).getLong(KEY_FIRST_OPEN_TIME, 0)
 
     fun getDaysSinceFirstOpen(context: Context): Int {

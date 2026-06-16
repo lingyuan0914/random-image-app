@@ -89,7 +89,7 @@ class LoliconImageApi(
             try {
                 val response = service.getImages(r18 = 0, num = count)
                 Timber.d("Lolicon API attempt ${attempt + 1}: error=${response.error}, data.size=${response.data.size}")
-                if (response.data.isNotEmpty()) {
+                if (response.error == "success" && response.data.isNotEmpty()) {
                     return response.data.map { it.toImageModel() }
                 }
             } catch (e: Exception) {
@@ -116,7 +116,7 @@ class LoliconImageApi(
             try {
                 val response = service.getImages(r18 = 1, num = count)
                 Timber.d("Lolicon NSFW attempt ${attempt + 1}: error=${response.error}, data.size=${response.data.size}")
-                if (response.data.isNotEmpty()) {
+                if (response.error == "success" && response.data.isNotEmpty()) {
                     return response.data.map { it.toImageModel() }
                 }
             } catch (e: Exception) {

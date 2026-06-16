@@ -59,7 +59,8 @@ class HomeViewModel @Inject constructor(
     application: Application,
     private val apiManager: ApiManager,
     private val repository: ImageRepository,
-    private val favoriteGroupDao: com.randomimage.data.local.FavoriteGroupDao
+    private val favoriteGroupDao: com.randomimage.data.local.FavoriteGroupDao,
+    private val imageLoader: coil.ImageLoader
 ) : AndroidViewModel(application) {
 
     private val loadMoreMutex = Mutex()
@@ -282,6 +283,11 @@ class HomeViewModel @Inject constructor(
         val currentImage = getCurrentImage() ?: return
         viewModelScope.launch {
             repository.addToHistory(currentImage)
+            if (!_uiState.value.isFavorite) {
+                repository.addToFavorites(currentImage)
+                _uiState.value = _uiState.value.copy(isFavorite = true)
+                StatsManager.incrementFavoriteCount(getApplication())
+            }
             nextImage()
         }
     }
@@ -327,7 +333,7 @@ class HomeViewModel @Inject constructor(
                 .data(image.urls.regular)
                 .memoryCacheKey("preload_${image.id}")
                 .build()
-            coil.ImageLoader(getApplication()).enqueue(request)
+            imageLoader.enqueue(request)
         }
     }
 

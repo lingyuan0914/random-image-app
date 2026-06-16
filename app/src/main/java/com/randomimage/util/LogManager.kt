@@ -71,7 +71,10 @@ object LogManager {
 
     fun clearLogs() {
         logBuffer.clear()
-        logFile?.delete()
+        logFile?.let { file ->
+            file.delete()
+            file.createNewFile()
+        }
         Timber.d("Logs cleared")
     }
 }

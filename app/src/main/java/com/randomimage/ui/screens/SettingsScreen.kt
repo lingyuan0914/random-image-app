@@ -83,19 +83,19 @@ fun SettingsScreen(
                     Text("使用统计", style = MaterialTheme.typography.titleMedium)
                     Spacer(modifier = Modifier.height(8.dp))
                     Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
-                        Text("浏览图片"); Text("${StatsManager.getViewCount(context)} 张")
+                        Text("浏览图片"); Text("${StatsManager.getViewCount()} 张")
                     }
                     Spacer(modifier = Modifier.height(4.dp))
                     Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
-                        Text("收藏图片"); Text("${StatsManager.getFavoriteCount(context)} 张")
+                        Text("收藏图片"); Text("${StatsManager.getFavoriteCount()} 张")
                     }
                     Spacer(modifier = Modifier.height(4.dp))
                     Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
-                        Text("下载图片"); Text("${StatsManager.getDownloadCount(context)} 张")
+                        Text("下载图片"); Text("${StatsManager.getDownloadCount()} 张")
                     }
                     Spacer(modifier = Modifier.height(4.dp))
                     Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
-                        Text("搜索次数"); Text("${StatsManager.getSearchCount(context)} 次")
+                        Text("搜索次数"); Text("${StatsManager.getSearchCount()} 次")
                     }
                     Spacer(modifier = Modifier.height(4.dp))
                     Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
@@ -104,10 +104,10 @@ fun SettingsScreen(
                     Spacer(modifier = Modifier.height(12.dp))
                     StatsChart(
                         items = listOf(
-                            StatsItem("浏览", StatsManager.getViewCount(context), MaterialTheme.colorScheme.primary),
-                            StatsItem("收藏", StatsManager.getFavoriteCount(context), MaterialTheme.colorScheme.error),
-                            StatsItem("下载", StatsManager.getDownloadCount(context), MaterialTheme.colorScheme.tertiary),
-                            StatsItem("搜索", StatsManager.getSearchCount(context), MaterialTheme.colorScheme.secondary)
+                            StatsItem("浏览", StatsManager.getViewCount(), MaterialTheme.colorScheme.primary),
+                            StatsItem("收藏", StatsManager.getFavoriteCount(), MaterialTheme.colorScheme.error),
+                            StatsItem("下载", StatsManager.getDownloadCount(), MaterialTheme.colorScheme.tertiary),
+                            StatsItem("搜索", StatsManager.getSearchCount(), MaterialTheme.colorScheme.secondary)
                         )
                     )
                 }
@@ -196,7 +196,7 @@ fun SettingsScreen(
                     Text("关于", style = MaterialTheme.typography.titleMedium)
                     Spacer(modifier = Modifier.height(8.dp))
                     Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
-                        Text("版本"); Text("1.7.0")
+                        Text("版本"); Text(com.randomimage.BuildConfig.VERSION_NAME)
                     }
                     Spacer(modifier = Modifier.height(4.dp))
                     Text("随机图片 - 二次元图片浏览应用")

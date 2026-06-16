@@ -6,6 +6,7 @@ import com.randomimage.domain.model.User
 import com.squareup.moshi.JsonClass
 import retrofit2.http.GET
 import retrofit2.http.Query
+import java.util.concurrent.atomic.AtomicInteger
 
 interface KoriService {
     @GET("img")
@@ -50,17 +51,17 @@ class KoriImageApi(
     override val supportsSearch = false
     override val supportsNSFW = true
 
-    private var counter = 0
+    private val counter = AtomicInteger(0)
 
     override suspend fun fetchRandomImages(count: Int): List<ImageModel> {
         return try {
             val images = mutableListOf<ImageModel>()
             repeat(count) {
-                counter++
+                val c = counter.incrementAndGet()
                 try {
                     val response = service.getImage(returnType = "json")
                     if (response.code == "200" && response.imgurl != null) {
-                        images.add(response.toImageModel(counter))
+                        images.add(response.toImageModel(c))
                     }
                 } catch (e: Exception) {
                     // skip failed request
@@ -80,11 +81,11 @@ class KoriImageApi(
         return try {
             val images = mutableListOf<ImageModel>()
             repeat(count) {
-                counter++
+                val c = counter.incrementAndGet()
                 try {
                     val response = service.getImage(returnType = "json", category = "R18")
                     if (response.code == "200" && response.imgurl != null) {
-                        images.add(response.toImageModel(counter))
+                        images.add(response.toImageModel(c))
                     }
                 } catch (e: Exception) {
                     // skip failed request

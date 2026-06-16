@@ -3,6 +3,7 @@ package com.randomimage.data.remote
 import com.randomimage.domain.model.ImageModel
 import com.randomimage.domain.model.ImageUrls
 import com.randomimage.domain.model.User
+import java.util.concurrent.atomic.AtomicInteger
 
 class MwmImageApi : ImageApi {
     override val name = "二次元风景"
@@ -15,18 +16,18 @@ class MwmImageApi : ImageApi {
         "https://t.mwm.moe/sj/"
     )
 
-    private var counter = 0
+    private val counter = AtomicInteger(0)
 
     override suspend fun fetchRandomImages(count: Int): List<ImageModel> {
         return try {
             val images = mutableListOf<ImageModel>()
             repeat(count) {
-                counter++
+                val c = counter.incrementAndGet()
                 val url = imageUrls.random()
                 val timestamp = System.currentTimeMillis()
                 images.add(
                     ImageModel(
-                        id = "mwm_${timestamp}_${counter}_${(0..9999).random()}",
+                        id = "mwm_${timestamp}_${c}_${(0..9999).random()}",
                         urls = ImageUrls(
                             raw = url,
                             full = url,
@@ -39,7 +40,7 @@ class MwmImageApi : ImageApi {
                             username = "MWM",
                             name = "二次元风景"
                         ),
-                        description = "二次元风景 #$counter",
+                        description = "二次元风景 #$c",
                         likes = 0
                     )
                 )

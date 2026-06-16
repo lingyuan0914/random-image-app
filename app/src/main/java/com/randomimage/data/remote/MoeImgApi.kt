@@ -3,36 +3,37 @@ package com.randomimage.data.remote
 import com.randomimage.domain.model.ImageModel
 import com.randomimage.domain.model.ImageUrls
 import com.randomimage.domain.model.User
+import java.util.concurrent.atomic.AtomicInteger
 
 class MoeImgImageApi : ImageApi {
     override val name = "萌图"
     override val supportsSearch = false
     override val supportsNSFW = false
 
-    private var counter = 0
+    private val counter = AtomicInteger(0)
 
     override suspend fun fetchRandomImages(count: Int): List<ImageModel> {
         return try {
             val images = mutableListOf<ImageModel>()
             repeat(count) {
-                counter++
+                val c = counter.incrementAndGet()
                 val timestamp = System.currentTimeMillis()
                 images.add(
                     ImageModel(
-                        id = "moe_${timestamp}_${counter}_${(0..9999).random()}",
+                        id = "moe_${timestamp}_${c}_${(0..9999).random()}",
                         urls = ImageUrls(
-                            raw = "https://img.xjh.me/random_img.php?return=302&t=$timestamp&_c=$counter",
-                            full = "https://img.xjh.me/random_img.php?return=302&t=$timestamp&_c=$counter",
-                            regular = "https://img.xjh.me/random_img.php?return=302&t=$timestamp&_c=$counter",
-                            small = "https://img.xjh.me/random_img.php?return=302&t=$timestamp&_c=$counter",
-                            thumb = "https://img.xjh.me/random_img.php?return=302&t=$timestamp&_c=$counter"
+                            raw = "https://img.xjh.me/random_img.php?return=302&t=$timestamp&_c=$c",
+                            full = "https://img.xjh.me/random_img.php?return=302&t=$timestamp&_c=$c",
+                            regular = "https://img.xjh.me/random_img.php?return=302&t=$timestamp&_c=$c",
+                            small = "https://img.xjh.me/random_img.php?return=302&t=$timestamp&_c=$c",
+                            thumb = "https://img.xjh.me/random_img.php?return=302&t=$timestamp&_c=$c"
                         ),
                         user = User(
                             id = "moe",
                             username = "萌图",
                             name = "萌图"
                         ),
-                        description = "随机萌图 #$counter",
+                        description = "随机萌图 #$c",
                         likes = 0
                     )
                 )

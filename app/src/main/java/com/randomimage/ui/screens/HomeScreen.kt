@@ -48,9 +48,7 @@ import com.randomimage.ui.components.DownloadProgress
 import com.randomimage.ui.components.SwipeCard
 import com.randomimage.ui.viewmodel.HomeViewModel
 import com.randomimage.util.ImageUtils
-import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
-import kotlinx.coroutines.withContext
 
 @OptIn(ExperimentalMaterial3Api::class, ExperimentalLayoutApi::class)
 @Composable
@@ -67,7 +65,7 @@ fun HomeScreen(
     var groups by remember { mutableStateOf<List<com.randomimage.data.local.FavoriteGroupEntity>>(emptyList()) }
 
     LaunchedEffect(Unit) {
-        groups = with(kotlinx.coroutines.Dispatchers.IO) { viewModel.getGroups() }
+        groups = viewModel.getGroups()
     }
 
     Column(modifier = Modifier.fillMaxSize()) {

@@ -3,9 +3,13 @@ package com.randomimage
 import android.app.Application
 import android.util.Log
 import coil.ImageLoader
+import com.randomimage.data.local.AppDatabase
+import com.randomimage.util.CloudSyncManager
 import com.randomimage.util.DownloadManager
 import com.randomimage.util.ImageUtils
 import com.randomimage.util.LogManager
+import com.randomimage.util.ShareUtils
+import com.randomimage.util.StatsManager
 import dagger.hilt.android.HiltAndroidApp
 import timber.log.Timber
 import javax.inject.Inject
@@ -16,6 +20,9 @@ class RandomImageApp : Application() {
     @Inject
     lateinit var imageLoader: ImageLoader
 
+    @Inject
+    lateinit var database: AppDatabase
+
     override fun onCreate() {
         super.onCreate()
         LogManager.init(this)
@@ -23,6 +30,9 @@ class RandomImageApp : Application() {
         Timber.plant(LogManagerTree())
         ImageUtils.init(imageLoader)
         DownloadManager.init(imageLoader)
+        ShareUtils.init(imageLoader)
+        CloudSyncManager.init(database)
+        StatsManager.init(this)
         Timber.d("Application started")
     }
 

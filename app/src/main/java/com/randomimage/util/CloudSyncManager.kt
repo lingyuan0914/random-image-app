@@ -15,6 +15,7 @@ object CloudSyncManager {
     private var webdavUrl: String = ""
     private var username: String = ""
     private var password: String = ""
+    private var database: AppDatabase? = null
 
     fun configure(url: String, user: String, pass: String) {
         webdavUrl = url
@@ -22,15 +23,14 @@ object CloudSyncManager {
         password = pass
     }
 
+    fun init(db: AppDatabase) {
+        database = db
+    }
+
     suspend fun exportFavorites(context: Context): Boolean {
         return withContext(Dispatchers.IO) {
             try {
-                val db = androidx.room.Room.databaseBuilder(
-                    context,
-                    AppDatabase::class.java,
-                    "random_image_db"
-                ).build()
-
+                val db = database ?: return@withContext false
                 val favorites = db.favoriteDao().getAllFavoritesSync()
                 val json = favoritesToJson(favorites)
 
@@ -55,12 +55,7 @@ object CloudSyncManager {
                 val json = file.readText()
                 val favorites = jsonToFavorites(json)
 
-                val db = androidx.room.Room.databaseBuilder(
-                    context,
-                    AppDatabase::class.java,
-                    "random_image_db"
-                ).build()
-
+                val db = database ?: return@withContext false
                 favorites.forEach { favorite ->
                     db.favoriteDao().insertFavorite(favorite)
                 }

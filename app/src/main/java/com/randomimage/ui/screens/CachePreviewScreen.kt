@@ -16,19 +16,16 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.foundation.lazy.grid.items
-import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowBack
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.Download
 import androidx.compose.material.icons.filled.Favorite
-import androidx.compose.material.icons.filled.FavoriteBorder
 import androidx.compose.material.icons.filled.Share
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Card
@@ -55,10 +52,6 @@ import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
-import com.randomimage.domain.model.ImageModel
-import com.randomimage.domain.model.ImageUrls
-import com.randomimage.domain.model.User
-import com.randomimage.ui.viewmodel.HomeViewModel
 import com.randomimage.util.CacheManager
 import com.randomimage.util.CacheStats
 import com.randomimage.util.ImageUtils
@@ -75,8 +68,7 @@ data class CachedImage(
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun CachePreviewScreen(
-    onBack: () -> Unit,
-    viewModel: HomeViewModel? = null
+    onBack: () -> Unit
 ) {
     val context = LocalContext.current
     val scope = rememberCoroutineScope()
@@ -208,41 +200,23 @@ fun CachePreviewScreen(
                     ) {
                         IconButton(
                             onClick = {
-                                scope.launch {
-                                    val success = ImageUtils.downloadImage(context, previewImage?.file?.absolutePath ?: "")
-                                    Toast.makeText(
-                                        context,
-                                        if (success) "下载成功" else "下载失败",
-                                        Toast.LENGTH_SHORT
-                                    ).show()
-                                }
-                            }
-                        ) {
-                            Icon(Icons.Default.Download, contentDescription = "下载")
-                        }
-                        IconButton(
-                            onClick = {
                                 previewImage?.file?.let { file ->
-                                    val imageModel = ImageModel(
-                                        id = file.nameWithoutExtension,
-                                        urls = ImageUrls(
-                                            raw = file.absolutePath,
-                                            full = file.absolutePath,
-                                            regular = file.absolutePath,
-                                            small = file.absolutePath,
-                                            thumb = file.absolutePath
-                                        ),
-                                        user = User(id = "", username = "", name = "缓存图片"),
-                                        description = null
-                                    )
-                                    viewModel?.let { vm ->
-                                        vm.toggleFavorite()
+                                    scope.launch {
+                                        try {
+                                            val picturesDir = android.os.Environment.getExternalStoragePublicDirectory(
+                                                android.os.Environment.DIRECTORY_PICTURES
+                                            )
+                                            val destFile = java.io.File(picturesDir, "random_image_${System.currentTimeMillis()}.jpg")
+                                            file.copyTo(destFile, overwrite = true)
+                                            Toast.makeText(context, "已保存到相册", Toast.LENGTH_SHORT).show()
+                                        } catch (e: Exception) {
+                                            Toast.makeText(context, "保存失败", Toast.LENGTH_SHORT).show()
+                                        }
                                     }
-                                    Toast.makeText(context, "已添加到收藏", Toast.LENGTH_SHORT).show()
                                 }
                             }
                         ) {
-                            Icon(Icons.Default.Favorite, contentDescription = "收藏", tint = Color.Red)
+                            Icon(Icons.Default.Download, contentDescription = "保存到相册")
                         }
                         IconButton(
                             onClick = {
