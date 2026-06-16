@@ -188,7 +188,7 @@ fun SettingsScreen(
                     Text("关于", style = MaterialTheme.typography.titleMedium)
                     Spacer(modifier = Modifier.height(8.dp))
                     Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
-                        Text("版本"); Text("1.3.0")
+                        Text("版本"); Text("1.7.0")
                     }
                     Spacer(modifier = Modifier.height(4.dp))
                     Text("随机图片 - 二次元图片浏览应用")
@@ -196,6 +196,8 @@ fun SettingsScreen(
                     Text("支持API: Lolicon, 萌图, 色图API, Kori图库, 随机美图, 二次元风景", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
                 }
             }
+
+            Spacer(modifier = Modifier.height(32.dp))
         }
     }
 

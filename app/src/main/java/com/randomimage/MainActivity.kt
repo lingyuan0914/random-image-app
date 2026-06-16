@@ -33,6 +33,7 @@ import com.randomimage.ui.components.BottomNavBar
 import com.randomimage.ui.screens.CachePreviewScreen
 import com.randomimage.ui.screens.FavoritesScreen
 import com.randomimage.ui.screens.HomeScreen
+import com.randomimage.ui.screens.ImageCropScreen
 import com.randomimage.ui.screens.ImageDetailScreen
 import com.randomimage.ui.screens.LogScreen
 import com.randomimage.ui.screens.SettingsScreen
@@ -162,6 +163,14 @@ class MainActivity : ComponentActivity() {
                             }
                             composable("cache_preview") {
                                 CachePreviewScreen(onBack = { navController.popBackStack() })
+                            }
+                            composable("image_crop/{imageUrl}") { backStackEntry ->
+                                val imageUrl = backStackEntry.arguments?.getString("imageUrl") ?: ""
+                                ImageCropScreen(
+                                    imageUrl = imageUrl,
+                                    onBack = { navController.popBackStack() },
+                                    onCropped = { navController.popBackStack() }
+                                )
                             }
                         }
                     }
