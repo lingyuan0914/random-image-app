@@ -38,6 +38,12 @@ class ImageRepository @Inject constructor(
         }
     }
 
+    fun getFavoritesByGroup(groupId: Long): Flow<List<ImageModel>> {
+        return favoriteDao.getFavoritesByGroup(groupId).map { entities ->
+            entities.map { it.toImageModel() }
+        }
+    }
+
     suspend fun addToFavorites(image: ImageModel) {
         favoriteDao.insertFavorite(FavoriteEntity.fromImageModel(image))
     }

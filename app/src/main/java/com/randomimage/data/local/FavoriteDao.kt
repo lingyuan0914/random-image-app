@@ -12,6 +12,9 @@ interface FavoriteDao {
     @Query("SELECT * FROM favorites ORDER BY timestamp DESC")
     fun getAllFavorites(): Flow<List<FavoriteEntity>>
 
+    @Query("SELECT * FROM favorites WHERE groupId = :groupId ORDER BY timestamp DESC")
+    fun getFavoritesByGroup(groupId: Long): Flow<List<FavoriteEntity>>
+
     @Query("SELECT * FROM favorites WHERE id = :imageId")
     suspend fun getFavoriteById(imageId: String): FavoriteEntity?
 

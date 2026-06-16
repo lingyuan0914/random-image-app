@@ -6,20 +6,29 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.foundation.lazy.grid.items
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Add
+import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
-import androidx.compose.material3.FilterChip
+import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.ScrollableTabRow
 import androidx.compose.material3.Tab
 import androidx.compose.material3.Text
@@ -50,53 +59,57 @@ fun FavoritesScreen(
     val uiState by viewModel.uiState.collectAsState()
     var selectedImage by remember { mutableStateOf<ImageModel?>(null) }
     var selectedGroupIndex by remember { mutableIntStateOf(0) }
+    var showAddGroupDialog by remember { mutableStateOf(false) }
+    var newGroupName by remember { mutableStateOf("") }
+    var showDeleteGroupDialog by remember { mutableStateOf(false) }
+    var groupToDelete by remember { mutableStateOf<String?>(null) }
 
     val groups = listOf("全部") + uiState.groups.map { it.name }
     val filteredFavorites = if (selectedGroupIndex == 0) {
         uiState.favorites
     } else {
-        val groupId = uiState.groups[selectedGroupIndex - 1].id
-        uiState.favorites.filter { it.id.startsWith("group_") || selectedGroupIndex == 0 }
+        val groupId = uiState.groups.getOrNull(selectedGroupIndex - 1)?.id ?: 0
+        uiState.favorites.filter { true }
     }
 
     Column(modifier = Modifier.fillMaxSize()) {
-        if (uiState.groups.isNotEmpty()) {
-            ScrollableTabRow(
-                selectedTabIndex = selectedGroupIndex,
-                modifier = Modifier.fillMaxWidth(),
-                edgePadding = 8.dp
-            ) {
-                groups.forEachIndexed { index, groupName ->
-                    Tab(
-                        selected = selectedGroupIndex == index,
-                        onClick = { selectedGroupIndex = index },
-                        text = { Text(groupName) }
-                    )
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.SpaceBetween
+        ) {
+            if (uiState.groups.isNotEmpty()) {
+                ScrollableTabRow(
+                    selectedTabIndex = selectedGroupIndex,
+                    modifier = Modifier.weight(1f),
+                    edgePadding = 8.dp
+                ) {
+                    groups.forEachIndexed { index, groupName ->
+                        Tab(
+                            selected = selectedGroupIndex == index,
+                            onClick = { selectedGroupIndex = index },
+                            text = { Text(groupName) }
+                        )
+                    }
                 }
+            }
+            IconButton(onClick = { showAddGroupDialog = true }) {
+                Icon(Icons.Default.Add, contentDescription = "添加分组")
             }
         }
 
         Box(modifier = Modifier.weight(1f)) {
             when {
                 uiState.isLoading -> {
-                    CircularProgressIndicator(
-                        modifier = Modifier.align(Alignment.Center)
-                    )
+                    CircularProgressIndicator(modifier = Modifier.align(Alignment.Center))
                 }
                 uiState.favorites.isEmpty() -> {
                     Column(
                         modifier = Modifier.align(Alignment.Center),
                         horizontalAlignment = Alignment.CenterHorizontally
                     ) {
-                        Text(
-                            text = "还没有收藏",
-                            style = MaterialTheme.typography.headlineSmall
-                        )
-                        Text(
-                            text = "在首页点击收藏按钮即可添加",
-                            style = MaterialTheme.typography.bodyMedium,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant
-                        )
+                        Text("还没有收藏", style = MaterialTheme.typography.headlineSmall)
+                        Text("在首页点击收藏按钮即可添加", style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
                     }
                 }
                 else -> {
@@ -131,25 +144,67 @@ fun FavoritesScreen(
         }
     }
 
+    if (showAddGroupDialog) {
+        AlertDialog(
+            onDismissRequest = { showAddGroupDialog = false },
+            title = { Text("新建分组") },
+            text = {
+                OutlinedTextField(
+                    value = newGroupName,
+                    onValueChange = { newGroupName = it },
+                    label = { Text("分组名称") },
+                    singleLine = true
+                )
+            },
+            confirmButton = {
+                TextButton(onClick = {
+                    if (newGroupName.isNotBlank()) {
+                        viewModel.addGroup(newGroupName)
+                        newGroupName = ""
+                        showAddGroupDialog = false
+                    }
+                }) { Text("创建") }
+            },
+            dismissButton = {
+                TextButton(onClick = { showAddGroupDialog = false; newGroupName = "" }) { Text("取消") }
+            }
+        )
+    }
+
+    if (showDeleteGroupDialog && groupToDelete != null) {
+        AlertDialog(
+            onDismissRequest = { showDeleteGroupDialog = false },
+            title = { Text("删除分组") },
+            text = { Text("确定要删除分组「$groupToDelete」吗？") },
+            confirmButton = {
+                TextButton(onClick = {
+                    val group = uiState.groups.find { it.name == groupToDelete }
+                    if (group != null) {
+                        viewModel.deleteGroup(group)
+                    }
+                    showDeleteGroupDialog = false
+                    groupToDelete = null
+                }) { Text("删除") }
+            },
+            dismissButton = {
+                TextButton(onClick = { showDeleteGroupDialog = false; groupToDelete = null }) { Text("取消") }
+            }
+        )
+    }
+
     selectedImage?.let { image ->
         AlertDialog(
             onDismissRequest = { selectedImage = null },
             title = { Text("删除收藏") },
             text = { Text("确定要删除这张图片吗？") },
             confirmButton = {
-                TextButton(
-                    onClick = {
-                        viewModel.removeFavorite(image.id)
-                        selectedImage = null
-                    }
-                ) {
-                    Text("删除")
-                }
+                TextButton(onClick = {
+                    viewModel.removeFavorite(image.id)
+                    selectedImage = null
+                }) { Text("删除") }
             },
             dismissButton = {
-                TextButton(onClick = { selectedImage = null }) {
-                    Text("取消")
-                }
+                TextButton(onClick = { selectedImage = null }) { Text("取消") }
             }
         )
     }
