@@ -3,10 +3,12 @@ package com.randomimage.di
 import android.content.Context
 import androidx.room.Room
 import com.randomimage.data.local.AppDatabase
+import com.randomimage.data.local.ArtistDao
 import com.randomimage.data.local.FavoriteDao
 import com.randomimage.data.local.FavoriteGroupDao
 import com.randomimage.data.local.HistoryDao
 import com.randomimage.data.local.SearchHistoryDao
+import com.randomimage.data.local.TagDao
 import dagger.Module
 import dagger.Provides
 import dagger.hilt.InstallIn
@@ -29,7 +31,9 @@ object DatabaseModule {
         .addMigrations(
             AppDatabase.MIGRATION_1_2,
             AppDatabase.MIGRATION_2_3,
-            AppDatabase.MIGRATION_3_4
+            AppDatabase.MIGRATION_3_4,
+            AppDatabase.MIGRATION_4_5,
+            AppDatabase.MIGRATION_5_6
         )
         .fallbackToDestructiveMigration()
         .build()
@@ -57,5 +61,17 @@ object DatabaseModule {
     @Singleton
     fun provideFavoriteGroupDao(database: AppDatabase): FavoriteGroupDao {
         return database.favoriteGroupDao()
+    }
+
+    @Provides
+    @Singleton
+    fun provideTagDao(database: AppDatabase): TagDao {
+        return database.tagDao()
+    }
+
+    @Provides
+    @Singleton
+    fun provideArtistDao(database: AppDatabase): ArtistDao {
+        return database.artistDao()
     }
 }

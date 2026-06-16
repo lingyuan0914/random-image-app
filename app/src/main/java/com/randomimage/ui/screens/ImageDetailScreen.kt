@@ -22,12 +22,15 @@ import androidx.compose.material.icons.filled.ArrowBack
 import androidx.compose.material.icons.filled.Download
 import androidx.compose.material.icons.filled.Favorite
 import androidx.compose.material.icons.filled.FavoriteBorder
+import androidx.compose.material.icons.filled.PersonAdd
+import androidx.compose.material.icons.filled.PersonRemove
 import androidx.compose.material.icons.filled.Share
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.SuggestionChip
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
@@ -55,7 +58,7 @@ import com.randomimage.domain.model.ImageModel
 import com.randomimage.util.ImageUtils
 import kotlinx.coroutines.launch
 
-@OptIn(ExperimentalMaterial3Api::class)
+@OptIn(ExperimentalMaterial3Api::class, androidx.compose.foundation.layout.ExperimentalLayoutApi::class)
 @Composable
 fun ImageDetailScreen(
     image: ImageModel,
@@ -64,6 +67,8 @@ fun ImageDetailScreen(
     onSwipeRight: () -> Unit,
     onFavorite: () -> Unit = {},
     isFavorite: Boolean = false,
+    onFollow: () -> Unit = {},
+    isFollowing: Boolean = false,
     imageIndex: Int = 0,
     totalImages: Int = 1
 ) {
@@ -205,6 +210,14 @@ fun ImageDetailScreen(
                         modifier = Modifier.size(28.dp)
                     )
                 }
+                IconButton(onClick = onFollow) {
+                    Icon(
+                        if (isFollowing) Icons.Default.PersonRemove else Icons.Default.PersonAdd,
+                        contentDescription = if (isFollowing) "取消关注" else "关注画师",
+                        tint = if (isFollowing) MaterialTheme.colorScheme.primary else Color.White,
+                        modifier = Modifier.size(28.dp)
+                    )
+                }
                 IconButton(onClick = { ImageUtils.shareImage(context, image.urls.regular) }) {
                     Icon(Icons.Default.Share, contentDescription = "分享", tint = Color.White, modifier = Modifier.size(28.dp))
                 }
@@ -232,6 +245,25 @@ fun ImageDetailScreen(
                     textAlign = TextAlign.Center,
                     maxLines = 2
                 )
+            }
+        }
+
+        if (image.tags.isNotEmpty()) {
+            Box(
+                modifier = Modifier
+                    .align(Alignment.BottomCenter)
+                    .padding(bottom = if (image.description != null) 130.dp else 110.dp, start = 16.dp, end = 16.dp)
+            ) {
+                androidx.compose.foundation.layout.FlowRow(
+                    horizontalArrangement = androidx.compose.foundation.layout.Arrangement.spacedBy(4.dp)
+                ) {
+                    image.tags.take(5).forEach { tag ->
+                        SuggestionChip(
+                            onClick = {},
+                            label = { Text(tag, style = MaterialTheme.typography.labelSmall) }
+                        )
+                    }
+                }
             }
         }
     }

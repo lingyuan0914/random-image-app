@@ -1,11 +1,15 @@
 package com.randomimage.data.repository
 
+import com.randomimage.data.local.ArtistDao
+import com.randomimage.data.local.ArtistEntity
 import com.randomimage.data.local.FavoriteDao
 import com.randomimage.data.local.FavoriteEntity
 import com.randomimage.data.local.HistoryDao
 import com.randomimage.data.local.HistoryEntity
 import com.randomimage.data.local.SearchHistoryDao
 import com.randomimage.data.local.SearchHistoryEntity
+import com.randomimage.data.local.TagDao
+import com.randomimage.data.local.TagEntity
 import com.randomimage.data.remote.ApiManager
 import com.randomimage.domain.model.ImageModel
 import kotlinx.coroutines.flow.Flow
@@ -18,7 +22,9 @@ class ImageRepository @Inject constructor(
     private val apiManager: ApiManager,
     private val favoriteDao: FavoriteDao,
     private val historyDao: HistoryDao,
-    private val searchHistoryDao: SearchHistoryDao
+    private val searchHistoryDao: SearchHistoryDao,
+    private val tagDao: TagDao,
+    private val artistDao: ArtistDao
 ) {
     suspend fun fetchRandomImages(count: Int = 10): List<ImageModel> {
         return apiManager.fetchRandomImages(count)
@@ -99,4 +105,19 @@ class ImageRepository @Inject constructor(
     suspend fun moveImageToGroup(imageId: String, groupId: Long) {
         favoriteDao.updateGroupById(imageId, groupId)
     }
+
+    // Tags
+    fun getAllTags(): Flow<List<TagEntity>> = tagDao.getAllTags()
+    suspend fun searchTags(query: String): List<TagEntity> = tagDao.searchTags(query)
+    suspend fun recordTagUsage(tagName: String) {
+        tagDao.insertTag(TagEntity(name = tagName))
+        tagDao.incrementUsage(tagName)
+    }
+
+    // Artists
+    fun getFollowedArtists(): Flow<List<ArtistEntity>> = artistDao.getAllFollowed()
+    suspend fun followArtist(artist: ArtistEntity) = artistDao.followArtist(artist)
+    suspend fun unfollowArtist(uid: String) = artistDao.unfollowArtist(uid)
+    suspend fun isFollowingArtist(uid: String): Boolean = artistDao.isFollowing(uid)
+    suspend fun getFollowedUids(): List<String> = artistDao.getAllFollowedUids()
 }

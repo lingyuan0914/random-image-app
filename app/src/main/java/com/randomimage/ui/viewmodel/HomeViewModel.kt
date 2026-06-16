@@ -43,9 +43,11 @@ data class HomeUiState(
     val history: List<ImageModel> = emptyList(),
     val recentSearches: List<String> = emptyList(),
     val isFavorite: Boolean = false,
+    val isFollowingArtist: Boolean = false,
     val showDetail: Boolean = false,
     val isWaterfall: Boolean = false,
-    val imageQuality: ImageQuality = ImageQuality.MEDIUM
+    val imageQuality: ImageQuality = ImageQuality.MEDIUM,
+    val popularTags: List<com.randomimage.data.local.TagEntity> = emptyList()
 )
 
 enum class ImageQuality(val label: String, val size: Int) {
@@ -176,6 +178,11 @@ class HomeViewModel @Inject constructor(
                     currentApiName = apiManager.currentApi.name
                 )
                 StatsManager.incrementViewCount(getApplication())
+                images.forEach { image ->
+                    image.tags.forEach { tag ->
+                        repository.recordTagUsage(tag)
+                    }
+                }
                 Timber.d("Loaded ${images.size} images")
             } catch (e: Exception) {
                 Timber.e(e, "Failed to load images")
@@ -308,8 +315,9 @@ class HomeViewModel @Inject constructor(
             checkFavorite()
             loadMoreIfNeeded()
         } else {
-            loadImages()
-        }
+        loadPopularTags()
+        loadImages()
+    }
     }
 
     private fun loadMoreIfNeeded() {
@@ -461,6 +469,51 @@ class HomeViewModel @Inject constructor(
             val newImages = _uiState.value.images.toMutableList()
             newImages.add(0, image)
             _uiState.value = _uiState.value.copy(images = newImages, currentIndex = 0)
+        }
+    }
+
+    fun toggleFollowArtist() {
+        val image = getCurrentImage() ?: return
+        viewModelScope.launch {
+            if (_uiState.value.isFollowingArtist) {
+                repository.unfollowArtist(image.user.id)
+                _uiState.value = _uiState.value.copy(isFollowingArtist = false)
+                Timber.d("Unfollowed artist: ${image.user.name}")
+            } else {
+                repository.followArtist(
+                    com.randomimage.data.local.ArtistEntity(
+                        uid = image.user.id,
+                        name = image.user.name
+                    )
+                )
+                _uiState.value = _uiState.value.copy(isFollowingArtist = true)
+                Timber.d("Followed artist: ${image.user.name}")
+            }
+        }
+    }
+
+    fun checkFollowingArtist() {
+        val image = getCurrentImage() ?: return
+        viewModelScope.launch {
+            val following = repository.isFollowingArtist(image.user.id)
+            _uiState.value = _uiState.value.copy(isFollowingArtist = following)
+        }
+    }
+
+    fun loadPopularTags() {
+        viewModelScope.launch {
+            repository.getAllTags().collect { tags ->
+                _uiState.value = _uiState.value.copy(popularTags = tags)
+            }
+        }
+    }
+
+    fun recordCurrentImageTags() {
+        val image = getCurrentImage() ?: return
+        viewModelScope.launch {
+            image.tags.forEach { tag ->
+                repository.recordTagUsage(tag)
+            }
         }
     }
 }

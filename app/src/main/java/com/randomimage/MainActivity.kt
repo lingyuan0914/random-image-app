@@ -122,6 +122,8 @@ class MainActivity : ComponentActivity() {
                                 },
                                 onFavorite = { homeViewModel.toggleFavorite() },
                                 isFavorite = homeUiState.isFavorite,
+                                onFollow = { homeViewModel.toggleFollowArtist() },
+                                isFollowing = homeUiState.isFollowingArtist,
                                 imageIndex = homeUiState.currentIndex,
                                 totalImages = homeUiState.images.size
                             )

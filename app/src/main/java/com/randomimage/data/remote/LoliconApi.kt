@@ -60,7 +60,8 @@ data class LoliconItem(
             description = title,
             likes = 0,
             width = width,
-            height = height
+            height = height,
+            tags = tags
         )
     }
 }

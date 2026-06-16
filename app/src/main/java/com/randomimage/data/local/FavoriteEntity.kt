@@ -14,6 +14,7 @@ data class FavoriteEntity(
     val photographerUsername: String,
     val description: String?,
     val groupId: Long = 0,
+    val tags: String = "",
     val timestamp: Long = System.currentTimeMillis()
 ) {
     fun toImageModel(): ImageModel {
@@ -45,7 +46,8 @@ data class FavoriteEntity(
                 photographerName = image.user.name,
                 photographerUsername = image.user.username,
                 description = image.description,
-                groupId = groupId
+                groupId = groupId,
+                tags = image.tags.joinToString(",")
             )
         }
     }

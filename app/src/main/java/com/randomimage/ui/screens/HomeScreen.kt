@@ -224,6 +224,28 @@ fun HomeScreen(
 
         Spacer(modifier = Modifier.height(4.dp))
 
+        if (uiState.popularTags.isNotEmpty() && uiState.searchQuery.isEmpty()) {
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = 12.dp, vertical = 2.dp),
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Text("标签:", style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                Spacer(modifier = Modifier.width(8.dp))
+                com.randomimage.ui.components.TagCloud(
+                    tags = uiState.popularTags,
+                    onTagClick = { tag ->
+                        viewModel.setSearchQuery(tag)
+                        viewModel.searchImages(tag)
+                    },
+                    modifier = Modifier.weight(1f)
+                )
+            }
+        }
+
+        Spacer(modifier = Modifier.height(4.dp))
+
         Box(
             modifier = Modifier
                 .weight(1f)
