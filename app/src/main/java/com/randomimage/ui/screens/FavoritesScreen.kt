@@ -97,14 +97,14 @@ fun FavoritesScreen(
             }
         }
 
-        Box(modifier = Modifier.weight(1f)) {
+        Box(modifier = Modifier.weight(1f).fillMaxWidth()) {
             when {
                 uiState.isLoading -> {
                     CircularProgressIndicator(modifier = Modifier.align(Alignment.Center))
                 }
                 filteredFavorites.isEmpty() -> {
                     Column(
-                        modifier = Modifier.align(Alignment.Center),
+                        modifier = Modifier.fillMaxWidth().padding(16.dp),
                         horizontalAlignment = Alignment.CenterHorizontally
                     ) {
                         Text("还没有收藏", style = MaterialTheme.typography.headlineSmall)
