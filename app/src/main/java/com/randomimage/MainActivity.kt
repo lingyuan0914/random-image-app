@@ -32,6 +32,7 @@ import androidx.navigation.compose.rememberNavController
 import com.randomimage.ui.components.BottomNavBar
 import com.randomimage.ui.screens.CachePreviewScreen
 import com.randomimage.ui.screens.CloudSyncScreen
+import com.randomimage.ui.screens.CustomApisScreen
 import com.randomimage.ui.screens.FavoritesScreen
 import com.randomimage.ui.screens.HomeScreen
 import com.randomimage.ui.screens.ImageCropScreen
@@ -165,7 +166,9 @@ class MainActivity : ComponentActivity() {
                                     onClearHistory = { homeViewModel.clearHistory() },
                                     onClearSearchHistory = { homeViewModel.clearSearchHistory() },
                                     onPreviewCache = { navController.navigate("cache_preview") },
-                                    onCloudSync = { navController.navigate("cloud_sync") }
+                                    onCloudSync = { navController.navigate("cloud_sync") },
+                                    onLogs = { navController.navigate("logs") },
+                                    onManageApis = { navController.navigate("custom_apis") }
                                 )
                             }
                             composable("cache_preview") {
@@ -181,6 +184,12 @@ class MainActivity : ComponentActivity() {
                             }
                             composable("cloud_sync") {
                                 CloudSyncScreen(onBack = { navController.popBackStack() })
+                            }
+                            composable("custom_apis") {
+                                CustomApisScreen(
+                                    onBack = { navController.popBackStack() },
+                                    onApisChanged = { homeViewModel.refreshApis() }
+                                )
                             }
                         }
                     }

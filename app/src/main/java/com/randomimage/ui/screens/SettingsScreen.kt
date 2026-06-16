@@ -50,7 +50,9 @@ fun SettingsScreen(
     onClearHistory: () -> Unit,
     onClearSearchHistory: () -> Unit,
     onPreviewCache: () -> Unit = {},
-    onCloudSync: () -> Unit = {}
+    onCloudSync: () -> Unit = {},
+    onLogs: () -> Unit = {},
+    onManageApis: () -> Unit = {}
 ) {
     BackHandler { onBack() }
     val context = LocalContext.current
@@ -186,6 +188,20 @@ fun SettingsScreen(
                             Text("备份和恢复收藏数据", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
                         }
                     }
+                    Spacer(modifier = Modifier.height(16.dp))
+                    Row(modifier = Modifier.fillMaxWidth().clickable { onManageApis() }, verticalAlignment = Alignment.CenterVertically) {
+                        Column(modifier = Modifier.weight(1f)) {
+                            Text("自定义API")
+                            Text("添加和管理自定义图片源", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                        }
+                    }
+                    Spacer(modifier = Modifier.height(16.dp))
+                    Row(modifier = Modifier.fillMaxWidth().clickable { onLogs() }, verticalAlignment = Alignment.CenterVertically) {
+                        Column(modifier = Modifier.weight(1f)) {
+                            Text("应用日志")
+                            Text("查看和分享应用运行日志", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                        }
+                    }
                 }
             }
 
@@ -196,12 +212,12 @@ fun SettingsScreen(
                     Text("关于", style = MaterialTheme.typography.titleMedium)
                     Spacer(modifier = Modifier.height(8.dp))
                     Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
-                        Text("版本"); Text("1.7.0")
+                        Text("版本"); Text(com.randomimage.BuildConfig.VERSION_NAME)
                     }
                     Spacer(modifier = Modifier.height(4.dp))
                     Text("随机图片 - 二次元图片浏览应用")
                     Spacer(modifier = Modifier.height(4.dp))
-                    Text("支持API: Lolicon, 萌图, 色图API, Kori图库, 随机美图, 二次元风景", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                    Text("支持API: Lolicon, 萌图, 色图API, Kori图库, 随机美图, 二次元风景 + 自定义API", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
                 }
             }
 

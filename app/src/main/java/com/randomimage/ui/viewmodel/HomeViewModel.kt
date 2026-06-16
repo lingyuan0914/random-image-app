@@ -271,6 +271,13 @@ class HomeViewModel @Inject constructor(
         loadImages()
     }
 
+    fun refreshApis() {
+        apiManager.refreshCustomApis()
+        _uiState.value = _uiState.value.copy(
+            availableApis = apiManager.availableApis.map { it.name }
+        )
+    }
+
     fun toggleNSFW() {
         val newState = !_uiState.value.isNSFW
         _uiState.value = _uiState.value.copy(isNSFW = newState)
