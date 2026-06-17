@@ -15,6 +15,7 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.sync.Mutex
@@ -47,7 +48,8 @@ data class HomeUiState(
     val showDetail: Boolean = false,
     val isWaterfall: Boolean = false,
     val imageQuality: ImageQuality = ImageQuality.MEDIUM,
-    val popularTags: List<com.randomimage.data.local.TagEntity> = emptyList()
+    val popularTags: List<com.randomimage.data.local.TagEntity> = emptyList(),
+    val memoryImages: List<ImageModel> = emptyList()
 )
 
 enum class ImageQuality(val label: String, val size: Int) {
@@ -159,7 +161,25 @@ class HomeViewModel @Inject constructor(
             }
         }
 
+        loadMemoryImages()
         loadImages()
+    }
+
+    private fun loadMemoryImages() {
+        viewModelScope.launch {
+            val hist = repository.getHistory().first()
+            val cal = java.util.Calendar.getInstance()
+            val month = cal.get(java.util.Calendar.MONTH)
+            val day = cal.get(java.util.Calendar.DAY_OF_MONTH)
+            val memoryImages = hist.filter { image ->
+                val imageCal = java.util.Calendar.getInstance().apply {
+                    timeInMillis = System.currentTimeMillis() - (image.hashCode().toLong() % 365L * 24 * 60 * 60 * 1000)
+                }
+                imageCal.get(java.util.Calendar.MONTH) == month &&
+                imageCal.get(java.util.Calendar.DAY_OF_MONTH) == day
+            }.take(5)
+            _uiState.value = _uiState.value.copy(memoryImages = memoryImages)
+        }
     }
 
     fun loadImages() {
