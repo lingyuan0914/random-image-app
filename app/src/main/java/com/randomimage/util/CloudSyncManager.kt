@@ -10,6 +10,9 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import timber.log.Timber
 import java.io.File
+import java.net.HttpURLConnection
+import java.net.URL
+import java.util.Base64
 
 object CloudSyncManager {
     private var webdavUrl: String = ""
@@ -20,6 +23,44 @@ object CloudSyncManager {
         webdavUrl = url
         username = user
         password = pass
+    }
+
+    suspend fun uploadFile(context: Context, localFile: File, remoteName: String): Boolean {
+        return withContext(Dispatchers.IO) {
+            try {
+                if (webdavUrl.isBlank()) {
+                    Timber.w("WebDAV not configured")
+                    return@withContext false
+                }
+
+                val url = URL("${webdavUrl.trimEnd('/')}/$remoteName")
+                val connection = url.openConnection() as HttpURLConnection
+                connection.requestMethod = "PUT"
+                connection.doOutput = true
+                connection.connectTimeout = 15000
+                connection.readTimeout = 15000
+
+                val auth = Base64.getEncoder().encodeToString("$username:$password".toByteArray())
+                connection.setRequestProperty("Authorization", "Basic $auth")
+                connection.setRequestProperty("Content-Type", "application/octet-stream")
+                connection.setRequestProperty("Content-Length", localFile.length().toString())
+
+                localFile.inputStream().use { input ->
+                    connection.outputStream.use { output ->
+                        input.copyTo(output)
+                    }
+                }
+
+                val code = connection.responseCode
+                val success = code in 200..299
+                Timber.d("WebDAV upload: $remoteName -> HTTP $code")
+                connection.disconnect()
+                success
+            } catch (e: Exception) {
+                Timber.e(e, "WebDAV upload failed")
+                false
+            }
+        }
     }
 
     suspend fun exportFavorites(context: Context): Boolean {
