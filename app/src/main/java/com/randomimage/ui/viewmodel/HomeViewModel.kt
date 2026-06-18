@@ -227,7 +227,11 @@ class HomeViewModel @Inject constructor(
         apiManager.switchApi(index)
         _uiState.value = _uiState.value.copy(
             currentApiName = apiManager.currentApi.name,
-            recommendedTags = emptyList()
+            recommendedTags = emptyList(),
+            images = emptyList(),
+            currentIndex = 0,
+            isLoading = true,
+            error = null
         )
         loadImages()
     }
