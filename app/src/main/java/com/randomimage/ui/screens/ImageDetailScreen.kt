@@ -116,7 +116,7 @@ fun ImageDetailScreen(
     ) {
         AsyncImage(
             model = ImageRequest.Builder(context)
-                .data(image.urls.regular)
+                .data(image.urls.thumb)
                 .crossfade(false)
                 .size(Size.ORIGINAL)
                 .allowHardware(true)
@@ -131,7 +131,7 @@ fun ImageDetailScreen(
 
         SubcomposeAsyncImage(
             model = ImageRequest.Builder(context)
-                .data(image.urls.regular)
+                .data(image.urls.thumb)
                 .crossfade(false)
                 .size(Size.ORIGINAL)
                 .allowHardware(true)
