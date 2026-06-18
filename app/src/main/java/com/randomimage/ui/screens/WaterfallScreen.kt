@@ -236,9 +236,9 @@ fun WaterfallScreen(
                                 AsyncImage(
                                     model = ImageRequest.Builder(context)
                                         .data(image.urls.thumb)
+                                        .memoryCacheKey(image.id)
                                         .crossfade(false)
                                         .size(300, 400)
-                                        .memoryCacheKey("${image.id}_$index")
                                         .allowHardware(true)
                                         .build(),
                                     contentDescription = image.description,
