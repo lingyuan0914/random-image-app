@@ -5,6 +5,8 @@ import com.randomimage.domain.model.ImageUrls
 import com.randomimage.domain.model.User
 import com.squareup.moshi.Moshi
 import com.squareup.moshi.kotlin.reflect.KotlinJsonAdapterFactory
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.withContext
 import okhttp3.OkHttpClient
 import okhttp3.Request
 import org.json.JSONArray
@@ -24,7 +26,7 @@ class CustomApiImageApi(
     private val counter = AtomicInteger(0)
 
     override suspend fun fetchRandomImages(count: Int): List<ImageModel> {
-        return fetchImages(count)
+        return withContext(Dispatchers.IO) { fetchImages(count) }
     }
 
     override suspend fun searchImages(query: String, count: Int): List<ImageModel> {
@@ -32,7 +34,7 @@ class CustomApiImageApi(
     }
 
     override suspend fun fetchRandomImagesNSFW(count: Int): List<ImageModel> {
-        return fetchImages(count)
+        return withContext(Dispatchers.IO) { fetchImages(count) }
     }
 
     private fun fetchImages(count: Int): List<ImageModel> {
