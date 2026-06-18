@@ -7,11 +7,25 @@ import com.squareup.moshi.Types
 import com.squareup.moshi.kotlin.reflect.KotlinJsonAdapterFactory
 import timber.log.Timber
 
+enum class ApiType(val label: String) {
+    AUTO("自动检测"),
+    LOLICON("Lolicon格式"),
+    DIRECT_IMAGE("直连图片")
+}
+
 data class CustomApiConfig(
     val id: String,
     val name: String,
     val url: String,
-    val enabled: Boolean = true
+    val enabled: Boolean = true,
+    val apiType: String = ApiType.AUTO.name
+)
+
+data class PresetApi(
+    val name: String,
+    val url: String,
+    val apiType: ApiType = ApiType.AUTO,
+    val description: String = ""
 )
 
 object CustomApiManager {
@@ -22,6 +36,15 @@ object CustomApiManager {
     private val moshi = Moshi.Builder()
         .addLast(KotlinJsonAdapterFactory())
         .build()
+
+    val presetApis = listOf(
+        PresetApi("Lolicon", "https://api.lolicon.app/setu/v2", ApiType.LOLICON, "二次元插画API"),
+        PresetApi("Elaina", "https://api.elaina.cat/random/", ApiType.DIRECT_IMAGE, "随机壁纸"),
+        PresetApi("TheCatAPI", "https://api.thecatapi.com/v1/images/search", ApiType.AUTO, "猫咪图片"),
+        PresetApi("TheDogAPI", "https://dog.ceo/api/breeds/image/random", ApiType.AUTO, "狗狗图片"),
+        PresetApi("Picsum", "https://picsum.photos/v2/list", ApiType.AUTO, "高清摄影图"),
+        PresetApi("随机壁纸", "https://t.mwm.moe/fj/", ApiType.DIRECT_IMAGE, "二次元风景壁纸")
+    )
 
     fun init(context: Context) {
         prefs = context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
@@ -38,10 +61,10 @@ object CustomApiManager {
         }
     }
 
-    fun addCustomApi(name: String, url: String) {
+    fun addCustomApi(name: String, url: String, apiType: ApiType = ApiType.AUTO) {
         val apis = getCustomApis().toMutableList()
         val id = "custom_${System.currentTimeMillis()}"
-        apis.add(CustomApiConfig(id = id, name = name, url = url))
+        apis.add(CustomApiConfig(id = id, name = name, url = url, apiType = apiType.name))
         saveApis(apis)
     }
 

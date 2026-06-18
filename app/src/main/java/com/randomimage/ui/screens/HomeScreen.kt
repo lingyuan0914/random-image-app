@@ -304,13 +304,21 @@ fun HomeScreen(
                     }
                 }
                 uiState.images.isEmpty() -> {
-                    TextButton(
-                        onClick = { viewModel.loadImages() }
+                    Column(
+                        horizontalAlignment = Alignment.CenterHorizontally
                     ) {
                         Text(
-                            text = "点击加载图片",
+                            text = if (uiState.availableApis.isEmpty()) "还没有添加API源" else "点击加载图片",
                             style = MaterialTheme.typography.bodyLarge
                         )
+                        if (uiState.availableApis.isEmpty()) {
+                            Spacer(modifier = Modifier.height(8.dp))
+                            Text(
+                                text = "请先在 设置 → 自定义API 中添加图片源",
+                                style = MaterialTheme.typography.bodySmall,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant
+                            )
+                        }
                     }
                 }
                 uiState.images.isNotEmpty() -> {

@@ -9,26 +9,16 @@ import javax.inject.Singleton
 
 @Singleton
 class ApiManager @Inject constructor(
-    private val loliconApi: LoliconImageApi,
-    private val moeImgApi: MoeImgImageApi,
-    private val sexPhotoApi: SexPhotoImageApi,
-    private val koriApi: KoriImageApi,
-    private val xjhApi: XjhImageApi,
-    private val mwmApi: MwmImageApi,
     private val okHttpClient: OkHttpClient
 ) {
-    private val builtInApis = listOf(loliconApi, moeImgApi, sexPhotoApi, koriApi, xjhApi, mwmApi)
     private var customApis: List<CustomApiImageApi> = emptyList()
     private var currentIndex = 0
 
     val currentApi: ImageApi
-        get() {
-            val all = allApis
-            return all.getOrElse(currentIndex) { builtInApis.first() }
-        }
+        get() = allApis.getOrElse(currentIndex) { allApis.firstOrNull() ?: NoOpApi() }
 
     val allApis: List<ImageApi>
-        get() = builtInApis + customApis.filter { it.config.enabled }
+        get() = customApis.filter { it.config.enabled }
 
     val availableApis: List<ImageApi> get() = allApis
 
@@ -64,18 +54,19 @@ class ApiManager @Inject constructor(
     }
 
     suspend fun searchImages(query: String, count: Int = 10): List<ImageModel> {
-        return if (currentApi.supportsSearch) {
-            currentApi.searchImages(query, count)
-        } else {
-            emptyList()
-        }
+        return currentApi.searchImages(query, count)
     }
 
     suspend fun fetchRandomImagesNSFW(count: Int = 10): List<ImageModel> {
-        return if (currentApi.supportsNSFW) {
-            currentApi.fetchRandomImagesNSFW(count)
-        } else {
-            fetchRandomImages(count)
-        }
+        return currentApi.fetchRandomImagesNSFW(count)
     }
+}
+
+private class NoOpApi : ImageApi {
+    override val name = "未配置"
+    override val supportsSearch = false
+    override val supportsNSFW = false
+    override suspend fun fetchRandomImages(count: Int) = emptyList<ImageModel>()
+    override suspend fun searchImages(query: String, count: Int) = emptyList<ImageModel>()
+    override suspend fun fetchRandomImagesNSFW(count: Int) = emptyList<ImageModel>()
 }

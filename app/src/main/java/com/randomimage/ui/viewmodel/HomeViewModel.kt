@@ -35,7 +35,7 @@ data class HomeUiState(
     val isDownloading: Boolean = false,
     val error: String? = null,
     val currentApiName: String = "Lolicon",
-    val availableApis: List<String> = listOf("Lolicon", "萌图", "色图API", "Kori图库", "随机美图", "二次元风景"),
+    val availableApis: List<String> = emptyList(),
     val isNSFW: Boolean = false,
     val searchQuery: String = "",
     val isSearching: Boolean = false,
@@ -68,63 +68,6 @@ class HomeViewModel @Inject constructor(
 
     private val loadMoreMutex = Mutex()
 
-    private val loliconTags = listOf(
-        RecommendedTag("白丝", "白丝"),
-        RecommendedTag("黑丝", "黑丝"),
-        RecommendedTag("泳装", "泳装"),
-        RecommendedTag("比基尼", "比基尼"),
-        RecommendedTag("学校泳装", "学校泳装"),
-        RecommendedTag("女仆", "女仆"),
-        RecommendedTag("兔女郎", "兔女郎"),
-        RecommendedTag("原神", "原神"),
-        RecommendedTag("崩坏", "崩坏"),
-        RecommendedTag("Fate", "Fate"),
-        RecommendedTag("碧蓝航线", "碧蓝航线"),
-        RecommendedTag("舰队", "舰队Collection")
-    )
-
-    private val koriTags = listOf(
-        RecommendedTag("default", "默认"),
-        RecommendedTag("anime", "动漫"),
-        RecommendedTag("landscape", "风景"),
-        RecommendedTag("girl", "少女"),
-        RecommendedTag("R18", "R18")
-    )
-
-    private val sexPhotoTags = listOf(
-        RecommendedTag("碧蓝航线", "碧蓝航线"),
-        RecommendedTag("原神", "原神"),
-        RecommendedTag("Fate", "Fate"),
-        RecommendedTag("东方", "东方"),
-        RecommendedTag("舰队Collection", "舰队Collection"),
-        RecommendedTag("碧蓝档案", "碧蓝档案"),
-        RecommendedTag("少女前线", "少女前线"),
-        RecommendedTag("hololive", "hololive"),
-        RecommendedTag("初音未来", "初音未来"),
-        RecommendedTag("loli", "萝莉"),
-        RecommendedTag("泳装", "泳装"),
-        RecommendedTag("白丝", "白丝")
-    )
-
-    private val moeImgTags = listOf(
-        RecommendedTag("风景", "风景"),
-        RecommendedTag("动漫", "动漫"),
-        RecommendedTag("可爱", "可爱"),
-        RecommendedTag("唯美", "唯美")
-    )
-
-    private val xjhTags = listOf(
-        RecommendedTag("随机", "随机美图"),
-        RecommendedTag("二次元", "二次元"),
-        RecommendedTag("动漫", "动漫")
-    )
-
-    private val mwmTags = listOf(
-        RecommendedTag("风景", "二次元风景"),
-        RecommendedTag("壁纸", "壁纸"),
-        RecommendedTag("唯美", "唯美")
-    )
-
     private val _uiState = MutableStateFlow(HomeUiState())
     val uiState: StateFlow<HomeUiState> = _uiState.asStateFlow()
 
@@ -142,7 +85,7 @@ class HomeViewModel @Inject constructor(
 
         _uiState.value = _uiState.value.copy(
             availableApis = apiManager.availableApis.map { it.name },
-            recommendedTags = loliconTags
+            recommendedTags = emptyList()
         )
 
         viewModelScope.launch {
@@ -282,18 +225,9 @@ class HomeViewModel @Inject constructor(
 
     fun switchApi(index: Int) {
         apiManager.switchApi(index)
-        val tags = when (apiManager.currentApi.name) {
-            "Lolicon" -> loliconTags
-            "萌图" -> moeImgTags
-            "色图API" -> sexPhotoTags
-            "Kori图库" -> koriTags
-            "随机美图" -> xjhTags
-            "二次元风景" -> mwmTags
-            else -> emptyList()
-        }
         _uiState.value = _uiState.value.copy(
             currentApiName = apiManager.currentApi.name,
-            recommendedTags = tags
+            recommendedTags = emptyList()
         )
         loadImages()
     }
