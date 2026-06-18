@@ -3,7 +3,6 @@ package com.randomimage.ui.screens
 import android.widget.Toast
 import androidx.activity.compose.BackHandler
 import androidx.compose.animation.AnimatedVisibility
-import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
 import androidx.compose.animation.slideInVertically
@@ -24,7 +23,6 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
@@ -73,11 +71,13 @@ import com.randomimage.domain.model.ImageModel
 import com.randomimage.util.ImageUtils
 import kotlinx.coroutines.launch
 
-@OptIn(ExperimentalMaterial3Api::class, ExperimentalLayoutApi::class)
+@OptIn(ExperimentalMaterial3Api::class, androidx.compose.foundation.layout.ExperimentalLayoutApi::class)
 @Composable
 fun ImageDetailScreen(
     image: ImageModel,
     onBack: () -> Unit,
+    onSwipeLeft: () -> Unit,
+    onSwipeRight: () -> Unit,
     onFavorite: () -> Unit = {},
     isFavorite: Boolean = false,
     onFollow: () -> Unit = {},
@@ -146,6 +146,12 @@ fun ImageDetailScreen(
             },
             modifier = Modifier
                 .fillMaxSize()
+                .graphicsLayer {
+                    scaleX = scale
+                    scaleY = scale
+                    translationX = offsetX
+                    translationY = offsetY
+                }
                 .pointerInput(Unit) {
                     detectTransformGestures { _, pan, zoom, _ ->
                         scale = (scale * zoom).coerceIn(0.5f, 5f)
@@ -157,6 +163,20 @@ fun ImageDetailScreen(
                             offsetY = 0f
                         }
                     }
+                }
+                .pointerInput(Unit) {
+                    detectHorizontalDragGestures(
+                        onDragEnd = {
+                            if (scale <= 1f) {
+                                if (offsetX > 100) onSwipeRight()
+                                else if (offsetX < -100) onSwipeLeft()
+                                offsetX = 0f
+                            }
+                        },
+                        onHorizontalDrag = { _, dragAmount ->
+                            if (scale <= 1f) offsetX += dragAmount
+                        }
+                    )
                 }
         )
 
@@ -257,22 +277,6 @@ fun ImageDetailScreen(
             }
         }
 
-        if (image.description != null && !showInfo) {
-            Box(
-                modifier = Modifier
-                    .align(Alignment.BottomCenter)
-                    .padding(bottom = 110.dp, start = 16.dp, end = 16.dp)
-            ) {
-                Text(
-                    text = image.description,
-                    style = MaterialTheme.typography.bodySmall,
-                    color = Color.White.copy(alpha = 0.7f),
-                    textAlign = TextAlign.Center,
-                    maxLines = 2
-                )
-            }
-        }
-
         AnimatedVisibility(
             visible = showInfo,
             enter = slideInVertically(initialOffsetY = { it }) + fadeIn(),
@@ -286,7 +290,7 @@ fun ImageDetailScreen(
                 shape = RoundedCornerShape(topStart = 16.dp, topEnd = 16.dp),
                 colors = CardDefaults.cardColors(containerColor = Color.Black.copy(alpha = 0.9f))
             ) {
-                Column(
+                androidx.compose.foundation.layout.Column(
                     modifier = Modifier
                         .fillMaxSize()
                         .verticalScroll(rememberScrollState())
@@ -304,7 +308,7 @@ fun ImageDetailScreen(
                     }
 
                     HorizontalDivider(color = Color.White.copy(alpha = 0.2f))
-                    Spacer(modifier = Modifier.height(12.dp))
+                    androidx.compose.foundation.layout.Spacer(modifier = Modifier.height(12.dp))
 
                     InfoRow("画师", image.user.name)
                     if (image.user.username != image.user.name) {
@@ -318,10 +322,10 @@ fun ImageDetailScreen(
                         InfoRow("宽高比", "%.2f".format(image.aspectRatio))
                     }
                     if (image.tags.isNotEmpty()) {
-                        Spacer(modifier = Modifier.height(8.dp))
+                        androidx.compose.foundation.layout.Spacer(modifier = Modifier.height(8.dp))
                         Text("标签", style = MaterialTheme.typography.bodySmall, color = Color.White.copy(alpha = 0.6f))
-                        Spacer(modifier = Modifier.height(4.dp))
-                        FlowRow(
+                        androidx.compose.foundation.layout.Spacer(modifier = Modifier.height(4.dp))
+                        androidx.compose.foundation.layout.FlowRow(
                             horizontalArrangement = Arrangement.spacedBy(4.dp),
                             verticalArrangement = Arrangement.spacedBy(4.dp)
                         ) {
@@ -333,7 +337,7 @@ fun ImageDetailScreen(
                             }
                         }
                     }
-                    Spacer(modifier = Modifier.height(16.dp))
+                    androidx.compose.foundation.layout.Spacer(modifier = Modifier.height(16.dp))
                 }
             }
         }

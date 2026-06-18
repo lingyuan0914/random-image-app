@@ -373,6 +373,32 @@ class HomeViewModel @Inject constructor(
         }
     }
 
+    fun swipeToNext() {
+        val image = getCurrentImage() ?: return
+        viewModelScope.launch {
+            repository.addToHistory(image)
+        }
+        val state = _uiState.value
+        if (state.currentIndex < state.images.size - 1) {
+            _uiState.value = state.copy(currentIndex = state.currentIndex + 1)
+            checkFavorite()
+        } else {
+            loadImages()
+        }
+    }
+
+    fun swipeToPrev() {
+        val image = getCurrentImage() ?: return
+        viewModelScope.launch {
+            repository.addToHistory(image)
+        }
+        val state = _uiState.value
+        if (state.currentIndex > 0) {
+            _uiState.value = state.copy(currentIndex = state.currentIndex - 1)
+            checkFavorite()
+        }
+    }
+
     fun getCurrentImage(): ImageModel? {
         val state = _uiState.value
         return state.images.getOrNull(state.currentIndex)

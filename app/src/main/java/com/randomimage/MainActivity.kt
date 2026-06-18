@@ -105,6 +105,8 @@ class MainActivity : ComponentActivity() {
                             ImageDetailScreen(
                                 image = currentImage,
                                 onBack = { homeViewModel.setShowDetail(false) },
+                                onSwipeLeft = { homeViewModel.swipeToNext() },
+                                onSwipeRight = { homeViewModel.swipeToPrev() },
                                 onFavorite = { homeViewModel.toggleFavorite() },
                                 isFavorite = homeUiState.isFavorite,
                                 onFollow = { homeViewModel.toggleFollowArtist() },
