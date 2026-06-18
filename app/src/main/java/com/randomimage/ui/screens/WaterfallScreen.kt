@@ -62,7 +62,7 @@ import com.randomimage.ui.viewmodel.HomeViewModel
 @Composable
 fun WaterfallScreen(
     viewModel: HomeViewModel = hiltViewModel(),
-    onImageClick: (Int) -> Unit = {}
+    onImageClick: (com.randomimage.domain.model.ImageModel) -> Unit = {}
 ) {
     val uiState by viewModel.uiState.collectAsState()
     val context = LocalContext.current
@@ -229,7 +229,7 @@ fun WaterfallScreen(
                             Card(
                                 modifier = Modifier
                                     .fillMaxWidth()
-                                    .clickable { onImageClick(index) },
+                                    .clickable { onImageClick(image) },
                                 shape = RoundedCornerShape(4.dp),
                                 elevation = CardDefaults.cardElevation(defaultElevation = 0.dp)
                             ) {

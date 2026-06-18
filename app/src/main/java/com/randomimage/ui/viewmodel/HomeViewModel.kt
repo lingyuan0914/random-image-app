@@ -46,6 +46,7 @@ data class HomeUiState(
     val isFavorite: Boolean = false,
     val isFollowingArtist: Boolean = false,
     val showDetail: Boolean = false,
+    val currentDetailImage: ImageModel? = null,
     val imageQuality: ImageQuality = ImageQuality.MEDIUM,
     val popularTags: List<com.randomimage.data.local.TagEntity> = emptyList(),
     val memoryImages: List<ImageModel> = emptyList()
@@ -283,6 +284,10 @@ class HomeViewModel @Inject constructor(
         }
     }
 
+    fun setCurrentImageDirect(image: ImageModel) {
+        _uiState.value = _uiState.value.copy(currentDetailImage = image)
+    }
+
     fun setCurrentIndex(index: Int) {
         _uiState.value = _uiState.value.copy(currentIndex = index)
         checkFavorite()
@@ -374,13 +379,15 @@ class HomeViewModel @Inject constructor(
     }
 
     fun swipeToNext() {
-        val image = getCurrentImage() ?: return
+        val image = _uiState.value.currentDetailImage ?: return
         viewModelScope.launch {
             repository.addToHistory(image)
         }
         val state = _uiState.value
-        if (state.currentIndex < state.images.size - 1) {
-            _uiState.value = state.copy(currentIndex = state.currentIndex + 1)
+        val currentIndex = state.images.indexOfFirst { it.id == image.id }
+        if (currentIndex >= 0 && currentIndex < state.images.size - 1) {
+            val nextImage = state.images[currentIndex + 1]
+            _uiState.value = state.copy(currentDetailImage = nextImage, currentIndex = currentIndex + 1)
             checkFavorite()
         } else {
             loadImages()
@@ -388,13 +395,15 @@ class HomeViewModel @Inject constructor(
     }
 
     fun swipeToPrev() {
-        val image = getCurrentImage() ?: return
+        val image = _uiState.value.currentDetailImage ?: return
         viewModelScope.launch {
             repository.addToHistory(image)
         }
         val state = _uiState.value
-        if (state.currentIndex > 0) {
-            _uiState.value = state.copy(currentIndex = state.currentIndex - 1)
+        val currentIndex = state.images.indexOfFirst { it.id == image.id }
+        if (currentIndex > 0) {
+            val prevImage = state.images[currentIndex - 1]
+            _uiState.value = state.copy(currentDetailImage = prevImage, currentIndex = currentIndex - 1)
             checkFavorite()
         }
     }

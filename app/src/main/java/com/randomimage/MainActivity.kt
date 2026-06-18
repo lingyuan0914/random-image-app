@@ -100,7 +100,7 @@ class MainActivity : ComponentActivity() {
                     }
                 ) { innerPadding ->
                     if (homeUiState.showDetail) {
-                        val currentImage = homeViewModel.getCurrentImage()
+                        val currentImage = homeUiState.currentDetailImage
                         if (currentImage != null) {
                             ImageDetailScreen(
                                 image = currentImage,
@@ -122,8 +122,8 @@ class MainActivity : ComponentActivity() {
                             composable("home") {
                                 WaterfallScreen(
                                     viewModel = homeViewModel,
-                                    onImageClick = { index ->
-                                        homeViewModel.setCurrentIndex(index)
+                                    onImageClick = { image ->
+                                        homeViewModel.setCurrentImageDirect(image)
                                         homeViewModel.setShowDetail(true)
                                     }
                                 )
