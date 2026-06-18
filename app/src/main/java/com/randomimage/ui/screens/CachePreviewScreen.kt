@@ -17,22 +17,17 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.foundation.lazy.grid.items
-import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowBack
 import androidx.compose.material.icons.filled.Delete
-import androidx.compose.material.icons.filled.Download
-import androidx.compose.material.icons.filled.Favorite
-import androidx.compose.material.icons.filled.FavoriteBorder
-import androidx.compose.material.icons.filled.Share
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
+import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -55,14 +50,12 @@ import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
-import com.randomimage.domain.model.ImageModel
-import com.randomimage.domain.model.ImageUrls
-import com.randomimage.domain.model.User
-import com.randomimage.ui.viewmodel.HomeViewModel
+import coil.compose.AsyncImage
 import com.randomimage.util.CacheManager
 import com.randomimage.util.CacheStats
-import com.randomimage.util.ImageUtils
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 import timber.log.Timber
 import java.io.File
 
@@ -75,8 +68,7 @@ data class CachedImage(
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun CachePreviewScreen(
-    onBack: () -> Unit,
-    viewModel: HomeViewModel? = null
+    onBack: () -> Unit
 ) {
     val context = LocalContext.current
     val scope = rememberCoroutineScope()
@@ -85,12 +77,13 @@ fun CachePreviewScreen(
     var showDeleteDialog by remember { mutableStateOf(false) }
     var selectedImage by remember { mutableStateOf<CachedImage?>(null) }
     var showClearAllDialog by remember { mutableStateOf(false) }
-    var showPreviewDialog by remember { mutableStateOf(false) }
-    var previewImage by remember { mutableStateOf<CachedImage?>(null) }
+    var isLoading by remember { mutableStateOf(true) }
 
     LaunchedEffect(Unit) {
-        cachedImages = loadCachedImages(context)
-        cacheStats = CacheManager.getCacheStats(context)
+        isLoading = true
+        cachedImages = withContext(Dispatchers.IO) { loadCachedImages(context) }
+        cacheStats = withContext(Dispatchers.IO) { CacheManager.getCacheStats(context) }
+        isLoading = false
     }
 
     BackHandler { onBack() }
@@ -125,47 +118,45 @@ fun CachePreviewScreen(
             )
         }
 
-        if (cachedImages.isEmpty()) {
-            Box(
-                modifier = Modifier.fillMaxSize(),
-                contentAlignment = Alignment.Center
-            ) {
-                Text(
-                    text = "暂无缓存图片",
-                    style = MaterialTheme.typography.bodyLarge,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant
-                )
+        when {
+            isLoading -> {
+                Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+                    CircularProgressIndicator()
+                }
             }
-        } else {
-            LazyVerticalGrid(
-                columns = GridCells.Fixed(3),
-                contentPadding = PaddingValues(8.dp),
-                horizontalArrangement = Arrangement.spacedBy(4.dp),
-                verticalArrangement = Arrangement.spacedBy(4.dp)
-            ) {
-                items(cachedImages) { cachedImage ->
-                    Card(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .height(120.dp)
-                            .clickable {
-                                previewImage = cachedImage
-                                showPreviewDialog = true
-                            },
-                        shape = RoundedCornerShape(8.dp),
-                        elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
-                    ) {
-                        val bitmap = remember(cachedImage.file) {
-                            try {
-                                BitmapFactory.decodeFile(cachedImage.file.absolutePath)
-                            } catch (e: Exception) {
-                                null
-                            }
-                        }
-
-                        if (bitmap != null) {
-                            Image(
-                                bitmap = bitmap.asImageBitmap(),
+            cachedImages.isEmpty() -> {
+                Box(
+                    modifier = Modifier.fillMaxSize(),
+                    contentAlignment = Alignment.Center
+                ) {
+                    Text(
+                        text = "暂无缓存图片",
+                        style = MaterialTheme.typography.bodyLarge,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                }
+            }
+            else -> {
+                LazyVerticalGrid(
+                    columns = GridCells.Fixed(3),
+                    contentPadding = PaddingValues(8.dp),
+                    horizontalArrangement = Arrangement.spacedBy(4.dp),
+                    verticalArrangement = Arrangement.spacedBy(4.dp)
+                ) {
+                    items(cachedImages, key = { it.file.absolutePath }) { cachedImage ->
+                        Card(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .height(120.dp)
+                                .clickable {
+                                    selectedImage = cachedImage
+                                    showDeleteDialog = true
+                                },
+                            shape = RoundedCornerShape(8.dp),
+                            elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
+                        ) {
+                            AsyncImage(
+                                model = cachedImage.file,
                                 contentDescription = cachedImage.name,
                                 contentScale = ContentScale.Crop,
                                 modifier = Modifier.fillMaxSize()
@@ -177,15 +168,15 @@ fun CachePreviewScreen(
         }
     }
 
-    if (showPreviewDialog && previewImage != null) {
-        val bitmap = remember(previewImage?.file) {
-            previewImage?.file?.let { BitmapFactory.decodeFile(it.absolutePath) }
+    if (showDeleteDialog && selectedImage != null) {
+        val bitmap = remember(selectedImage?.file) {
+            selectedImage?.file?.let { BitmapFactory.decodeFile(it.absolutePath) }
         }
 
         AlertDialog(
             onDismissRequest = {
-                showPreviewDialog = false
-                previewImage = null
+                showDeleteDialog = false
+                selectedImage = null
             },
             title = { Text("图片预览") },
             text = {
@@ -201,102 +192,30 @@ fun CachePreviewScreen(
                                 .clip(RoundedCornerShape(8.dp))
                         )
                     }
-                    Spacer(modifier = Modifier.height(12.dp))
-                    Row(
-                        modifier = Modifier.fillMaxWidth(),
-                        horizontalArrangement = Arrangement.SpaceEvenly
-                    ) {
-                        IconButton(
-                            onClick = {
-                                scope.launch {
-                                    val success = ImageUtils.downloadImage(context, previewImage?.file?.absolutePath ?: "")
-                                    Toast.makeText(
-                                        context,
-                                        if (success) "下载成功" else "下载失败",
-                                        Toast.LENGTH_SHORT
-                                    ).show()
-                                }
-                            }
-                        ) {
-                            Icon(Icons.Default.Download, contentDescription = "下载")
-                        }
-                        IconButton(
-                            onClick = {
-                                previewImage?.file?.let { file ->
-                                    val imageModel = ImageModel(
-                                        id = file.nameWithoutExtension,
-                                        urls = ImageUrls(
-                                            raw = file.absolutePath,
-                                            full = file.absolutePath,
-                                            regular = file.absolutePath,
-                                            small = file.absolutePath,
-                                            thumb = file.absolutePath
-                                        ),
-                                        user = User(id = "", username = "", name = "缓存图片"),
-                                        description = null
-                                    )
-                                    viewModel?.let { vm ->
-                                        vm.toggleFavorite()
-                                    }
-                                    Toast.makeText(context, "已添加到收藏", Toast.LENGTH_SHORT).show()
-                                }
-                            }
-                        ) {
-                            Icon(Icons.Default.Favorite, contentDescription = "收藏", tint = Color.Red)
-                        }
-                        IconButton(
-                            onClick = {
-                                previewImage?.file?.let { file ->
-                                    ImageUtils.shareImage(context, file.absolutePath)
-                                }
-                            }
-                        ) {
-                            Icon(Icons.Default.Share, contentDescription = "分享")
-                        }
-                    }
+                    Spacer(modifier = Modifier.height(8.dp))
+                    Text(
+                        text = selectedImage?.name ?: "",
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                    Text(
+                        text = CacheManager.formatSize(selectedImage?.size ?: 0),
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
                 }
             },
             confirmButton = {
                 TextButton(onClick = {
-                    showPreviewDialog = false
-                    previewImage = null
+                    selectedImage?.file?.delete()
+                    cachedImages = cachedImages.filter { it.file != selectedImage?.file }
+                    scope.launch {
+                        cacheStats = withContext(Dispatchers.IO) { CacheManager.getCacheStats(context) }
+                    }
+                    showDeleteDialog = false
+                    selectedImage = null
                 }) {
-                    Text("关闭")
-                }
-            },
-            dismissButton = {
-                TextButton(
-                    onClick = {
-                        selectedImage = previewImage
-                        showPreviewDialog = false
-                        showDeleteDialog = true
-                    }
-                ) {
                     Text("删除", color = MaterialTheme.colorScheme.error)
-                }
-            }
-        )
-    }
-
-    if (showDeleteDialog && selectedImage != null) {
-        AlertDialog(
-            onDismissRequest = {
-                showDeleteDialog = false
-                selectedImage = null
-            },
-            title = { Text("删除缓存") },
-            text = { Text("确定要删除这张缓存图片吗？") },
-            confirmButton = {
-                TextButton(
-                    onClick = {
-                        selectedImage?.file?.delete()
-                        cachedImages = cachedImages.filter { it.file != selectedImage?.file }
-                        cacheStats = CacheManager.getCacheStats(context)
-                        showDeleteDialog = false
-                        selectedImage = null
-                    }
-                ) {
-                    Text("删除")
                 }
             },
             dismissButton = {
@@ -304,7 +223,7 @@ fun CachePreviewScreen(
                     showDeleteDialog = false
                     selectedImage = null
                 }) {
-                    Text("取消")
+                    Text("关闭")
                 }
             }
         )
@@ -316,14 +235,14 @@ fun CachePreviewScreen(
             title = { Text("清除全部缓存") },
             text = { Text("确定要清除所有缓存图片吗？") },
             confirmButton = {
-                TextButton(
-                    onClick = {
-                        CacheManager.clearDiskCache(context)
-                        cachedImages = emptyList()
-                        cacheStats = CacheStats(0, 0, 0, 0)
-                        showClearAllDialog = false
-                    }
-                ) {
+                TextButton(onClick = {
+                    CacheManager.clearDiskCache(context)
+                    val customDir = File(context.cacheDir, "custom_api_images")
+                    if (customDir.exists()) customDir.deleteRecursively()
+                    cachedImages = emptyList()
+                    cacheStats = CacheStats(0, 0, 0, 0)
+                    showClearAllDialog = false
+                }) {
                     Text("确定")
                 }
             },
@@ -337,28 +256,35 @@ fun CachePreviewScreen(
 }
 
 private fun loadCachedImages(context: Context): List<CachedImage> {
-    val cacheDir = File(context.cacheDir, "image_cache")
-    Timber.d("Cache dir: ${cacheDir.absolutePath}, exists: ${cacheDir.exists()}")
+    val images = mutableListOf<CachedImage>()
 
-    if (!cacheDir.exists()) {
-        cacheDir.mkdirs()
-        return emptyList()
+    // Scan Coil disk cache
+    val coilCacheDir = File(context.cacheDir, "image_cache")
+    if (coilCacheDir.exists()) {
+        coilCacheDir.walkTopDown()
+            .filter { file ->
+                file.isFile &&
+                file.name != "journal" &&
+                file.name.endsWith(".1") &&
+                file.length() > 1000
+            }
+            .forEach { file ->
+                images.add(CachedImage(file = file, name = file.name, size = file.length()))
+            }
     }
 
-    return cacheDir.walkTopDown()
-        .filter { file ->
-            file.isFile &&
-            file.name != "journal" &&
-            file.name.endsWith(".1") &&
-            file.length() > 1000
-        }
-        .map { file ->
-            CachedImage(
-                file = file,
-                name = file.name,
-                size = file.length()
-            )
-        }
-        .sortedByDescending { it.file.lastModified() }
-        .toList()
+    // Scan custom API images
+    val customDir = File(context.cacheDir, "custom_api_images")
+    if (customDir.exists()) {
+        customDir.walkTopDown()
+            .filter { file ->
+                file.isFile &&
+                file.length() > 1000
+            }
+            .forEach { file ->
+                images.add(CachedImage(file = file, name = file.name, size = file.length()))
+            }
+    }
+
+    return images.sortedByDescending { it.file.lastModified() }
 }
