@@ -26,6 +26,7 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
+import androidx.compose.material3.Slider
 import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
@@ -124,6 +125,27 @@ fun CustomApisScreen(
                                     typeLabel,
                                     style = MaterialTheme.typography.labelSmall,
                                     color = MaterialTheme.colorScheme.primary
+                                )
+                                val rateText = if (api.rateLimit <= 0) "无限制" else "${api.rateLimit} 次/${api.rateLimitWindow}秒"
+                                Text(
+                                    "速率限制: $rateText",
+                                    style = MaterialTheme.typography.labelSmall,
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                                )
+                                Spacer(modifier = Modifier.height(4.dp))
+                                Slider(
+                                    value = api.rateLimit.toFloat(),
+                                    onValueChange = { newValue ->
+                                        val newApis = apis.map { if (it.id == api.id) it.copy(rateLimit = newValue.toInt()) else it }
+                                        apis = newApis
+                                    },
+                                    onValueChangeFinished = {
+                                        CustomApiManager.updateRateLimit(api.id, api.rateLimit, api.rateLimitWindow)
+                                        onApisChanged()
+                                    },
+                                    valueRange = 0f..50f,
+                                    steps = 49,
+                                    modifier = Modifier.fillMaxWidth()
                                 )
                             }
                             Switch(

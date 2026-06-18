@@ -26,6 +26,7 @@ class CustomApiImageApi(
     override val supportsNSFW: Boolean = true
 
     private val counter = AtomicInteger(0)
+    private val requestTimestamps = mutableListOf<Long>()
 
     override suspend fun fetchRandomImages(count: Int): List<ImageModel> {
         return withContext(Dispatchers.IO) { fetchImages(count) }
@@ -39,7 +40,23 @@ class CustomApiImageApi(
         return withContext(Dispatchers.IO) { fetchImages(count) }
     }
 
+    private fun checkRateLimit(): Boolean {
+        if (config.rateLimit <= 0) return true
+        val now = System.currentTimeMillis()
+        val windowMs = config.rateLimitWindow * 1000L
+        synchronized(requestTimestamps) {
+            requestTimestamps.removeAll { now - it > windowMs }
+            if (requestTimestamps.size >= config.rateLimit) {
+                Timber.w("Custom API ${config.name} rate limited: ${requestTimestamps.size}/${config.rateLimit} in ${config.rateLimitWindow}s")
+                return false
+            }
+            requestTimestamps.add(now)
+        }
+        return true
+    }
+
     private fun fetchImages(count: Int): List<ImageModel> {
+        if (!checkRateLimit()) return emptyList()
         val apiType = try { ApiType.valueOf(config.apiType) } catch (_: Exception) { ApiType.AUTO }
 
         return when (apiType) {

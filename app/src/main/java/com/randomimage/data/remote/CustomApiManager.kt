@@ -18,7 +18,9 @@ data class CustomApiConfig(
     val name: String,
     val url: String,
     val enabled: Boolean = true,
-    val apiType: String = ApiType.AUTO.name
+    val apiType: String = ApiType.AUTO.name,
+    val rateLimit: Int = 0,
+    val rateLimitWindow: Int = 10
 )
 
 data class PresetApi(
@@ -61,10 +63,10 @@ object CustomApiManager {
         }
     }
 
-    fun addCustomApi(name: String, url: String, apiType: ApiType = ApiType.AUTO) {
+    fun addCustomApi(name: String, url: String, apiType: ApiType = ApiType.AUTO, rateLimit: Int = 0, rateLimitWindow: Int = 10) {
         val apis = getCustomApis().toMutableList()
         val id = "custom_${System.currentTimeMillis()}"
-        apis.add(CustomApiConfig(id = id, name = name, url = url, apiType = apiType.name))
+        apis.add(CustomApiConfig(id = id, name = name, url = url, apiType = apiType.name, rateLimit = rateLimit, rateLimitWindow = rateLimitWindow))
         saveApis(apis)
     }
 
@@ -79,6 +81,15 @@ object CustomApiManager {
         val index = apis.indexOfFirst { it.id == id }
         if (index >= 0) {
             apis[index] = apis[index].copy(enabled = !apis[index].enabled)
+            saveApis(apis)
+        }
+    }
+
+    fun updateRateLimit(id: String, rateLimit: Int, rateLimitWindow: Int) {
+        val apis = getCustomApis().toMutableList()
+        val index = apis.indexOfFirst { it.id == id }
+        if (index >= 0) {
+            apis[index] = apis[index].copy(rateLimit = rateLimit, rateLimitWindow = rateLimitWindow)
             saveApis(apis)
         }
     }

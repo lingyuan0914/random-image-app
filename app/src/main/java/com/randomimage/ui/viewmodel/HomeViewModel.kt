@@ -46,6 +46,7 @@ data class HomeUiState(
     val isFavorite: Boolean = false,
     val isFollowingArtist: Boolean = false,
     val showDetail: Boolean = false,
+    val detailImage: ImageModel? = null,
     val imageQuality: ImageQuality = ImageQuality.MEDIUM,
     val popularTags: List<com.randomimage.data.local.TagEntity> = emptyList(),
     val memoryImages: List<ImageModel> = emptyList()
@@ -289,8 +290,12 @@ class HomeViewModel @Inject constructor(
     }
 
     fun setCurrentIndex(index: Int) {
-        _uiState.value = _uiState.value.copy(currentIndex = index)
+        _uiState.value = _uiState.value.copy(currentIndex = index, detailImage = null)
         checkFavorite()
+    }
+
+    fun setDetailImage(image: ImageModel) {
+        _uiState.value = _uiState.value.copy(detailImage = image, showDetail = true)
     }
 
     fun setShowDetail(show: Boolean) {

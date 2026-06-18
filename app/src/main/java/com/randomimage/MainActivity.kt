@@ -100,7 +100,7 @@ class MainActivity : ComponentActivity() {
                     }
                 ) { innerPadding ->
                     if (homeUiState.showDetail) {
-                        val currentImage = homeViewModel.getCurrentImage()
+                        val currentImage = homeUiState.detailImage ?: homeViewModel.getCurrentImage()
                         if (currentImage != null) {
                             ImageDetailScreen(
                                 image = currentImage,
@@ -155,7 +155,12 @@ class MainActivity : ComponentActivity() {
                                 )
                             }
                             composable("cache_preview") {
-                                CachePreviewScreen(onBack = { navController.popBackStack() })
+                                CachePreviewScreen(
+                                    onBack = { navController.popBackStack() },
+                                    onImageClick = { image ->
+                                        homeViewModel.setDetailImage(image)
+                                    }
+                                )
                             }
                             composable("image_crop/{imageUrl}") { backStackEntry ->
                                 val imageUrl = backStackEntry.arguments?.getString("imageUrl") ?: ""

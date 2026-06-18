@@ -68,7 +68,8 @@ data class CachedImage(
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun CachePreviewScreen(
-    onBack: () -> Unit
+    onBack: () -> Unit,
+    onImageClick: (com.randomimage.domain.model.ImageModel) -> Unit = {}
 ) {
     val context = LocalContext.current
     val scope = rememberCoroutineScope()
@@ -149,8 +150,20 @@ fun CachePreviewScreen(
                                 .fillMaxWidth()
                                 .height(120.dp)
                                 .clickable {
-                                    selectedImage = cachedImage
-                                    showDeleteDialog = true
+                                    val fileUri = "file://${cachedImage.file.absolutePath}"
+                                    val imageModel = com.randomimage.domain.model.ImageModel(
+                                        id = "cache_${cachedImage.file.nameWithoutExtension}",
+                                        urls = com.randomimage.domain.model.ImageUrls(
+                                            raw = fileUri, full = fileUri, regular = fileUri,
+                                            small = fileUri, thumb = fileUri
+                                        ),
+                                        user = com.randomimage.domain.model.User(
+                                            id = "", username = "", name = "缓存图片"
+                                        ),
+                                        description = cachedImage.name,
+                                        localPath = cachedImage.file.absolutePath
+                                    )
+                                    onImageClick(imageModel)
                                 },
                             shape = RoundedCornerShape(8.dp),
                             elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
