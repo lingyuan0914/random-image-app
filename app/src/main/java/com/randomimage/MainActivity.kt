@@ -74,6 +74,13 @@ class MainActivity : ComponentActivity() {
                 val navController = rememberNavController()
                 val homeViewModel: HomeViewModel = hiltViewModel()
                 val homeUiState by homeViewModel.uiState.collectAsState()
+                val currentRoute = navController.currentBackStackEntryAsState().value?.destination?.route
+
+                LaunchedEffect(currentRoute) {
+                    if (currentRoute != null && currentRoute != "home" && homeUiState.showDetail) {
+                        homeViewModel.setShowDetail(false)
+                    }
+                }
 
                 Scaffold(
                     modifier = Modifier.fillMaxSize(),

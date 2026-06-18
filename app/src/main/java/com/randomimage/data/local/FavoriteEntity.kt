@@ -33,7 +33,9 @@ data class FavoriteEntity(
                 name = photographerName
             ),
             description = description,
-            groupId = groupId
+            groupId = groupId,
+            tags = if (tags.isNotBlank()) tags.split(",") else emptyList(),
+            localPath = if (imageUrl.startsWith("file://")) imageUrl.removePrefix("file://") else null
         )
     }
 

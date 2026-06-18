@@ -310,6 +310,9 @@ class HomeViewModel @Inject constructor(
 
     fun setShowDetail(show: Boolean) {
         _uiState.value = _uiState.value.copy(showDetail = show)
+        if (!show) {
+            _uiState.value = _uiState.value.copy(detailImage = null, expandImageBounds = null)
+        }
     }
 
     private fun checkFavorite() {
