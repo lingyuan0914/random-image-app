@@ -63,9 +63,10 @@ class CustomApiImageApi(
                 val imageUrl = response.request.url.toString()
                 response.close()
 
+                val uniqueUrl = "${imageUrl}?_t=${System.nanoTime()}_$c"
                 images.add(ImageModel(
                     id = "custom_${config.id}_${System.nanoTime()}_$c",
-                    urls = ImageUrls(raw = imageUrl, full = imageUrl, regular = imageUrl, small = imageUrl, thumb = imageUrl),
+                    urls = ImageUrls(raw = uniqueUrl, full = uniqueUrl, regular = uniqueUrl, small = uniqueUrl, thumb = uniqueUrl),
                     user = User(id = config.id, username = config.name, name = config.name),
                     description = "${config.name} #$c",
                     likes = 0
@@ -147,7 +148,8 @@ class CustomApiImageApi(
 
                 if (contentType.contains("image/")) {
                     val imageUrl = response.request.url.toString()
-                    images.add(makeImageModel(imageUrl, c))
+                    val uniqueUrl = "${imageUrl}?_t=${System.nanoTime()}_$c"
+                    images.add(makeImageModel(uniqueUrl, c))
                     response.close()
                 } else if (contentType.contains("json")) {
                     val body = response.body?.string() ?: ""
@@ -156,7 +158,8 @@ class CustomApiImageApi(
                     images.addAll(parsed)
                 } else {
                     val imageUrl = response.request.url.toString()
-                    images.add(makeImageModel(imageUrl, c))
+                    val uniqueUrl = "${imageUrl}?_t=${System.nanoTime()}_$c"
+                    images.add(makeImageModel(uniqueUrl, c))
                     response.close()
                 }
             }
