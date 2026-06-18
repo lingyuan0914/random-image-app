@@ -46,7 +46,6 @@ data class HomeUiState(
     val isFavorite: Boolean = false,
     val isFollowingArtist: Boolean = false,
     val showDetail: Boolean = false,
-    val isWaterfall: Boolean = false,
     val imageQuality: ImageQuality = ImageQuality.MEDIUM,
     val popularTags: List<com.randomimage.data.local.TagEntity> = emptyList(),
     val memoryImages: List<ImageModel> = emptyList()
@@ -246,22 +245,6 @@ class HomeViewModel @Inject constructor(
         loadImages()
     }
 
-    fun swipeRight() {
-        val currentImage = getCurrentImage() ?: return
-        viewModelScope.launch {
-            repository.addToHistory(currentImage)
-            nextImage()
-        }
-    }
-
-    fun swipeLeft() {
-        val currentImage = getCurrentImage() ?: return
-        viewModelScope.launch {
-            repository.addToHistory(currentImage)
-            nextImage()
-        }
-    }
-
     private fun nextImage() {
         val state = _uiState.value
         if (state.currentIndex < state.images.size - 1) {
@@ -307,10 +290,6 @@ class HomeViewModel @Inject constructor(
 
     fun setShowDetail(show: Boolean) {
         _uiState.value = _uiState.value.copy(showDetail = show)
-    }
-
-    fun setIsWaterfall(waterfall: Boolean) {
-        _uiState.value = _uiState.value.copy(isWaterfall = waterfall)
     }
 
     private fun checkFavorite() {

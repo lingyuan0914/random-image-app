@@ -78,14 +78,10 @@ import kotlinx.coroutines.launch
 fun ImageDetailScreen(
     image: ImageModel,
     onBack: () -> Unit,
-    onSwipeLeft: () -> Unit,
-    onSwipeRight: () -> Unit,
     onFavorite: () -> Unit = {},
     isFavorite: Boolean = false,
     onFollow: () -> Unit = {},
-    isFollowing: Boolean = false,
-    imageIndex: Int = 0,
-    totalImages: Int = 1
+    isFollowing: Boolean = false
 ) {
     val context = LocalContext.current
     val scope = rememberCoroutineScope()
@@ -95,9 +91,6 @@ fun ImageDetailScreen(
     var showInfo by remember { mutableStateOf(false) }
     var showTopBar by remember { mutableStateOf(true) }
     var showBottomBar by remember { mutableStateOf(true) }
-
-    val animatedOffsetX by animateFloatAsState(targetValue = offsetX, label = "offsetX")
-    val animatedScale by animateFloatAsState(targetValue = scale, label = "scale")
 
     BackHandler { onBack() }
 
@@ -153,12 +146,6 @@ fun ImageDetailScreen(
             },
             modifier = Modifier
                 .fillMaxSize()
-                .graphicsLayer {
-                    translationX = animatedOffsetX
-                    translationY = offsetY
-                    scaleX = animatedScale
-                    scaleY = animatedScale
-                }
                 .pointerInput(Unit) {
                     detectTransformGestures { _, pan, zoom, _ ->
                         scale = (scale * zoom).coerceIn(0.5f, 5f)
@@ -170,20 +157,6 @@ fun ImageDetailScreen(
                             offsetY = 0f
                         }
                     }
-                }
-                .pointerInput(Unit) {
-                    detectHorizontalDragGestures(
-                        onDragEnd = {
-                            if (scale <= 1f) {
-                                if (offsetX > 100) onSwipeRight()
-                                else if (offsetX < -100) onSwipeLeft()
-                                offsetX = 0f
-                            }
-                        },
-                        onHorizontalDrag = { _, dragAmount ->
-                            if (scale <= 1f) offsetX += dragAmount
-                        }
-                    )
                 }
         )
 
@@ -212,19 +185,13 @@ fun ImageDetailScreen(
                     IconButton(onClick = onBack) {
                         Icon(Icons.Default.ArrowBack, contentDescription = "返回", tint = Color.White)
                     }
-                    Column(modifier = Modifier.weight(1f)) {
-                        Text(
-                            text = image.user.name,
-                            style = MaterialTheme.typography.bodyMedium,
-                            color = Color.White,
-                            fontWeight = FontWeight.Bold
-                        )
-                        Text(
-                            text = "${imageIndex + 1}/$totalImages",
-                            style = MaterialTheme.typography.bodySmall,
-                            color = Color.White.copy(alpha = 0.7f)
-                        )
-                    }
+                    Text(
+                        text = image.user.name,
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = Color.White,
+                        fontWeight = FontWeight.Bold,
+                        modifier = Modifier.weight(1f)
+                    )
                     IconButton(onClick = { showInfo = !showInfo }) {
                         Icon(
                             Icons.Default.Info,

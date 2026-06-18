@@ -8,11 +8,9 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.DarkMode
-import androidx.compose.material.icons.filled.GridView
 import androidx.compose.material.icons.filled.LightMode
 import androidx.compose.material.icons.filled.Refresh
 import androidx.compose.material.icons.filled.Settings
-import androidx.compose.material.icons.filled.ViewCarousel
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -34,7 +32,6 @@ import com.randomimage.ui.screens.CachePreviewScreen
 import com.randomimage.ui.screens.CloudSyncScreen
 import com.randomimage.ui.screens.CustomApisScreen
 import com.randomimage.ui.screens.FavoritesScreen
-import com.randomimage.ui.screens.HomeScreen
 import com.randomimage.ui.screens.ImageCropScreen
 import com.randomimage.ui.screens.ImageDetailScreen
 import com.randomimage.ui.screens.LogScreen
@@ -74,12 +71,6 @@ class MainActivity : ComponentActivity() {
                                             contentDescription = if (isDark) "浅色模式" else "深色模式"
                                         )
                                     }
-                                    IconButton(onClick = { homeViewModel.setIsWaterfall(!homeUiState.isWaterfall) }) {
-                                        Icon(
-                                            imageVector = if (homeUiState.isWaterfall) Icons.Default.ViewCarousel else Icons.Default.GridView,
-                                            contentDescription = if (homeUiState.isWaterfall) "切换卡片" else "切换瀑布流"
-                                        )
-                                    }
                                     IconButton(onClick = { navController.navigate("settings") }) {
                                         Icon(Icons.Default.Settings, contentDescription = "设置")
                                     }
@@ -114,18 +105,10 @@ class MainActivity : ComponentActivity() {
                             ImageDetailScreen(
                                 image = currentImage,
                                 onBack = { homeViewModel.setShowDetail(false) },
-                                onSwipeLeft = {
-                                    homeViewModel.swipeLeft()
-                                },
-                                onSwipeRight = {
-                                    homeViewModel.swipeRight()
-                                },
                                 onFavorite = { homeViewModel.toggleFavorite() },
                                 isFavorite = homeUiState.isFavorite,
                                 onFollow = { homeViewModel.toggleFollowArtist() },
-                                isFollowing = homeUiState.isFollowingArtist,
-                                imageIndex = homeUiState.currentIndex,
-                                totalImages = homeUiState.images.size
+                                isFollowing = homeUiState.isFollowingArtist
                             )
                         }
                     } else {
@@ -135,20 +118,13 @@ class MainActivity : ComponentActivity() {
                             modifier = Modifier.padding(innerPadding)
                         ) {
                             composable("home") {
-                                if (homeUiState.isWaterfall) {
-                                    WaterfallScreen(
-                                        viewModel = homeViewModel,
-                                        onImageClick = { index ->
-                                            homeViewModel.setCurrentIndex(index)
-                                            homeViewModel.setShowDetail(true)
-                                        }
-                                    )
-                                } else {
-                                    HomeScreen(
-                                        viewModel = homeViewModel,
-                                        onImageClick = { homeViewModel.setShowDetail(true) }
-                                    )
-                                }
+                                WaterfallScreen(
+                                    viewModel = homeViewModel,
+                                    onImageClick = { index ->
+                                        homeViewModel.setCurrentIndex(index)
+                                        homeViewModel.setShowDetail(true)
+                                    }
+                                )
                             }
                             composable("favorites") {
                                 FavoritesScreen(
