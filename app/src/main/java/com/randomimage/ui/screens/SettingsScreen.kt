@@ -24,6 +24,7 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.RadioButton
+import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.TopAppBar
@@ -62,6 +63,7 @@ fun SettingsScreen(
     var showThemeDialog by remember { mutableStateOf(false) }
     var showQualityDialog by remember { mutableStateOf(false) }
     val themeMode = remember { mutableStateOf(ThemeManager.getThemeMode(context)) }
+    var predictiveBack by remember { mutableStateOf(ThemeManager.getPredictiveBack(context)) }
     var imageQuality by remember { mutableStateOf("中等") }
 
     Column(modifier = Modifier.fillMaxSize()) {
@@ -139,6 +141,23 @@ fun SettingsScreen(
                                 style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant
                             )
                         }
+                    }
+                    Spacer(modifier = Modifier.height(8.dp))
+                    Row(modifier = Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
+                        Column(modifier = Modifier.weight(1f)) {
+                            Text("预测性返回动画")
+                            Text(
+                                if (predictiveBack) "已开启" else "已关闭",
+                                style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant
+                            )
+                        }
+                        Switch(
+                            checked = predictiveBack,
+                            onCheckedChange = {
+                                predictiveBack = it
+                                ThemeManager.setPredictiveBack(context, it)
+                            }
+                        )
                     }
                 }
             }

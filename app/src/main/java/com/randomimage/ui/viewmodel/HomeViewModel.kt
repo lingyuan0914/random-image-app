@@ -47,6 +47,7 @@ data class HomeUiState(
     val isFollowingArtist: Boolean = false,
     val showDetail: Boolean = false,
     val detailImage: ImageModel? = null,
+    val expandImageBounds: androidx.compose.ui.geometry.Rect? = null,
     val imageQuality: ImageQuality = ImageQuality.MEDIUM,
     val popularTags: List<com.randomimage.data.local.TagEntity> = emptyList(),
     val memoryImages: List<ImageModel> = emptyList()
@@ -294,8 +295,17 @@ class HomeViewModel @Inject constructor(
         checkFavorite()
     }
 
-    fun setDetailImage(image: ImageModel) {
-        _uiState.value = _uiState.value.copy(detailImage = image, showDetail = true)
+    fun setDetailImage(image: ImageModel, bounds: androidx.compose.ui.geometry.Rect? = null) {
+        _uiState.value = _uiState.value.copy(detailImage = image, expandImageBounds = bounds, showDetail = true)
+    }
+
+    fun setExpandBounds(bounds: FloatArray) {
+        val rect = androidx.compose.ui.geometry.Rect(bounds[0], bounds[1], bounds[2], bounds[3])
+        _uiState.value = _uiState.value.copy(expandImageBounds = rect)
+    }
+
+    fun clearExpandBounds() {
+        _uiState.value = _uiState.value.copy(expandImageBounds = null)
     }
 
     fun setShowDetail(show: Boolean) {

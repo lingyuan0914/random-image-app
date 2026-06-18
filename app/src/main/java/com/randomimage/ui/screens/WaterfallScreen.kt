@@ -48,7 +48,10 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.geometry.Rect
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.layout.onGloballyPositioned
+import androidx.compose.ui.layout.positionInRoot
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.unit.dp
@@ -226,10 +229,23 @@ fun WaterfallScreen(
                             items = uiState.images,
                             key = { index, image -> "${image.id}_$index" }
                         ) { index, image ->
+                            var itemBounds by remember { mutableStateOf(androidx.compose.ui.geometry.Rect.Zero) }
                             Card(
                                 modifier = Modifier
                                     .fillMaxWidth()
-                                    .clickable { onImageClick(image) },
+                                    .onGloballyPositioned { coordinates ->
+                                        val pos = coordinates.positionInRoot()
+                                        val size = coordinates.size
+                                        itemBounds = androidx.compose.ui.geometry.Rect(
+                                            pos.x, pos.y, pos.x + size.width, pos.y + size.height
+                                        )
+                                    }
+                                    .clickable {
+                                        viewModel.setExpandBounds(
+                                            floatArrayOf(itemBounds.left, itemBounds.top, itemBounds.right, itemBounds.bottom)
+                                        )
+                                        onImageClick(image)
+                                    },
                                 shape = RoundedCornerShape(4.dp),
                                 elevation = CardDefaults.cardElevation(defaultElevation = 0.dp)
                             ) {
