@@ -90,17 +90,17 @@ class HomeViewModel @Inject constructor(
 
         viewModelScope.launch {
             favoritesFlow.collect { favorites ->
-                _uiState.value = _uiState.value.copy(favorites = favorites)
+                _uiState.value = _uiState.value.copy(favorites = favorites, currentDetailImage = _uiState.value.currentDetailImage)
             }
         }
         viewModelScope.launch {
             historyFlow.collect { history ->
-                _uiState.value = _uiState.value.copy(history = history)
+                _uiState.value = _uiState.value.copy(history = history, currentDetailImage = _uiState.value.currentDetailImage)
             }
         }
         viewModelScope.launch {
             recentSearchesFlow.collect { searches ->
-                _uiState.value = _uiState.value.copy(recentSearches = searches)
+                _uiState.value = _uiState.value.copy(recentSearches = searches, currentDetailImage = _uiState.value.currentDetailImage)
             }
         }
 
@@ -138,7 +138,8 @@ class HomeViewModel @Inject constructor(
                     images = images,
                     currentIndex = 0,
                     isLoading = false,
-                    currentApiName = apiManager.currentApi.name
+                    currentApiName = apiManager.currentApi.name,
+                    currentDetailImage = _uiState.value.currentDetailImage
                 )
                 StatsManager.incrementViewCount(getApplication())
                 images.forEach { image ->
@@ -173,7 +174,8 @@ class HomeViewModel @Inject constructor(
                     if (uniqueNewImages.isNotEmpty()) {
                         _uiState.value = _uiState.value.copy(
                             images = _uiState.value.images + uniqueNewImages,
-                            isLoading = false
+                            isLoading = false,
+                            currentDetailImage = _uiState.value.currentDetailImage
                         )
                         Timber.d("Loaded ${uniqueNewImages.size} more images")
                     } else {
