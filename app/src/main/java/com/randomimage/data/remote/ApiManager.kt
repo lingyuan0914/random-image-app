@@ -4,6 +4,7 @@ import android.content.Context
 import com.randomimage.domain.model.ImageModel
 import okhttp3.OkHttpClient
 import timber.log.Timber
+import java.io.File
 import javax.inject.Inject
 import javax.inject.Singleton
 
@@ -13,6 +14,7 @@ class ApiManager @Inject constructor(
 ) {
     private var customApis: List<CustomApiImageApi> = emptyList()
     private var currentIndex = 0
+    private var cacheDir: File? = null
 
     val currentApi: ImageApi
         get() = allApis.getOrElse(currentIndex) { allApis.firstOrNull() ?: NoOpApi() }
@@ -24,13 +26,14 @@ class ApiManager @Inject constructor(
 
     fun init(context: Context) {
         CustomApiManager.init(context)
+        cacheDir = context.cacheDir
         refreshCustomApis()
     }
 
     fun refreshCustomApis() {
         customApis = CustomApiManager.getCustomApis()
             .filter { it.enabled }
-            .map { CustomApiImageApi(it, okHttpClient) }
+            .map { CustomApiImageApi(it, okHttpClient, cacheDir) }
         if (currentIndex >= allApis.size) {
             currentIndex = 0
         }

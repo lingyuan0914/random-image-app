@@ -235,7 +235,7 @@ fun WaterfallScreen(
                             ) {
                                 AsyncImage(
                                     model = ImageRequest.Builder(context)
-                                        .data(image.urls.thumb)
+                                        .data(image.localPath ?: image.urls.thumb)
                                         .memoryCacheKey(image.id)
                                         .crossfade(false)
                                         .size(300, 400)

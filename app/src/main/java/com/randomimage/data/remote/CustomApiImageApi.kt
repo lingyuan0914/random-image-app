@@ -12,11 +12,13 @@ import okhttp3.Request
 import org.json.JSONArray
 import org.json.JSONObject
 import timber.log.Timber
+import java.io.File
 import java.util.concurrent.atomic.AtomicInteger
 
 class CustomApiImageApi(
     val config: CustomApiConfig,
-    private val client: OkHttpClient
+    private val client: OkHttpClient,
+    private val cacheDir: File? = null
 ) : ImageApi {
 
     override val name: String get() = config.name
@@ -43,7 +45,7 @@ class CustomApiImageApi(
         return when (apiType) {
             ApiType.DIRECT_IMAGE -> fetchDirectImages(count)
             ApiType.LOLICON -> fetchLoliconImages(count)
-            ApiType.AUTO -> fetchAutoDetect(count)
+            ApiType.AUTO -> fetchAutoDetectImages(count)
         }
     }
 
@@ -60,22 +62,85 @@ class CustomApiImageApi(
                     .build()
 
                 val response = client.newCall(request).execute()
-                val imageUrl = response.request.url.toString()
+                val body = response.body ?: return@repeat
+                val localFile = saveToLocal(body.byteStream(), "custom_${config.id}_$c.jpg")
                 response.close()
 
-                val uniqueUrl = "${imageUrl}?_t=${System.nanoTime()}_$c"
-                images.add(ImageModel(
-                    id = "custom_${config.id}_${System.nanoTime()}_$c",
-                    urls = ImageUrls(raw = uniqueUrl, full = uniqueUrl, regular = uniqueUrl, small = uniqueUrl, thumb = uniqueUrl),
-                    user = User(id = config.id, username = config.name, name = config.name),
-                    description = "${config.name} #$c",
-                    likes = 0
-                ))
+                if (localFile != null) {
+                    val fileUri = "file://${localFile.absolutePath}"
+                    images.add(ImageModel(
+                        id = "custom_${config.id}_${System.nanoTime()}_$c",
+                        urls = ImageUrls(raw = fileUri, full = fileUri, regular = fileUri, small = fileUri, thumb = fileUri),
+                        user = User(id = config.id, username = config.name, name = config.name),
+                        description = "${config.name} #$c",
+                        likes = 0,
+                        localPath = localFile.absolutePath
+                    ))
+                }
             }
             images
         } catch (e: Exception) {
             Timber.e(e, "Custom API ${config.name} direct failed")
             emptyList()
+        }
+    }
+
+    private fun fetchAutoDetectImages(count: Int): List<ImageModel> {
+        return try {
+            val baseUrl = config.url.trimEnd('/')
+            val images = mutableListOf<ImageModel>()
+
+            repeat(count) {
+                val c = counter.incrementAndGet()
+                val request = Request.Builder()
+                    .url(baseUrl)
+                    .header("User-Agent", "RandomImageApp/1.0")
+                    .build()
+
+                val response = client.newCall(request).execute()
+                val contentType = response.header("Content-Type") ?: ""
+
+                if (contentType.contains("image/")) {
+                    val body = response.body ?: return@repeat
+                    val localFile = saveToLocal(body.byteStream(), "custom_${config.id}_$c.jpg")
+                    response.close()
+                    if (localFile != null) {
+                        val fileUri = "file://${localFile.absolutePath}"
+                        images.add(makeImageModel(fileUri, c, localPath = localFile.absolutePath))
+                    }
+                } else if (contentType.contains("json")) {
+                    val responseBody = response.body?.string() ?: ""
+                    response.close()
+                    images.addAll(parseGenericJson(responseBody, c))
+                } else {
+                    val body = response.body ?: return@repeat
+                    val localFile = saveToLocal(body.byteStream(), "custom_${config.id}_$c.jpg")
+                    response.close()
+                    if (localFile != null) {
+                        val fileUri = "file://${localFile.absolutePath}"
+                        images.add(makeImageModel(fileUri, c, localPath = localFile.absolutePath))
+                    }
+                }
+            }
+            images
+        } catch (e: Exception) {
+            Timber.e(e, "Custom API ${config.name} auto failed")
+            emptyList()
+        }
+    }
+
+    private fun saveToLocal(inputStream: java.io.InputStream, filename: String): File? {
+        return try {
+            val dir = File(cacheDir ?: File(System.getProperty("java.io.tmpdir")), "custom_api_images")
+            dir.mkdirs()
+            val file = File(dir, filename)
+            file.outputStream().use { output ->
+                inputStream.copyTo(output)
+            }
+            file
+        } catch (e: Exception) {
+            Timber.e(e, "Failed to save image locally")
+            null
         }
     }
 
@@ -127,45 +192,6 @@ class CustomApiImageApi(
             images
         } catch (e: Exception) {
             Timber.e(e, "Custom API ${config.name} lolicon failed")
-            emptyList()
-        }
-    }
-
-    private fun fetchAutoDetect(count: Int): List<ImageModel> {
-        return try {
-            val baseUrl = config.url.trimEnd('/')
-            val images = mutableListOf<ImageModel>()
-
-            repeat(count) {
-                val c = counter.incrementAndGet()
-                val request = Request.Builder()
-                    .url(baseUrl)
-                    .header("User-Agent", "RandomImageApp/1.0")
-                    .build()
-
-                val response = client.newCall(request).execute()
-                val contentType = response.header("Content-Type") ?: ""
-
-                if (contentType.contains("image/")) {
-                    val imageUrl = response.request.url.toString()
-                    val uniqueUrl = "${imageUrl}?_t=${System.nanoTime()}_$c"
-                    images.add(makeImageModel(uniqueUrl, c))
-                    response.close()
-                } else if (contentType.contains("json")) {
-                    val body = response.body?.string() ?: ""
-                    response.close()
-                    val parsed = parseGenericJson(body, c)
-                    images.addAll(parsed)
-                } else {
-                    val imageUrl = response.request.url.toString()
-                    val uniqueUrl = "${imageUrl}?_t=${System.nanoTime()}_$c"
-                    images.add(makeImageModel(uniqueUrl, c))
-                    response.close()
-                }
-            }
-            images
-        } catch (e: Exception) {
-            Timber.e(e, "Custom API ${config.name} auto failed")
             emptyList()
         }
     }
@@ -252,7 +278,7 @@ class CustomApiImageApi(
         return null
     }
 
-    private fun makeImageModel(url: String, counter: Int, json: JSONObject? = null): ImageModel {
+    private fun makeImageModel(url: String, counter: Int, json: JSONObject? = null, localPath: String? = null): ImageModel {
         return ImageModel(
             id = "custom_${config.id}_${System.nanoTime()}_$counter",
             urls = ImageUrls(raw = url, full = url, regular = url, small = url, thumb = url),
@@ -260,7 +286,8 @@ class CustomApiImageApi(
             description = json?.optString("title") ?: json?.optString("description") ?: "${config.name} #$counter",
             likes = 0,
             width = json?.optInt("width") ?: 0,
-            height = json?.optInt("height") ?: 0
+            height = json?.optInt("height") ?: 0,
+            localPath = localPath
         )
     }
 
