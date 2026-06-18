@@ -46,7 +46,6 @@ data class HomeUiState(
     val isFavorite: Boolean = false,
     val isFollowingArtist: Boolean = false,
     val showDetail: Boolean = false,
-    val currentDetailImage: ImageModel? = null,
     val imageQuality: ImageQuality = ImageQuality.MEDIUM,
     val popularTags: List<com.randomimage.data.local.TagEntity> = emptyList(),
     val memoryImages: List<ImageModel> = emptyList()
@@ -90,17 +89,17 @@ class HomeViewModel @Inject constructor(
 
         viewModelScope.launch {
             favoritesFlow.collect { favorites ->
-                _uiState.value = _uiState.value.copy(favorites = favorites, currentDetailImage = _uiState.value.currentDetailImage)
+                _uiState.value = _uiState.value.copy(favorites = favorites)
             }
         }
         viewModelScope.launch {
             historyFlow.collect { history ->
-                _uiState.value = _uiState.value.copy(history = history, currentDetailImage = _uiState.value.currentDetailImage)
+                _uiState.value = _uiState.value.copy(history = history)
             }
         }
         viewModelScope.launch {
             recentSearchesFlow.collect { searches ->
-                _uiState.value = _uiState.value.copy(recentSearches = searches, currentDetailImage = _uiState.value.currentDetailImage)
+                _uiState.value = _uiState.value.copy(recentSearches = searches)
             }
         }
 
@@ -134,12 +133,12 @@ class HomeViewModel @Inject constructor(
                 } else {
                     repository.fetchRandomImages(20)
                 }
+                val preserveIndex = _uiState.value.showDetail
                 _uiState.value = _uiState.value.copy(
                     images = images,
-                    currentIndex = 0,
+                    currentIndex = if (preserveIndex) _uiState.value.currentIndex else 0,
                     isLoading = false,
-                    currentApiName = apiManager.currentApi.name,
-                    currentDetailImage = _uiState.value.currentDetailImage
+                    currentApiName = apiManager.currentApi.name
                 )
                 StatsManager.incrementViewCount(getApplication())
                 images.forEach { image ->
@@ -174,8 +173,7 @@ class HomeViewModel @Inject constructor(
                     if (uniqueNewImages.isNotEmpty()) {
                         _uiState.value = _uiState.value.copy(
                             images = _uiState.value.images + uniqueNewImages,
-                            isLoading = false,
-                            currentDetailImage = _uiState.value.currentDetailImage
+                            isLoading = false
                         )
                         Timber.d("Loaded ${uniqueNewImages.size} more images")
                     } else {
@@ -286,10 +284,6 @@ class HomeViewModel @Inject constructor(
         }
     }
 
-    fun setCurrentImageDirect(image: ImageModel) {
-        _uiState.value = _uiState.value.copy(currentDetailImage = image)
-    }
-
     fun setCurrentIndex(index: Int) {
         _uiState.value = _uiState.value.copy(currentIndex = index)
         checkFavorite()
@@ -381,31 +375,25 @@ class HomeViewModel @Inject constructor(
     }
 
     fun swipeToNext() {
-        val image = _uiState.value.currentDetailImage ?: return
+        val image = getCurrentImage() ?: return
         viewModelScope.launch {
             repository.addToHistory(image)
         }
         val state = _uiState.value
-        val currentIndex = state.images.indexOfFirst { it.id == image.id }
-        if (currentIndex >= 0 && currentIndex < state.images.size - 1) {
-            val nextImage = state.images[currentIndex + 1]
-            _uiState.value = state.copy(currentDetailImage = nextImage, currentIndex = currentIndex + 1)
+        if (state.currentIndex < state.images.size - 1) {
+            _uiState.value = state.copy(currentIndex = state.currentIndex + 1)
             checkFavorite()
-        } else {
-            loadImages()
         }
     }
 
     fun swipeToPrev() {
-        val image = _uiState.value.currentDetailImage ?: return
+        val image = getCurrentImage() ?: return
         viewModelScope.launch {
             repository.addToHistory(image)
         }
         val state = _uiState.value
-        val currentIndex = state.images.indexOfFirst { it.id == image.id }
-        if (currentIndex > 0) {
-            val prevImage = state.images[currentIndex - 1]
-            _uiState.value = state.copy(currentDetailImage = prevImage, currentIndex = currentIndex - 1)
+        if (state.currentIndex > 0) {
+            _uiState.value = state.copy(currentIndex = state.currentIndex - 1)
             checkFavorite()
         }
     }

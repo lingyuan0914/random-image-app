@@ -100,7 +100,7 @@ class MainActivity : ComponentActivity() {
                     }
                 ) { innerPadding ->
                     if (homeUiState.showDetail) {
-                        val currentImage = homeUiState.currentDetailImage
+                        val currentImage = homeViewModel.getCurrentImage()
                         if (currentImage != null) {
                             ImageDetailScreen(
                                 image = currentImage,
@@ -123,8 +123,11 @@ class MainActivity : ComponentActivity() {
                                 WaterfallScreen(
                                     viewModel = homeViewModel,
                                     onImageClick = { image ->
-                                        homeViewModel.setCurrentImageDirect(image)
-                                        homeViewModel.setShowDetail(true)
+                                        val index = homeViewModel.uiState.value.images.indexOfFirst { it.id == image.id }
+                                        if (index >= 0) {
+                                            homeViewModel.setCurrentIndex(index)
+                                            homeViewModel.setShowDetail(true)
+                                        }
                                     }
                                 )
                             }
