@@ -174,6 +174,31 @@ fun WaterfallScreen(
             }
         }
 
+        if (uiState.recentSearches.isNotEmpty()) {
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = 12.dp, vertical = 2.dp)
+                    .height(36.dp),
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Text("历史:", style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                Spacer(modifier = Modifier.width(8.dp))
+                FlowRow(
+                    modifier = Modifier.weight(1f),
+                    horizontalArrangement = Arrangement.spacedBy(4.dp),
+                    verticalArrangement = Arrangement.spacedBy(2.dp)
+                ) {
+                    uiState.recentSearches.take(6).forEach { query ->
+                        SuggestionChip(
+                            onClick = { viewModel.setSearchQuery(query); viewModel.searchImages(query) },
+                            label = { Text(query, style = MaterialTheme.typography.labelSmall) }
+                        )
+                    }
+                }
+            }
+        }
+
         if (uiState.recommendedTags.isNotEmpty()) {
             Row(
                 modifier = Modifier

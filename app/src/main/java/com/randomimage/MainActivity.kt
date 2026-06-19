@@ -148,7 +148,15 @@ class MainActivity : ComponentActivity() {
                                 onPreviewCache = { navController.navigate("cache_preview") },
                                 onCloudSync = { navController.navigate("cloud_sync") },
                                 onLogs = { navController.navigate("logs") },
-                                onManageApis = { navController.navigate("custom_apis") }
+                                onManageApis = { navController.navigate("custom_apis") },
+                                onQualityChanged = { quality ->
+                                    val q = when (quality) {
+                                        "缩略图" -> com.randomimage.ui.viewmodel.ImageQuality.THUMBNAIL
+                                        "原图" -> com.randomimage.ui.viewmodel.ImageQuality.ORIGINAL
+                                        else -> com.randomimage.ui.viewmodel.ImageQuality.MEDIUM
+                                    }
+                                    homeViewModel.setImageQuality(q)
+                                }
                             )
                         }
                         composable("cache_preview") {

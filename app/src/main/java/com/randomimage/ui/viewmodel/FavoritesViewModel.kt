@@ -36,7 +36,7 @@ class FavoritesViewModel @Inject constructor(
             _uiState.value = _uiState.value.copy(isLoading = true)
             repository.getFavorites().collect { favorites ->
                 _uiState.value = _uiState.value.copy(
-                    favorites = favorites,
+                    favorites = favorites.distinctBy { it.id },
                     isLoading = false
                 )
             }
