@@ -62,7 +62,8 @@ enum class ImageQuality(val label: String, val size: Int) {
 class HomeViewModel @Inject constructor(
     application: Application,
     private val apiManager: ApiManager,
-    private val repository: ImageRepository
+    private val repository: ImageRepository,
+    private val imageLoader: coil.ImageLoader
 ) : AndroidViewModel(application) {
 
     private val loadMoreMutex = Mutex()
@@ -107,6 +108,9 @@ class HomeViewModel @Inject constructor(
         loadImages()
     }
 
+    // TODO: HistoryData doesn't store actual timestamps, so we approximate "last year today"
+    // using hashCode().toLong() % 365L as a pseudo-random offset. This means images shown
+    // as "memories" won't actually be from the same date last year.
     private fun loadMemoryImages() {
         viewModelScope.launch {
             val hist = repository.getHistory().first()
@@ -256,9 +260,9 @@ class HomeViewModel @Inject constructor(
             checkFavorite()
             loadMoreIfNeeded()
         } else {
-        loadPopularTags()
-        loadImages()
-    }
+            loadPopularTags()
+            loadImages()
+        }
     }
 
     private fun loadMoreIfNeeded() {
@@ -283,7 +287,7 @@ class HomeViewModel @Inject constructor(
                 .data(image.urls.regular)
                 .memoryCacheKey("preload_${image.id}")
                 .build()
-            coil.ImageLoader(getApplication()).enqueue(request)
+            imageLoader.enqueue(request)
         }
     }
 

@@ -13,6 +13,7 @@ import org.json.JSONArray
 import org.json.JSONObject
 import timber.log.Timber
 import java.io.File
+import java.util.Collections
 import java.util.concurrent.atomic.AtomicInteger
 
 class CustomApiImageApi(
@@ -26,7 +27,7 @@ class CustomApiImageApi(
     override val supportsNSFW: Boolean = true
 
     private val counter = AtomicInteger(0)
-    private val requestTimestamps = mutableListOf<Long>()
+    private val requestTimestamps: MutableList<Long> = Collections.synchronizedList(mutableListOf())
 
     override suspend fun fetchRandomImages(count: Int): List<ImageModel> {
         return withContext(Dispatchers.IO) { fetchImages(count) }

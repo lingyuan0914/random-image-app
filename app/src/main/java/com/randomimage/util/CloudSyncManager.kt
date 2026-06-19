@@ -18,8 +18,12 @@ import java.util.Base64
 object CloudSyncManager {
     private var webdavUrl: String = ""
     private var username: String = ""
-    private var password: String = ""
+    private var password: String = "" // TODO: encrypt or use Android Keystore instead of storing in plain text
     private var dataStore: AppDataStore? = null
+
+    private val moshi: Moshi = Moshi.Builder()
+        .addLast(KotlinJsonAdapterFactory())
+        .build()
 
     fun configure(url: String, user: String, pass: String) {
         webdavUrl = url
@@ -112,20 +116,12 @@ object CloudSyncManager {
     }
 
     private fun favoritesToJson(favorites: List<FavoriteData>): String {
-        val moshi = Moshi.Builder()
-            .addLast(KotlinJsonAdapterFactory())
-            .build()
-
         val type = Types.newParameterizedType(List::class.java, FavoriteData::class.java)
         val adapter = moshi.adapter<List<FavoriteData>>(type)
         return adapter.toJson(favorites)
     }
 
     private fun jsonToFavorites(json: String): List<FavoriteData> {
-        val moshi = Moshi.Builder()
-            .addLast(KotlinJsonAdapterFactory())
-            .build()
-
         val type = Types.newParameterizedType(List::class.java, FavoriteData::class.java)
         val adapter = moshi.adapter<List<FavoriteData>>(type)
         return adapter.fromJson(json) ?: emptyList()

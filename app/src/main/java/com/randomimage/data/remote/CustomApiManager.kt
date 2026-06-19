@@ -65,6 +65,7 @@ object CustomApiManager {
 
     fun addCustomApi(name: String, url: String, apiType: ApiType = ApiType.AUTO, rateLimit: Int = 0, rateLimitWindow: Int = 10) {
         val apis = getCustomApis().toMutableList()
+        if (apis.any { it.url == url }) return
         val id = "custom_${System.currentTimeMillis()}"
         apis.add(CustomApiConfig(id = id, name = name, url = url, apiType = apiType.name, rateLimit = rateLimit, rateLimitWindow = rateLimitWindow))
         saveApis(apis)

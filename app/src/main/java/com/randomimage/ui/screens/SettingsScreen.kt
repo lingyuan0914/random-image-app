@@ -53,7 +53,8 @@ fun SettingsScreen(
     onPreviewCache: () -> Unit = {},
     onCloudSync: () -> Unit = {},
     onLogs: () -> Unit = {},
-    onManageApis: () -> Unit = {}
+    onManageApis: () -> Unit = {},
+    onQualityChanged: (String) -> Unit = {}
 ) {
     BackHandler { onBack() }
     val context = LocalContext.current
@@ -287,8 +288,8 @@ fun SettingsScreen(
         AlertDialog(onDismissRequest = { showQualityDialog = false }, title = { Text("图片质量") }, text = {
             Column {
                 listOf("缩略图", "中等", "原图").forEach { quality ->
-                    Row(modifier = Modifier.fillMaxWidth().clickable { imageQuality = quality; showQualityDialog = false }, verticalAlignment = Alignment.CenterVertically) {
-                        RadioButton(selected = imageQuality == quality, onClick = { imageQuality = quality; showQualityDialog = false })
+                    Row(modifier = Modifier.fillMaxWidth().clickable { imageQuality = quality; onQualityChanged(quality); showQualityDialog = false }, verticalAlignment = Alignment.CenterVertically) {
+                        RadioButton(selected = imageQuality == quality, onClick = { imageQuality = quality; onQualityChanged(quality); showQualityDialog = false })
                         Spacer(modifier = Modifier.width(8.dp)); Text(quality)
                     }
                 }

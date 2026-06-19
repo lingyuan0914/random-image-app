@@ -4,16 +4,18 @@ import android.content.Context
 import androidx.datastore.core.DataStore
 import androidx.datastore.preferences.core.Preferences
 import androidx.datastore.preferences.core.edit
-import androidx.datastore.preferences.core.intPreferencesKey
 import androidx.datastore.preferences.core.stringPreferencesKey
 import androidx.datastore.preferences.preferencesDataStore
 import com.randomimage.domain.model.ImageModel
+import com.squareup.moshi.JsonAdapter
 import com.squareup.moshi.Moshi
 import com.squareup.moshi.Types
 import com.squareup.moshi.kotlin.reflect.KotlinJsonAdapterFactory
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.map
+import kotlinx.coroutines.sync.Mutex
+import kotlinx.coroutines.sync.withLock
 import javax.inject.Inject
 import javax.inject.Singleton
 
@@ -44,6 +46,22 @@ class AppDataStore @Inject constructor(
         private val KEY_ARTISTS = stringPreferencesKey("artists")
     }
 
+    private val MAX_JSON_SIZE = 800 * 1024
+    private val favoritesMutex = Mutex()
+    private val tagsMutex = Mutex()
+
+    private fun <T> trimToSize(
+        adapter: JsonAdapter<List<T>>,
+        list: List<T>,
+        timeExtractor: (T) -> Long
+    ): List<T> {
+        var trimmed = list
+        while (adapter.toJson(trimmed).toByteArray(Charsets.UTF_8).size > MAX_JSON_SIZE && trimmed.isNotEmpty()) {
+            trimmed = trimmed.sortedBy { timeExtractor(it) }.drop(1)
+        }
+        return trimmed
+    }
+
     // Favorites
     fun getFavorites(): Flow<List<FavoriteData>> {
         return context.dataStore.data.map { prefs ->
@@ -59,17 +77,21 @@ class AppDataStore @Inject constructor(
     }
 
     suspend fun addFavorite(favorite: FavoriteData) {
-        context.dataStore.edit { prefs ->
-            val current = try { favoritesAdapter.fromJson(prefs[KEY_FAVORITES] ?: "[]") ?: emptyList() } catch (_: Exception) { emptyList() }
-            val updated = current.filter { it.id != favorite.id } + favorite
-            prefs[KEY_FAVORITES] = favoritesAdapter.toJson(updated)
+        favoritesMutex.withLock {
+            context.dataStore.edit { prefs ->
+                val current = try { favoritesAdapter.fromJson(prefs[KEY_FAVORITES] ?: "[]") ?: emptyList() } catch (_: Exception) { emptyList() }
+                val updated = current.filter { it.id != favorite.id } + favorite
+                prefs[KEY_FAVORITES] = favoritesAdapter.toJson(updated)
+            }
         }
     }
 
     suspend fun removeFavorite(id: String) {
-        context.dataStore.edit { prefs ->
-            val current = try { favoritesAdapter.fromJson(prefs[KEY_FAVORITES] ?: "[]") ?: emptyList() } catch (_: Exception) { emptyList() }
-            prefs[KEY_FAVORITES] = favoritesAdapter.toJson(current.filter { it.id != id })
+        favoritesMutex.withLock {
+            context.dataStore.edit { prefs ->
+                val current = try { favoritesAdapter.fromJson(prefs[KEY_FAVORITES] ?: "[]") ?: emptyList() } catch (_: Exception) { emptyList() }
+                prefs[KEY_FAVORITES] = favoritesAdapter.toJson(current.filter { it.id != id })
+            }
         }
     }
 
@@ -91,7 +113,8 @@ class AppDataStore @Inject constructor(
         context.dataStore.edit { prefs ->
             val current = try { historyAdapter.fromJson(prefs[KEY_HISTORY] ?: "[]") ?: emptyList() } catch (_: Exception) { emptyList() }
             val updated = (current + history).takeLast(100)
-            prefs[KEY_HISTORY] = historyAdapter.toJson(updated)
+            val trimmed = trimToSize(historyAdapter, updated) { it.timestamp }
+            prefs[KEY_HISTORY] = historyAdapter.toJson(trimmed)
         }
     }
 
@@ -161,18 +184,21 @@ class AppDataStore @Inject constructor(
     }
 
     suspend fun recordTag(tagName: String) {
-        context.dataStore.edit { prefs ->
-            val current = try {
-                moshi.adapter<List<TagData>>(Types.newParameterizedType(List::class.java, TagData::class.java))
-                    .fromJson(prefs[KEY_TAGS] ?: "[]") ?: emptyList()
-            } catch (_: Exception) { emptyList() }
-            val existing = current.find { it.name == tagName }
-            val updated = if (existing != null) {
-                current.map { if (it.name == tagName) it.copy(usageCount = it.usageCount + 1) else it }
-            } else {
-                current + TagData(name = tagName, usageCount = 1)
+        val tagAdapter = moshi.adapter<List<TagData>>(Types.newParameterizedType(List::class.java, TagData::class.java))
+        tagsMutex.withLock {
+            context.dataStore.edit { prefs ->
+                val current = try {
+                    tagAdapter.fromJson(prefs[KEY_TAGS] ?: "[]") ?: emptyList()
+                } catch (_: Exception) { emptyList() }
+                val existing = current.find { it.name == tagName }
+                val updated = if (existing != null) {
+                    current.map { if (it.name == tagName) it.copy(usageCount = it.usageCount + 1) else it }
+                } else {
+                    current + TagData(name = tagName, usageCount = 1)
+                }
+                val trimmed = trimToSize(tagAdapter, updated) { it.lastUsedTime }
+                prefs[KEY_TAGS] = tagAdapter.toJson(trimmed)
             }
-            prefs[KEY_TAGS] = moshi.adapter<List<TagData>>(Types.newParameterizedType(List::class.java, TagData::class.java)).toJson(updated)
         }
     }
 
