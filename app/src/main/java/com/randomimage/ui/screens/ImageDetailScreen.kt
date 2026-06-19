@@ -56,7 +56,6 @@ import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.blur
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.input.pointer.pointerInput
@@ -124,33 +123,7 @@ fun ImageDetailScreen(
                 )
             }
     ) {
-        // Blurred background - transitions from blurry to clear during back gesture
-        AsyncImage(
-            model = ImageRequest.Builder(context)
-                .data(image.localPath ?: image.urls.thumb)
-                .memoryCacheKey(image.id)
-                .crossfade(false)
-                .size(Size.ORIGINAL)
-                .allowHardware(true)
-                .build(),
-            contentDescription = null,
-            contentScale = ContentScale.Crop,
-            modifier = Modifier
-                .fillMaxSize()
-                .blur((20 * (1f - progress)).dp)
-                .graphicsLayer {
-                    alpha = 0.8f * (1f - progress * 0.5f)
-                }
-        )
-
-        // Semi-transparent overlay - fades out during back gesture
-        Box(
-            modifier = Modifier
-                .fillMaxSize()
-                .background(Color.Black.copy(alpha = 0.3f * (1f - progress)))
-        )
-
-        // Main image - scales down during back gesture
+        // Main image - transparent background so system shows home page behind
         SubcomposeAsyncImage(
             model = ImageRequest.Builder(context)
                 .data(image.localPath ?: image.urls.thumb)
