@@ -4,12 +4,6 @@ import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
-import androidx.compose.animation.AnimatedVisibility
-import androidx.compose.animation.core.Animatable
-import androidx.compose.animation.core.tween
-import androidx.compose.animation.fadeIn
-import androidx.compose.animation.fadeOut
-import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material.icons.Icons
@@ -25,29 +19,14 @@ import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
-import androidx.compose.runtime.Composable
-import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.geometry.Rect
-import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.graphicsLayer
-import androidx.compose.ui.layout.ContentScale
-import androidx.compose.ui.platform.LocalContext
-import androidx.compose.ui.platform.LocalDensity
-import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
-import coil.compose.AsyncImage
-import coil.request.ImageRequest
-import coil.size.Size
 import com.randomimage.ui.components.BottomNavBar
 import com.randomimage.ui.screens.CachePreviewScreen
 import com.randomimage.ui.screens.CloudSyncScreen
@@ -74,18 +53,11 @@ class MainActivity : ComponentActivity() {
                 val navController = rememberNavController()
                 val homeViewModel: HomeViewModel = hiltViewModel()
                 val homeUiState by homeViewModel.uiState.collectAsState()
-                val currentRoute = navController.currentBackStackEntryAsState().value?.destination?.route
-
-                LaunchedEffect(currentRoute) {
-                    if (currentRoute != null && currentRoute != "home" && homeUiState.showDetail) {
-                        homeViewModel.setShowDetail(false)
-                    }
-                }
 
                 Scaffold(
                     modifier = Modifier.fillMaxSize(),
                     topBar = {
-                        if (!homeUiState.showDetail) {
+                        if (navController.currentBackStackEntryAsState().value?.destination?.route != "detail") {
                             TopAppBar(
                                 title = { Text("随机图片") },
                                 actions = {
@@ -110,7 +82,7 @@ class MainActivity : ComponentActivity() {
                         }
                     },
                     bottomBar = {
-                        if (!homeUiState.showDetail) {
+                        if (navController.currentBackStackEntryAsState().value?.destination?.route != "detail") {
                             BottomNavBar(
                                 currentRoute = navController.currentBackStackEntryAsState().value?.destination?.route,
                                 onNavigate = { route ->
@@ -127,158 +99,87 @@ class MainActivity : ComponentActivity() {
                         }
                     }
                 ) { innerPadding ->
-                    if (homeUiState.showDetail) {
-                        val currentImage = homeUiState.detailImage ?: homeViewModel.getCurrentImage()
-                        if (currentImage != null) {
-                            ImageDetailScreen(
-                                image = currentImage,
-                                onBack = {
-                                    homeViewModel.clearExpandBounds()
-                                    homeViewModel.setShowDetail(false)
-                                },
-                                onSwipeLeft = { homeViewModel.swipeToNext() },
-                                onSwipeRight = { homeViewModel.swipeToPrev() },
-                                onFavorite = { homeViewModel.toggleFavorite() },
-                                isFavorite = homeUiState.isFavorite,
-                                onFollow = { homeViewModel.toggleFollowArtist() },
-                                isFollowing = homeUiState.isFollowingArtist
+                    NavHost(
+                        navController = navController,
+                        startDestination = "home",
+                        modifier = Modifier.padding(innerPadding)
+                    ) {
+                        composable("home") {
+                            WaterfallScreen(
+                                viewModel = homeViewModel,
+                                onImageClick = { image ->
+                                    homeViewModel.setDetailImage(image)
+                                    navController.navigate("detail")
+                                }
                             )
                         }
-                    } else {
-                        NavHost(
-                            navController = navController,
-                            startDestination = "home",
-                            modifier = Modifier.padding(innerPadding)
-                        ) {
-                            composable("home") {
-                                WaterfallScreen(
-                                    viewModel = homeViewModel,
-                                    onImageClick = { image ->
-                                        homeViewModel.setDetailImage(image)
-                                    }
-                                )
-                            }
-                            composable("favorites") {
-                                FavoritesScreen(
-                                    onImageClick = { image ->
-                                        homeViewModel.setCurrentImage(image)
-                                        homeViewModel.setShowDetail(true)
-                                    }
-                                )
-                            }
-                            composable("logs") {
-                                LogScreen(onBack = { navController.popBackStack() })
-                            }
-                            composable("settings") {
-                                SettingsScreen(
+                        composable("favorites") {
+                            FavoritesScreen(
+                                onImageClick = { image ->
+                                    homeViewModel.setCurrentImage(image)
+                                    navController.navigate("detail")
+                                }
+                            )
+                        }
+                        composable("detail") {
+                            val currentImage = homeViewModel.getCurrentImage()
+                            if (currentImage != null) {
+                                ImageDetailScreen(
+                                    image = currentImage,
                                     onBack = { navController.popBackStack() },
-                                    onClearCache = { homeViewModel.clearCache() },
-                                    onClearHistory = { homeViewModel.clearHistory() },
-                                    onClearSearchHistory = { homeViewModel.clearSearchHistory() },
-                                    onPreviewCache = { navController.navigate("cache_preview") },
-                                    onCloudSync = { navController.navigate("cloud_sync") },
-                                    onLogs = { navController.navigate("logs") },
-                                    onManageApis = { navController.navigate("custom_apis") }
+                                    onSwipeLeft = { homeViewModel.swipeToNext() },
+                                    onSwipeRight = { homeViewModel.swipeToPrev() },
+                                    onFavorite = { homeViewModel.toggleFavorite() },
+                                    isFavorite = homeUiState.isFavorite,
+                                    onFollow = { homeViewModel.toggleFollowArtist() },
+                                    isFollowing = homeUiState.isFollowingArtist
                                 )
                             }
-                            composable("cache_preview") {
-                                CachePreviewScreen(
-                                    onBack = { navController.popBackStack() },
-                                    onImageClick = { image -> homeViewModel.setDetailImage(image) }
-                                )
-                            }
-                            composable("image_crop/{imageUrl}") { backStackEntry ->
-                                val imageUrl = backStackEntry.arguments?.getString("imageUrl") ?: ""
-                                ImageCropScreen(
-                                    imageUrl = imageUrl,
-                                    onBack = { navController.popBackStack() },
-                                    onCropped = { navController.popBackStack() }
-                                )
-                            }
-                            composable("cloud_sync") {
-                                CloudSyncScreen(onBack = { navController.popBackStack() })
-                            }
-                            composable("custom_apis") {
-                                CustomApisScreen(
-                                    onBack = { navController.popBackStack() },
-                                    onApisChanged = { homeViewModel.refreshApis() }
-                                )
-                            }
+                        }
+                        composable("logs") {
+                            LogScreen(onBack = { navController.popBackStack() })
+                        }
+                        composable("settings") {
+                            SettingsScreen(
+                                onBack = { navController.popBackStack() },
+                                onClearCache = { homeViewModel.clearCache() },
+                                onClearHistory = { homeViewModel.clearHistory() },
+                                onClearSearchHistory = { homeViewModel.clearSearchHistory() },
+                                onPreviewCache = { navController.navigate("cache_preview") },
+                                onCloudSync = { navController.navigate("cloud_sync") },
+                                onLogs = { navController.navigate("logs") },
+                                onManageApis = { navController.navigate("custom_apis") }
+                            )
+                        }
+                        composable("cache_preview") {
+                            CachePreviewScreen(
+                                onBack = { navController.popBackStack() },
+                                onImageClick = { image ->
+                                    homeViewModel.setDetailImage(image)
+                                    navController.navigate("detail")
+                                }
+                            )
+                        }
+                        composable("image_crop/{imageUrl}") { backStackEntry ->
+                            val imageUrl = backStackEntry.arguments?.getString("imageUrl") ?: ""
+                            ImageCropScreen(
+                                imageUrl = imageUrl,
+                                onBack = { navController.popBackStack() },
+                                onCropped = { navController.popBackStack() }
+                            )
+                        }
+                        composable("cloud_sync") {
+                            CloudSyncScreen(onBack = { navController.popBackStack() })
+                        }
+                        composable("custom_apis") {
+                            CustomApisScreen(
+                                onBack = { navController.popBackStack() },
+                                onApisChanged = { homeViewModel.refreshApis() }
+                            )
                         }
                     }
                 }
-
-                // Expand image animation overlay
-                ExpandImageOverlay(
-                    image = homeUiState.detailImage,
-                    bounds = homeUiState.expandImageBounds,
-                    showDetail = homeUiState.showDetail,
-                    onAnimationDone = { homeViewModel.clearExpandBounds() }
-                )
             }
         }
-    }
-}
-
-@Composable
-private fun ExpandImageOverlay(
-    image: com.randomimage.domain.model.ImageModel?,
-    bounds: Rect?,
-    showDetail: Boolean,
-    onAnimationDone: () -> Unit
-) {
-    if (image == null) return
-
-    val context = LocalContext.current
-    val density = LocalDensity.current
-    val screenWidthPx = with(density) { context.resources.displayMetrics.widthPixels.toFloat() }
-    val screenHeightPx = with(density) { context.resources.displayMetrics.heightPixels.toFloat() }
-
-    val progress = remember { Animatable(0f) }
-    var isVisible by remember { mutableStateOf(false) }
-
-    LaunchedEffect(showDetail, image?.id) {
-        if (showDetail && bounds != null && bounds != Rect.Zero) {
-            isVisible = true
-            progress.snapTo(0f)
-            progress.animateTo(1f, animationSpec = tween(350))
-            onAnimationDone()
-        } else if (!showDetail && isVisible) {
-            progress.animateTo(0f, animationSpec = tween(300))
-            isVisible = false
-        }
-    }
-
-    AnimatedVisibility(
-        visible = isVisible,
-        enter = fadeIn(tween(200)),
-        exit = fadeOut(tween(200))
-    ) {
-        val b = bounds ?: Rect.Zero
-        val currentLeft = b.left + (screenWidthPx - b.width) * progress.value
-        val currentTop = b.top * (1f - progress.value)
-        val currentWidth = b.width + (screenWidthPx - b.width) * progress.value
-        val currentHeight = b.height + (screenHeightPx - b.height) * progress.value
-
-        AsyncImage(
-            model = ImageRequest.Builder(context)
-                .data(image.localPath ?: image.urls.thumb)
-                .memoryCacheKey(image.id)
-                .crossfade(false)
-                .size(Size.ORIGINAL)
-                .allowHardware(true)
-                .build(),
-            contentDescription = null,
-            contentScale = ContentScale.Crop,
-            modifier = Modifier
-                .graphicsLayer {
-                    translationX = currentLeft
-                    translationY = currentTop
-                    scaleX = currentWidth / b.width.coerceAtLeast(1f)
-                    scaleY = currentHeight / b.height.coerceAtLeast(1f)
-                    alpha = 1f - progress.value * 0.3f
-                }
-                .background(Color.Black)
-        )
     }
 }

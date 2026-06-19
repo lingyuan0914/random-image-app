@@ -45,7 +45,6 @@ data class HomeUiState(
     val recentSearches: List<String> = emptyList(),
     val isFavorite: Boolean = false,
     val isFollowingArtist: Boolean = false,
-    val showDetail: Boolean = false,
     val detailImage: ImageModel? = null,
     val expandImageBounds: androidx.compose.ui.geometry.Rect? = null,
     val imageQuality: ImageQuality = ImageQuality.MEDIUM,
@@ -134,10 +133,9 @@ class HomeViewModel @Inject constructor(
                 } else {
                     repository.fetchRandomImages(20)
                 }
-                val preserveIndex = _uiState.value.showDetail
                 _uiState.value = _uiState.value.copy(
                     images = images,
-                    currentIndex = if (preserveIndex) _uiState.value.currentIndex else 0,
+                    currentIndex = 0,
                     isLoading = false,
                     currentApiName = apiManager.currentApi.name
                 )
@@ -295,7 +293,7 @@ class HomeViewModel @Inject constructor(
     }
 
     fun setDetailImage(image: ImageModel, bounds: androidx.compose.ui.geometry.Rect? = null) {
-        _uiState.value = _uiState.value.copy(detailImage = image, expandImageBounds = bounds, showDetail = true)
+        _uiState.value = _uiState.value.copy(detailImage = image, expandImageBounds = bounds)
     }
 
     fun setExpandBounds(bounds: FloatArray) {
@@ -305,13 +303,6 @@ class HomeViewModel @Inject constructor(
 
     fun clearExpandBounds() {
         _uiState.value = _uiState.value.copy(expandImageBounds = null)
-    }
-
-    fun setShowDetail(show: Boolean) {
-        _uiState.value = _uiState.value.copy(showDetail = show)
-        if (!show) {
-            _uiState.value = _uiState.value.copy(detailImage = null, expandImageBounds = null)
-        }
     }
 
     private fun checkFavorite() {
