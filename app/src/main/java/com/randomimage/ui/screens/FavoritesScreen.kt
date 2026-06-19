@@ -43,6 +43,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import coil.compose.AsyncImage
@@ -130,7 +131,12 @@ fun FavoritesScreen(
                                 elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
                             ) {
                                 AsyncImage(
-                                    model = image.urls.thumb,
+                                    model = coil.request.ImageRequest.Builder(LocalContext.current)
+                                        .data(image.localPath ?: image.urls.thumb)
+                                        .memoryCacheKey("fav_${image.id}")
+                                        .crossfade(false)
+                                        .allowHardware(true)
+                                        .build(),
                                     contentDescription = image.description,
                                     contentScale = ContentScale.Crop,
                                     modifier = Modifier.fillMaxSize()
