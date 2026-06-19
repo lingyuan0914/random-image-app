@@ -2,6 +2,7 @@ package com.randomimage.ui.screens
 
 import android.widget.Toast
 import androidx.activity.compose.BackHandler
+import androidx.activity.compose.PredictiveBackHandler
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
@@ -92,11 +93,27 @@ fun ImageDetailScreen(
     var showTopBar by remember { mutableStateOf(true) }
     var showBottomBar by remember { mutableStateOf(true) }
 
-    BackHandler { onBack() }
+    val backProgress = remember { mutableFloatStateOf(0f) }
+
+    PredictiveBackHandler { backEvents ->
+        backEvents.collect { event ->
+            backProgress.value = event.progress
+        }
+        onBack()
+    }
 
     Box(
         modifier = Modifier
             .fillMaxSize()
+            .graphicsLayer {
+                val progress = backProgress.value
+                if (progress > 0f) {
+                    scaleX = 1f - progress * 0.3f
+                    scaleY = 1f - progress * 0.3f
+                    alpha = 1f - progress * 0.5f
+                    translationX = progress * 200f
+                }
+            }
             .background(Color.Black)
             .pointerInput(Unit) {
                 detectTapGestures(
