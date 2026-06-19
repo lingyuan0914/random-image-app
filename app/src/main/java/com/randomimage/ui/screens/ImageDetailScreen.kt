@@ -1,9 +1,9 @@
 package com.randomimage.ui.screens
 
 import android.widget.Toast
-import androidx.activity.compose.BackHandler
 import androidx.activity.compose.PredictiveBackHandler
 import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
 import androidx.compose.animation.slideInVertically
@@ -24,6 +24,7 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
@@ -72,7 +73,7 @@ import com.randomimage.domain.model.ImageModel
 import com.randomimage.util.ImageUtils
 import kotlinx.coroutines.launch
 
-@OptIn(ExperimentalMaterial3Api::class, androidx.compose.foundation.layout.ExperimentalLayoutApi::class)
+@OptIn(ExperimentalMaterial3Api::class, ExperimentalLayoutApi::class)
 @Composable
 fun ImageDetailScreen(
     image: ImageModel,
@@ -102,18 +103,11 @@ fun ImageDetailScreen(
         onBack()
     }
 
+    val progress by backProgress
+
     Box(
         modifier = Modifier
             .fillMaxSize()
-            .graphicsLayer {
-                val progress = backProgress.value
-                if (progress > 0f) {
-                    scaleX = 1f - progress * 0.3f
-                    scaleY = 1f - progress * 0.3f
-                    alpha = 1f - progress * 0.5f
-                    translationX = progress * 200f
-                }
-            }
             .background(Color.Black)
             .pointerInput(Unit) {
                 detectTapGestures(
@@ -131,6 +125,7 @@ fun ImageDetailScreen(
                 )
             }
     ) {
+        // Blurred background - fades out during back gesture
         AsyncImage(
             model = ImageRequest.Builder(context)
                 .data(image.localPath ?: image.urls.thumb)
@@ -144,9 +139,12 @@ fun ImageDetailScreen(
             modifier = Modifier
                 .fillMaxSize()
                 .blur(20.dp)
-                .graphicsLayer { alpha = 0.6f }
+                .graphicsLayer {
+                    alpha = 0.6f * (1f - progress)
+                }
         )
 
+        // Main image - scales down during back gesture
         SubcomposeAsyncImage(
             model = ImageRequest.Builder(context)
                 .data(image.localPath ?: image.urls.thumb)
@@ -166,10 +164,16 @@ fun ImageDetailScreen(
             modifier = Modifier
                 .fillMaxSize()
                 .graphicsLayer {
+                    // Apply zoom from user gestures
                     scaleX = scale
                     scaleY = scale
                     translationX = offsetX
                     translationY = offsetY
+                    // Apply back gesture animation: scale down and fade
+                    val backScale = 1f - progress * 0.5f
+                    scaleX *= backScale
+                    scaleY *= backScale
+                    alpha = 1f - progress
                 }
                 .pointerInput(Unit) {
                     detectTransformGestures { _, pan, zoom, _ ->
@@ -199,8 +203,9 @@ fun ImageDetailScreen(
                 }
         )
 
+        // Top bar - fades out during back gesture
         AnimatedVisibility(
-            visible = showTopBar,
+            visible = showTopBar && progress == 0f,
             enter = fadeIn() + slideInVertically(),
             exit = fadeOut() + slideOutVertically(),
             modifier = Modifier.align(Alignment.TopCenter)
@@ -242,8 +247,9 @@ fun ImageDetailScreen(
             }
         }
 
+        // Bottom bar - fades out during back gesture
         AnimatedVisibility(
-            visible = showBottomBar,
+            visible = showBottomBar && progress == 0f,
             enter = fadeIn() + slideInVertically(),
             exit = fadeOut() + slideOutVertically(),
             modifier = Modifier.align(Alignment.BottomCenter)
@@ -296,8 +302,9 @@ fun ImageDetailScreen(
             }
         }
 
+        // Info panel - fades out during back gesture
         AnimatedVisibility(
-            visible = showInfo,
+            visible = showInfo && progress == 0f,
             enter = slideInVertically(initialOffsetY = { it }) + fadeIn(),
             exit = slideOutVertically(targetOffsetY = { it }) + fadeOut(),
             modifier = Modifier.align(Alignment.BottomCenter)
@@ -309,7 +316,7 @@ fun ImageDetailScreen(
                 shape = RoundedCornerShape(topStart = 16.dp, topEnd = 16.dp),
                 colors = CardDefaults.cardColors(containerColor = Color.Black.copy(alpha = 0.9f))
             ) {
-                androidx.compose.foundation.layout.Column(
+                Column(
                     modifier = Modifier
                         .fillMaxSize()
                         .verticalScroll(rememberScrollState())
@@ -327,7 +334,7 @@ fun ImageDetailScreen(
                     }
 
                     HorizontalDivider(color = Color.White.copy(alpha = 0.2f))
-                    androidx.compose.foundation.layout.Spacer(modifier = Modifier.height(12.dp))
+                    Spacer(modifier = Modifier.height(12.dp))
 
                     InfoRow("画师", image.user.name)
                     if (image.user.username != image.user.name) {
@@ -341,10 +348,10 @@ fun ImageDetailScreen(
                         InfoRow("宽高比", "%.2f".format(image.aspectRatio))
                     }
                     if (image.tags.isNotEmpty()) {
-                        androidx.compose.foundation.layout.Spacer(modifier = Modifier.height(8.dp))
+                        Spacer(modifier = Modifier.height(8.dp))
                         Text("标签", style = MaterialTheme.typography.bodySmall, color = Color.White.copy(alpha = 0.6f))
-                        androidx.compose.foundation.layout.Spacer(modifier = Modifier.height(4.dp))
-                        androidx.compose.foundation.layout.FlowRow(
+                        Spacer(modifier = Modifier.height(4.dp))
+                        FlowRow(
                             horizontalArrangement = Arrangement.spacedBy(4.dp),
                             verticalArrangement = Arrangement.spacedBy(4.dp)
                         ) {
@@ -356,7 +363,7 @@ fun ImageDetailScreen(
                             }
                         }
                     }
-                    androidx.compose.foundation.layout.Spacer(modifier = Modifier.height(16.dp))
+                    Spacer(modifier = Modifier.height(16.dp))
                 }
             }
         }
