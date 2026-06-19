@@ -1,7 +1,7 @@
 package com.randomimage.ui.screens
 
 import android.widget.Toast
-import androidx.activity.compose.BackHandler
+import androidx.activity.compose.PredictiveBackHandler
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Spacer
@@ -54,7 +54,10 @@ fun CloudSyncScreen(
     var isImporting by remember { mutableStateOf(false) }
     var showConfigDialog by remember { mutableStateOf(true) }
 
-    BackHandler { onBack() }
+    PredictiveBackHandler { backEvents ->
+        backEvents.collect { }
+        onBack()
+    }
 
     Column(modifier = Modifier.fillMaxSize()) {
         TopAppBar(

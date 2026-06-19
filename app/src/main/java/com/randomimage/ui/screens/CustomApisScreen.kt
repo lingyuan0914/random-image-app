@@ -1,7 +1,7 @@
 package com.randomimage.ui.screens
 
 import android.widget.Toast
-import androidx.activity.compose.BackHandler
+import androidx.activity.compose.PredictiveBackHandler
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
@@ -51,7 +51,10 @@ fun CustomApisScreen(
     onBack: () -> Unit,
     onApisChanged: () -> Unit = {}
 ) {
-    BackHandler { onBack() }
+    PredictiveBackHandler { backEvents ->
+        backEvents.collect { }
+        onBack()
+    }
     val context = LocalContext.current
     var apis by remember { mutableStateOf(CustomApiManager.getCustomApis()) }
     var showAddDialog by remember { mutableStateOf(false) }

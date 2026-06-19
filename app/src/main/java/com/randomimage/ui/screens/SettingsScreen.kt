@@ -1,7 +1,7 @@
 package com.randomimage.ui.screens
 
 import android.widget.Toast
-import androidx.activity.compose.BackHandler
+import androidx.activity.compose.PredictiveBackHandler
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
@@ -56,7 +56,10 @@ fun SettingsScreen(
     onManageApis: () -> Unit = {},
     onQualityChanged: (String) -> Unit = {}
 ) {
-    BackHandler { onBack() }
+    PredictiveBackHandler { backEvents ->
+        backEvents.collect { }
+        onBack()
+    }
     val context = LocalContext.current
     var showClearCacheDialog by remember { mutableStateOf(false) }
     var showClearHistoryDialog by remember { mutableStateOf(false) }
@@ -146,7 +149,7 @@ fun SettingsScreen(
                     Spacer(modifier = Modifier.height(8.dp))
                     Row(modifier = Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
                         Column(modifier = Modifier.weight(1f)) {
-                            Text("预测性返回动画")
+                            Text("预测性返回动画（实验性功能）")
                             Text(
                                 if (predictiveBack) "已开启" else "已关闭",
                                 style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant

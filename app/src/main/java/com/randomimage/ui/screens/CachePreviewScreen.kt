@@ -3,7 +3,7 @@ package com.randomimage.ui.screens
 import android.content.Context
 import android.graphics.BitmapFactory
 import android.widget.Toast
-import androidx.activity.compose.BackHandler
+import androidx.activity.compose.PredictiveBackHandler
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
@@ -87,7 +87,10 @@ fun CachePreviewScreen(
         isLoading = false
     }
 
-    BackHandler { onBack() }
+    PredictiveBackHandler { backEvents ->
+        backEvents.collect { }
+        onBack()
+    }
 
     Column(modifier = Modifier.fillMaxSize()) {
         TopAppBar(

@@ -3,7 +3,7 @@ package com.randomimage.ui.screens
 import android.graphics.Bitmap
 import android.graphics.BitmapFactory
 import android.widget.Toast
-import androidx.activity.compose.BackHandler
+import androidx.activity.compose.PredictiveBackHandler
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
 import androidx.compose.foundation.gestures.detectTransformGestures
@@ -66,7 +66,10 @@ fun ImageCropScreen(
     var offsetY by remember { mutableFloatStateOf(0f) }
     var aspectRatio by remember { mutableFloatStateOf(1f) }
 
-    BackHandler { onBack() }
+    PredictiveBackHandler { backEvents ->
+        backEvents.collect { }
+        onBack()
+    }
 
     Column(modifier = Modifier.fillMaxSize()) {
         TopAppBar(
