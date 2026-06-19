@@ -108,7 +108,6 @@ fun ImageDetailScreen(
     Box(
         modifier = Modifier
             .fillMaxSize()
-            .background(Color.Black)
             .pointerInput(Unit) {
                 detectTapGestures(
                     onDoubleTap = {
@@ -125,7 +124,7 @@ fun ImageDetailScreen(
                 )
             }
     ) {
-        // Blurred background - fades out during back gesture
+        // Blurred background - transitions from blurry to clear during back gesture
         AsyncImage(
             model = ImageRequest.Builder(context)
                 .data(image.localPath ?: image.urls.thumb)
@@ -138,10 +137,17 @@ fun ImageDetailScreen(
             contentScale = ContentScale.Crop,
             modifier = Modifier
                 .fillMaxSize()
-                .blur(20.dp)
+                .blur((20 * (1f - progress)).dp)
                 .graphicsLayer {
-                    alpha = 0.6f * (1f - progress)
+                    alpha = 0.8f * (1f - progress * 0.5f)
                 }
+        )
+
+        // Semi-transparent overlay - fades out during back gesture
+        Box(
+            modifier = Modifier
+                .fillMaxSize()
+                .background(Color.Black.copy(alpha = 0.3f * (1f - progress)))
         )
 
         // Main image - scales down during back gesture

@@ -122,10 +122,10 @@ class MainActivity : ComponentActivity() {
                             )
                         }
                         composable("detail") {
-                            val currentImage = homeViewModel.getCurrentImage()
-                            if (currentImage != null) {
+                            val detailImage = homeUiState.detailImage
+                            if (detailImage != null) {
                                 ImageDetailScreen(
-                                    image = currentImage,
+                                    image = detailImage,
                                     onBack = { navController.popBackStack() },
                                     onSwipeLeft = { homeViewModel.swipeToNext() },
                                     onSwipeRight = { homeViewModel.swipeToPrev() },
