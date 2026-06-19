@@ -3,7 +3,6 @@ package com.randomimage.ui.screens
 import android.widget.Toast
 import androidx.activity.compose.PredictiveBackHandler
 import androidx.compose.animation.AnimatedVisibility
-import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
 import androidx.compose.animation.slideInVertically
@@ -56,6 +55,7 @@ import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.blur
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.input.pointer.pointerInput
@@ -64,7 +64,6 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
-import coil.compose.AsyncImage
 import coil.compose.SubcomposeAsyncImage
 import coil.request.ImageRequest
 import coil.size.Size
@@ -123,7 +122,79 @@ fun ImageDetailScreen(
                 )
             }
     ) {
-        // Main image - transparent background so system shows home page behind
+        // Blurred background - fades out during back gesture
+        SubcomposeAsyncImage(
+            model = ImageRequest.Builder(context)
+                .data(image.localPath ?: image.urls.thumb)
+                .memoryCacheKey(image.id)
+                .crossfade(false)
+                .size(Size.ORIGINAL)
+                .allowHardware(true)
+                .build(),
+            contentDescription = null,
+            contentScale = ContentScale.Crop,
+            modifier = Modifier
+                .fillMaxSize()
+                .blur(20.dp)
+                .graphicsLayer {
+                    alpha = 0.7f * (1f - progress)
+                }
+        )
+
+        // Main image - scales down and fades during back gesture
+        SubcomposeAsyncImage(
+            model = ImageRequest.Builder(context)
+                .data(image.localPath ?: image.urls.thumb)
+                .memoryCacheKey(image.id)
+                .crossfade(false)
+                .size(Size.ORIGINAL)
+                .allowHardware(true)
+                .build(),
+            contentDescription = image.description,
+            contentScale = ContentScale.Fit,
+            loading = {
+                CircularProgressIndicator(
+                    modifier = Modifier.align(Alignment.Center),
+                    color = Color.White
+                )
+            },
+            modifier = Modifier
+                .fillMaxSize()
+                .graphicsLayer {
+                    scaleX = scale * (1f - progress * 0.6f)
+                    scaleY = scale * (1f - progress * 0.6f)
+                    translationX = offsetX
+                    translationY = offsetY
+                    alpha = 1f - progress * 0.3f
+                }
+                .pointerInput(Unit) {
+                    detectTransformGestures { _, pan, zoom, _ ->
+                        scale = (scale * zoom).coerceIn(0.5f, 5f)
+                        if (scale > 1f) {
+                            offsetX += pan.x
+                            offsetY += pan.y
+                        } else {
+                            offsetX = 0f
+                            offsetY = 0f
+                        }
+                    }
+                }
+                .pointerInput(Unit) {
+                    detectHorizontalDragGestures(
+                        onDragEnd = {
+                            if (scale <= 1f) {
+                                if (offsetX > 100) onSwipeRight()
+                                else if (offsetX < -100) onSwipeLeft()
+                                offsetX = 0f
+                            }
+                        },
+                        onHorizontalDrag = { _, dragAmount ->
+                            if (scale <= 1f) offsetX += dragAmount
+                        }
+                    )
+                }
+        )
+
         SubcomposeAsyncImage(
             model = ImageRequest.Builder(context)
                 .data(image.localPath ?: image.urls.thumb)
