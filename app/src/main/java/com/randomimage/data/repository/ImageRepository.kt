@@ -92,12 +92,12 @@ class ImageRepository @Inject constructor(
     }
 
     suspend fun addToFavorites(image: ImageModel) {
-        val localPath = downloadToCache(image.urls.regular, image.id)
+        val localPath = downloadToCache(image.urls.raw, image.id)
         dataStore.addFavorite(FavoriteData.fromImageModel(image, localPath = localPath))
     }
 
     suspend fun addToFavoritesWithGroup(image: ImageModel, groupId: String) {
-        val localPath = downloadToCache(image.urls.regular, image.id)
+        val localPath = downloadToCache(image.urls.raw, image.id)
         dataStore.addFavorite(FavoriteData.fromImageModel(image, groupId.toLongOrNull() ?: 0, localPath = localPath))
     }
 

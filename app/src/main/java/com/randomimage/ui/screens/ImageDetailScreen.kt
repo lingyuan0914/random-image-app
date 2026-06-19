@@ -141,8 +141,8 @@ fun ImageDetailScreen(
                 Row(modifier = Modifier.fillMaxSize().padding(horizontal = 16.dp), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.SpaceEvenly) {
                     IconButton(onClick = onFavorite) { Icon(if (isFavorite) Icons.Default.Favorite else Icons.Default.FavoriteBorder, contentDescription = "Favorite", tint = if (isFavorite) Color.Red else Color.White, modifier = Modifier.size(28.dp)) }
                     IconButton(onClick = onFollow) { Icon(if (isFollowing) Icons.Default.PersonRemove else Icons.Default.PersonAdd, contentDescription = "Follow", tint = if (isFollowing) MaterialTheme.colorScheme.primary else Color.White, modifier = Modifier.size(28.dp)) }
-                    IconButton(onClick = { ImageUtils.shareImage(context, image.urls.regular) }) { Icon(Icons.Default.Share, contentDescription = "Share", tint = Color.White, modifier = Modifier.size(28.dp)) }
-                    IconButton(onClick = { scope.launch { val s = ImageUtils.downloadImage(context, image.urls.regular); Toast.makeText(context, if (s) "Downloaded" else "Failed", Toast.LENGTH_SHORT).show() } }) { Icon(Icons.Default.Download, contentDescription = "Download", tint = Color.White, modifier = Modifier.size(28.dp)) }
+                    IconButton(onClick = { ImageUtils.shareImage(context, image.urls.raw) }) { Icon(Icons.Default.Share, contentDescription = "Share", tint = Color.White, modifier = Modifier.size(28.dp)) }
+                    IconButton(onClick = { scope.launch { val s = ImageUtils.downloadImage(context, image.urls.raw); Toast.makeText(context, if (s) "已下载" else "下载失败", Toast.LENGTH_SHORT).show() } }) { Icon(Icons.Default.Download, contentDescription = "Download", tint = Color.White, modifier = Modifier.size(28.dp)) }
                 }
             }
         }

@@ -377,7 +377,7 @@ class HomeViewModel @Inject constructor(
             try {
                 val success = com.randomimage.util.ImageUtils.downloadImage(
                     getApplication(),
-                    currentImage.urls.regular
+                    currentImage.urls.raw
                 )
                 if (success) {
                     StatsManager.incrementDownloadCount(getApplication())
