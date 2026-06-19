@@ -119,7 +119,7 @@ fun FavoritesScreen(
                         horizontalArrangement = Arrangement.spacedBy(4.dp),
                         verticalArrangement = Arrangement.spacedBy(4.dp)
                     ) {
-                        items(filteredFavorites) { image ->
+                        items(filteredFavorites, key = { it.id }) { image ->
                             Card(
                                 modifier = Modifier
                                     .clip(RoundedCornerShape(8.dp))

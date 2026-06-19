@@ -298,6 +298,7 @@ class HomeViewModel @Inject constructor(
 
     fun setDetailImage(image: ImageModel, bounds: androidx.compose.ui.geometry.Rect? = null) {
         _uiState.value = _uiState.value.copy(detailImage = image, expandImageBounds = bounds)
+        checkFavorite()
     }
 
     fun setExpandBounds(bounds: FloatArray) {

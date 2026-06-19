@@ -1,5 +1,10 @@
 package com.randomimage.data.repository
 
+import android.content.Context
+import android.graphics.drawable.BitmapDrawable
+import coil.ImageLoader
+import coil.request.ImageRequest
+import coil.request.SuccessResult
 import com.randomimage.data.local.AppDataStore
 import com.randomimage.data.local.FavoriteData
 import com.randomimage.data.local.GroupData
@@ -9,17 +14,58 @@ import com.randomimage.data.local.ArtistData
 import com.randomimage.data.remote.CustomApiManager
 import com.randomimage.data.remote.ApiManager
 import com.randomimage.domain.model.ImageModel
+import dagger.hilt.android.qualifiers.ApplicationContext
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.first as flowFirst
 import kotlinx.coroutines.flow.map
+import kotlinx.coroutines.withContext
+import timber.log.Timber
+import java.io.File
 import javax.inject.Inject
 import javax.inject.Singleton
 
 @Singleton
 class ImageRepository @Inject constructor(
+    @ApplicationContext private val context: Context,
     private val dataStore: AppDataStore,
-    private val apiManager: ApiManager
+    private val apiManager: ApiManager,
+    private val imageLoader: ImageLoader
 ) {
+    private val favoritesCacheDir by lazy { File(context.filesDir, "favorite_images").also { it.mkdirs() } }
+
+    private suspend fun downloadToCache(imageUrl: String, imageId: String): String? {
+        return withContext(Dispatchers.IO) {
+            try {
+                val file = File(favoritesCacheDir, "${imageId.hashCode()}.jpg")
+                if (file.exists() && file.length() > 0) {
+                    Timber.d("Image already cached: ${file.absolutePath}")
+                    return@withContext file.absolutePath
+                }
+
+                val request = ImageRequest.Builder(context)
+                    .data(imageUrl)
+                    .allowHardware(false)
+                    .build()
+
+                val result = imageLoader.execute(request)
+                if (result is SuccessResult) {
+                    val bitmap = (result.drawable as BitmapDrawable).bitmap
+                    file.outputStream().use { out ->
+                        bitmap.compress(android.graphics.Bitmap.CompressFormat.JPEG, 90, out)
+                    }
+                    Timber.d("Image cached to: ${file.absolutePath}")
+                    file.absolutePath
+                } else {
+                    Timber.w("Failed to download image for caching: $imageUrl")
+                    null
+                }
+            } catch (e: Exception) {
+                Timber.e(e, "Error caching image: $imageUrl")
+                null
+            }
+        }
+    }
     suspend fun fetchRandomImages(count: Int = 10): List<ImageModel> {
         return apiManager.fetchRandomImages(count)
     }
@@ -46,11 +92,13 @@ class ImageRepository @Inject constructor(
     }
 
     suspend fun addToFavorites(image: ImageModel) {
-        dataStore.addFavorite(FavoriteData.fromImageModel(image))
+        val localPath = downloadToCache(image.urls.regular, image.id)
+        dataStore.addFavorite(FavoriteData.fromImageModel(image, localPath = localPath))
     }
 
     suspend fun addToFavoritesWithGroup(image: ImageModel, groupId: String) {
-        dataStore.addFavorite(FavoriteData.fromImageModel(image, groupId.toLongOrNull() ?: 0))
+        val localPath = downloadToCache(image.urls.regular, image.id)
+        dataStore.addFavorite(FavoriteData.fromImageModel(image, groupId.toLongOrNull() ?: 0, localPath = localPath))
     }
 
     suspend fun removeFromFavorites(imageId: String) {
@@ -107,9 +155,7 @@ class ImageRepository @Inject constructor(
     suspend fun updateGroupCover(id: String, coverUrl: String) = dataStore.updateGroupCover(id, coverUrl)
 
     suspend fun moveImageToGroup(imageId: String, groupId: String) {
-        val favorites = dataStore.getFavorites().flowFirst()
-        val updated = favorites.map { if (it.id == imageId) it.copy(groupId = groupId.toLongOrNull() ?: 0) else it }
-        dataStore.saveFavorites(updated)
+        dataStore.moveImageToGroup(imageId, groupId)
     }
 
     // Tags

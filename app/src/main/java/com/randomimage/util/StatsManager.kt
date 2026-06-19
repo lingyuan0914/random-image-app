@@ -26,22 +26,26 @@ object StatsManager {
 
     fun incrementViewCount(context: Context) {
         val prefs = getPrefs(context)
-        prefs.edit().putInt(KEY_VIEW_COUNT, prefs.getInt(KEY_VIEW_COUNT, 0) + 1).apply()
+        val current = prefs.getInt(KEY_VIEW_COUNT, 0)
+        prefs.edit().putInt(KEY_VIEW_COUNT, current + 1).apply()
     }
 
     fun incrementFavoriteCount(context: Context) {
         val prefs = getPrefs(context)
-        prefs.edit().putInt(KEY_FAVORITE_COUNT, prefs.getInt(KEY_FAVORITE_COUNT, 0) + 1).apply()
+        val current = prefs.getInt(KEY_FAVORITE_COUNT, 0)
+        prefs.edit().putInt(KEY_FAVORITE_COUNT, current + 1).apply()
     }
 
     fun incrementDownloadCount(context: Context) {
         val prefs = getPrefs(context)
-        prefs.edit().putInt(KEY_DOWNLOAD_COUNT, prefs.getInt(KEY_DOWNLOAD_COUNT, 0) + 1).apply()
+        val current = prefs.getInt(KEY_DOWNLOAD_COUNT, 0)
+        prefs.edit().putInt(KEY_DOWNLOAD_COUNT, current + 1).apply()
     }
 
     fun incrementSearchCount(context: Context) {
         val prefs = getPrefs(context)
-        prefs.edit().putInt(KEY_SEARCH_COUNT, prefs.getInt(KEY_SEARCH_COUNT, 0) + 1).apply()
+        val current = prefs.getInt(KEY_SEARCH_COUNT, 0)
+        prefs.edit().putInt(KEY_SEARCH_COUNT, current + 1).apply()
     }
 
     fun getViewCount(context: Context): Int = getPrefs(context).getInt(KEY_VIEW_COUNT, 0)

@@ -16,6 +16,7 @@ import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
+import timber.log.Timber
 import javax.inject.Inject
 import javax.inject.Singleton
 
@@ -36,6 +37,8 @@ class AppDataStore @Inject constructor(
     private val favoritesAdapter = moshi.adapter<List<FavoriteData>>(favoritesType)
     private val historyAdapter = moshi.adapter<List<HistoryData>>(historyType)
     private val groupsAdapter = moshi.adapter<List<GroupData>>(groupsType)
+
+    private val backupFile by lazy { java.io.File(context.filesDir, "favorites_backup.json") }
 
     companion object {
         private val KEY_FAVORITES = stringPreferencesKey("favorites")
@@ -66,23 +69,92 @@ class AppDataStore @Inject constructor(
     fun getFavorites(): Flow<List<FavoriteData>> {
         return context.dataStore.data.map { prefs ->
             val json = prefs[KEY_FAVORITES] ?: "[]"
-            try { favoritesAdapter.fromJson(json) ?: emptyList() } catch (_: Exception) { emptyList() }
+            try { 
+                val result = favoritesAdapter.fromJson(json) ?: emptyList()
+                Timber.d("getFavorites: count=${result.size}, ids=${result.map { it.id }.take(5)}")
+                result
+            } catch (e: Exception) { 
+                Timber.e(e, "Failed to parse favorites JSON, trying backup")
+                val backup = loadBackupFavorites()
+                if (backup.isNotEmpty()) {
+                    Timber.d("Restored ${backup.size} favorites from backup")
+                    saveFavoritesSync(backup)
+                }
+                backup
+            }
         }
     }
 
     suspend fun saveFavorites(favorites: List<FavoriteData>) {
-        context.dataStore.edit { prefs ->
-            prefs[KEY_FAVORITES] = favoritesAdapter.toJson(favorites)
+        favoritesMutex.withLock {
+            val json = favoritesAdapter.toJson(favorites)
+            Timber.d("saveFavorites: count=${favorites.size}, ids=${favorites.map { it.id }.take(5)}")
+            context.dataStore.edit { prefs ->
+                prefs[KEY_FAVORITES] = json
+            }
+            saveBackupFavorites(favorites)
         }
     }
 
     suspend fun addFavorite(favorite: FavoriteData) {
         favoritesMutex.withLock {
             context.dataStore.edit { prefs ->
-                val current = try { favoritesAdapter.fromJson(prefs[KEY_FAVORITES] ?: "[]") ?: emptyList() } catch (_: Exception) { emptyList() }
+                val current = try { favoritesAdapter.fromJson(prefs[KEY_FAVORITES] ?: "[]") ?: emptyList() } catch (e: Exception) { 
+                    Timber.e(e, "Failed to parse favorites JSON in addFavorite")
+                    val backup = loadBackupFavorites()
+                    backup
+                }
                 val updated = current.filter { it.id != favorite.id } + favorite
-                prefs[KEY_FAVORITES] = favoritesAdapter.toJson(updated)
+                val json = favoritesAdapter.toJson(updated)
+                Timber.d("addFavorite: id=${favorite.id}, current=${current.size}, updated=${updated.size}")
+                prefs[KEY_FAVORITES] = json
             }
+            saveBackupFavorites(loadCurrentFavorites())
+        }
+    }
+
+    private suspend fun loadCurrentFavorites(): List<FavoriteData> {
+        return try {
+            val prefs = context.dataStore.data.map { it[KEY_FAVORITES] ?: "[]" }.first()
+            favoritesAdapter.fromJson(prefs) ?: emptyList()
+        } catch (e: Exception) {
+            Timber.e(e, "Failed to load current favorites")
+            emptyList()
+        }
+    }
+
+    private fun saveBackupFavorites(favorites: List<FavoriteData>) {
+        try {
+            val json = favoritesAdapter.toJson(favorites)
+            backupFile.writeText(json)
+            Timber.d("Backup saved: ${favorites.size} favorites")
+        } catch (e: Exception) {
+            Timber.e(e, "Failed to save backup")
+        }
+    }
+
+    private fun loadBackupFavorites(): List<FavoriteData> {
+        return try {
+            if (backupFile.exists()) {
+                val json = backupFile.readText()
+                favoritesAdapter.fromJson(json) ?: emptyList()
+            } else {
+                emptyList()
+            }
+        } catch (e: Exception) {
+            Timber.e(e, "Failed to load backup")
+            emptyList()
+        }
+    }
+
+    private suspend fun saveFavoritesSync(favorites: List<FavoriteData>) {
+        try {
+            val json = favoritesAdapter.toJson(favorites)
+            context.dataStore.edit { prefs ->
+                prefs[KEY_FAVORITES] = json
+            }
+        } catch (e: Exception) {
+            Timber.e(e, "Failed to save favorites sync")
         }
     }
 
@@ -96,9 +168,21 @@ class AppDataStore @Inject constructor(
     }
 
     suspend fun isFavorite(id: String): Boolean {
-        val prefs = context.dataStore.data.map { it[KEY_FAVORITES] ?: "[]" }.first()
-        val current = try { favoritesAdapter.fromJson(prefs) ?: emptyList() } catch (_: Exception) { emptyList() }
-        return current.any { it.id == id }
+        return favoritesMutex.withLock {
+            val prefs = context.dataStore.data.map { it[KEY_FAVORITES] ?: "[]" }.first()
+            val current = try { favoritesAdapter.fromJson(prefs) ?: emptyList() } catch (_: Exception) { emptyList() }
+            current.any { it.id == id }
+        }
+    }
+
+    suspend fun moveImageToGroup(imageId: String, groupId: String) {
+        favoritesMutex.withLock {
+            context.dataStore.edit { prefs ->
+                val current = try { favoritesAdapter.fromJson(prefs[KEY_FAVORITES] ?: "[]") ?: emptyList() } catch (_: Exception) { emptyList() }
+                val updated = current.map { if (it.id == imageId) it.copy(groupId = groupId.toLongOrNull() ?: 0) else it }
+                prefs[KEY_FAVORITES] = favoritesAdapter.toJson(updated)
+            }
+        }
     }
 
     // History
@@ -257,7 +341,8 @@ data class FavoriteData(
     val description: String?,
     val groupId: Long = 0,
     val tags: String = "",
-    val timestamp: Long = System.currentTimeMillis()
+    val timestamp: Long = System.currentTimeMillis(),
+    val localPath: String? = null
 ) {
     fun toImageModel(): ImageModel {
         return ImageModel(
@@ -272,16 +357,17 @@ data class FavoriteData(
             description = description,
             groupId = groupId,
             tags = if (tags.isNotBlank()) tags.split(",") else emptyList(),
-            localPath = if (imageUrl.startsWith("file://")) imageUrl.removePrefix("file://") else null
+            localPath = localPath
         )
     }
 
     companion object {
-        fun fromImageModel(image: ImageModel, groupId: Long = 0): FavoriteData {
+        fun fromImageModel(image: ImageModel, groupId: Long = 0, localPath: String? = null): FavoriteData {
             return FavoriteData(
                 id = image.id, imageUrl = image.urls.regular, thumbnailUrl = image.urls.thumb,
                 photographerName = image.user.name, photographerUsername = image.user.username,
-                description = image.description, groupId = groupId, tags = image.tags.joinToString(",")
+                description = image.description, groupId = groupId, tags = image.tags.joinToString(","),
+                localPath = localPath
             )
         }
     }

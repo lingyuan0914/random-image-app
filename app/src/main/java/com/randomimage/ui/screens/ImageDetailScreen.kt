@@ -111,13 +111,13 @@ fun ImageDetailScreen(
             }
     ) {
         SubcomposeAsyncImage(
-            model = ImageRequest.Builder(context).data(image.localPath ?: image.urls.thumb).memoryCacheKey(image.id).crossfade(false).size(Size.ORIGINAL).allowHardware(true).build(),
+            model = ImageRequest.Builder(context).data(image.localPath ?: image.urls.regular).memoryCacheKey("${image.id}_blur").crossfade(false).size(Size.ORIGINAL).allowHardware(true).build(),
             contentDescription = null, contentScale = ContentScale.Crop,
             modifier = Modifier.fillMaxSize().blur(20.dp)
         )
 
         SubcomposeAsyncImage(
-            model = ImageRequest.Builder(context).data(image.localPath ?: image.urls.thumb).memoryCacheKey(image.id).crossfade(false).size(Size.ORIGINAL).allowHardware(true).build(),
+            model = ImageRequest.Builder(context).data(image.localPath ?: image.urls.regular).memoryCacheKey("${image.id}_detail").crossfade(false).size(Size.ORIGINAL).allowHardware(true).build(),
             contentDescription = image.description, contentScale = ContentScale.Fit,
             loading = { CircularProgressIndicator(modifier = Modifier.align(Alignment.Center), color = Color.White) },
             modifier = Modifier.fillMaxSize()

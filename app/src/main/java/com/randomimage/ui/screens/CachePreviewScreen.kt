@@ -119,11 +119,14 @@ fun CachePreviewScreen(onBack: () -> Unit, onImageClick: (com.randomimage.domain
                             shape = RoundedCornerShape(8.dp),
                             elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
                         ) {
-                            val bitmap = remember(cachedImage.file) {
-                                try { BitmapFactory.decodeFile(cachedImage.file.absolutePath) } catch (_: Exception) { null }
+                            var bitmap by remember { mutableStateOf<android.graphics.Bitmap?>(null) }
+                            LaunchedEffect(cachedImage.file) {
+                                bitmap = withContext(Dispatchers.IO) {
+                                    try { BitmapFactory.decodeFile(cachedImage.file.absolutePath) } catch (_: Exception) { null }
+                                }
                             }
                             if (bitmap != null) {
-                                Image(bitmap = bitmap.asImageBitmap(), contentDescription = cachedImage.name, contentScale = ContentScale.Crop, modifier = Modifier.fillMaxSize())
+                                Image(bitmap = bitmap!!.asImageBitmap(), contentDescription = cachedImage.name, contentScale = ContentScale.Crop, modifier = Modifier.fillMaxSize())
                             }
                         }
                     }
@@ -133,14 +136,19 @@ fun CachePreviewScreen(onBack: () -> Unit, onImageClick: (com.randomimage.domain
     }
 
     if (showDeleteDialog && selectedImage != null) {
-        val bitmap = remember(selectedImage?.file) { selectedImage?.file?.let { BitmapFactory.decodeFile(it.absolutePath) } }
+        var bitmap by remember { mutableStateOf<android.graphics.Bitmap?>(null) }
+        LaunchedEffect(selectedImage?.file) {
+            bitmap = withContext(Dispatchers.IO) {
+                selectedImage?.file?.let { try { BitmapFactory.decodeFile(it.absolutePath) } catch (_: Exception) { null } }
+            }
+        }
         AlertDialog(
             onDismissRequest = { showDeleteDialog = false; selectedImage = null },
             title = { Text("图片预览") },
             text = {
                 Column {
-                    if (bitmap != null) {
-                        Image(bitmap = bitmap.asImageBitmap(), contentDescription = "预览", contentScale = ContentScale.Fit,
+                    bitmap?.let { bmp ->
+                        Image(bitmap = bmp.asImageBitmap(), contentDescription = "预览", contentScale = ContentScale.Fit,
                             modifier = Modifier.fillMaxWidth().height(300.dp).clip(RoundedCornerShape(8.dp)))
                     }
                     Spacer(modifier = Modifier.height(8.dp))

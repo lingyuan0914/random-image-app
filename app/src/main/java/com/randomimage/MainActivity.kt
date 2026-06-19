@@ -116,7 +116,7 @@ class MainActivity : ComponentActivity() {
                         composable("favorites") {
                             FavoritesScreen(
                                 onImageClick = { image ->
-                                    homeViewModel.setCurrentImage(image)
+                                    homeViewModel.setDetailImage(image)
                                     navController.navigate("detail")
                                 }
                             )

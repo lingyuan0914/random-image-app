@@ -8,12 +8,10 @@ import androidx.compose.material3.dynamicDarkColorScheme
 import androidx.compose.material3.dynamicLightColorScheme
 import androidx.compose.material3.lightColorScheme
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.mutableIntStateOf
-import androidx.compose.runtime.remember
+import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.getValue
 import androidx.compose.ui.platform.LocalContext
 import com.randomimage.util.ThemeManager
-import kotlinx.coroutines.delay
 
 private val DarkColorScheme = darkColorScheme(
     primary = Purple80,
@@ -33,19 +31,10 @@ fun RandomImageTheme(
     content: @Composable () -> Unit
 ) {
     val context = LocalContext.current
-    val themeMode = remember { mutableIntStateOf(ThemeManager.getThemeMode(context)) }
+    ThemeManager.init(context)
+    val themeMode by ThemeManager.themeModeFlow.collectAsState()
 
-    LaunchedEffect(Unit) {
-        while (true) {
-            delay(100)
-            val newMode = ThemeManager.getThemeMode(context)
-            if (themeMode.intValue != newMode) {
-                themeMode.intValue = newMode
-            }
-        }
-    }
-
-    val darkTheme = when (themeMode.intValue) {
+    val darkTheme = when (themeMode) {
         ThemeManager.THEME_LIGHT -> false
         ThemeManager.THEME_DARK -> true
         else -> isSystemInDarkTheme()
