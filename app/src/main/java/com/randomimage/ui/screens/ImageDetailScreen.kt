@@ -1,7 +1,7 @@
 package com.randomimage.ui.screens
 
 import android.widget.Toast
-import androidx.activity.compose.PredictiveBackHandler
+import androidx.activity.compose.BackHandler
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
@@ -92,16 +92,7 @@ fun ImageDetailScreen(
     var showTopBar by remember { mutableStateOf(true) }
     var showBottomBar by remember { mutableStateOf(true) }
 
-    val backProgress = remember { mutableFloatStateOf(0f) }
-
-    PredictiveBackHandler { backEvents ->
-        backEvents.collect { event ->
-            backProgress.value = event.progress
-        }
-        onBack()
-    }
-
-    val progress by backProgress
+    BackHandler { onBack() }
 
     Box(
         modifier = Modifier
@@ -119,209 +110,65 @@ fun ImageDetailScreen(
                 )
             }
     ) {
-        // Layer 1: Blurred background — fades out during back gesture
         SubcomposeAsyncImage(
-            model = ImageRequest.Builder(context)
-                .data(image.localPath ?: image.urls.thumb)
-                .memoryCacheKey(image.id)
-                .crossfade(false)
-                .size(Size.ORIGINAL)
-                .allowHardware(true)
-                .build(),
-            contentDescription = null,
-            contentScale = ContentScale.Crop,
-            modifier = Modifier
-                .fillMaxSize()
-                .blur(20.dp)
-                .graphicsLayer { alpha = 0.7f * (1f - progress) }
+            model = ImageRequest.Builder(context).data(image.localPath ?: image.urls.thumb).memoryCacheKey(image.id).crossfade(false).size(Size.ORIGINAL).allowHardware(true).build(),
+            contentDescription = null, contentScale = ContentScale.Crop,
+            modifier = Modifier.fillMaxSize().blur(20.dp)
         )
 
-        // Layer 2: Main image — scales down and fades during back gesture
         SubcomposeAsyncImage(
-            model = ImageRequest.Builder(context)
-                .data(image.localPath ?: image.urls.thumb)
-                .memoryCacheKey(image.id)
-                .crossfade(false)
-                .size(Size.ORIGINAL)
-                .allowHardware(true)
-                .build(),
-            contentDescription = image.description,
-            contentScale = ContentScale.Fit,
-            loading = {
-                CircularProgressIndicator(
-                    modifier = Modifier.align(Alignment.Center),
-                    color = Color.White
-                )
-            },
-            modifier = Modifier
-                .fillMaxSize()
-                .graphicsLayer {
-                    // User zoom
-                    scaleX = scale
-                    scaleY = scale
-                    translationX = offsetX
-                    translationY = offsetY
-                    // Back gesture: scale down + fade
-                    val backScale = 1f - progress * 0.5f
-                    scaleX *= backScale
-                    scaleY *= backScale
-                    alpha = 1f - progress * 0.4f
-                }
-                .pointerInput(Unit) {
-                    detectTransformGestures { _, pan, zoom, _ ->
-                        scale = (scale * zoom).coerceIn(0.5f, 5f)
-                        if (scale > 1f) { offsetX += pan.x; offsetY += pan.y }
-                        else { offsetX = 0f; offsetY = 0f }
-                    }
-                }
-                .pointerInput(Unit) {
-                    detectHorizontalDragGestures(
-                        onDragEnd = {
-                            if (scale <= 1f) {
-                                if (offsetX > 100) onSwipeRight()
-                                else if (offsetX < -100) onSwipeLeft()
-                                offsetX = 0f
-                            }
-                        },
-                        onHorizontalDrag = { _, dragAmount ->
-                            if (scale <= 1f) offsetX += dragAmount
-                        }
-                    )
-                }
+            model = ImageRequest.Builder(context).data(image.localPath ?: image.urls.thumb).memoryCacheKey(image.id).crossfade(false).size(Size.ORIGINAL).allowHardware(true).build(),
+            contentDescription = image.description, contentScale = ContentScale.Fit,
+            loading = { CircularProgressIndicator(modifier = Modifier.align(Alignment.Center), color = Color.White) },
+            modifier = Modifier.fillMaxSize()
+                .graphicsLayer { scaleX = scale; scaleY = scale; translationX = offsetX; translationY = offsetY }
+                .pointerInput(Unit) { detectTransformGestures { _, pan, zoom, _ -> scale = (scale * zoom).coerceIn(0.5f, 5f); if (scale > 1f) { offsetX += pan.x; offsetY += pan.y } else { offsetX = 0f; offsetY = 0f } } }
+                .pointerInput(Unit) { detectHorizontalDragGestures(onDragEnd = { if (scale <= 1f) { if (offsetX > 100) onSwipeRight(); else if (offsetX < -100) onSwipeLeft(); offsetX = 0f } }, onHorizontalDrag = { _, d -> if (scale <= 1f) offsetX += d }) }
         )
 
-        // Layer 3: Top bar
-        AnimatedVisibility(
-            visible = showTopBar && progress == 0f,
-            enter = fadeIn() + slideInVertically(),
-            exit = fadeOut() + slideOutVertically(),
-            modifier = Modifier.align(Alignment.TopCenter)
-        ) {
-            Box(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .height(80.dp)
-                    .background(
-                        brush = androidx.compose.ui.graphics.Brush.verticalGradient(
-                            listOf(Color.Black.copy(alpha = 0.7f), Color.Transparent)
-                        )
-                    )
-            ) {
-                Row(
-                    modifier = Modifier.fillMaxSize().padding(horizontal = 8.dp),
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
-                    IconButton(onClick = onBack) {
-                        Icon(Icons.Default.ArrowBack, contentDescription = "返回", tint = Color.White)
-                    }
-                    Text(
-                        text = image.user.name,
-                        style = MaterialTheme.typography.bodyMedium,
-                        color = Color.White,
-                        fontWeight = FontWeight.Bold,
-                        modifier = Modifier.weight(1f)
-                    )
-                    IconButton(onClick = { showInfo = !showInfo }) {
-                        Icon(
-                            Icons.Default.Info, contentDescription = "信息",
-                            tint = if (showInfo) MaterialTheme.colorScheme.primary else Color.White
-                        )
-                    }
+        AnimatedVisibility(visible = showTopBar, enter = fadeIn() + slideInVertically(), exit = fadeOut() + slideOutVertically(), modifier = Modifier.align(Alignment.TopCenter)) {
+            Box(modifier = Modifier.fillMaxWidth().height(80.dp).background(brush = androidx.compose.ui.graphics.Brush.verticalGradient(listOf(Color.Black.copy(alpha = 0.7f), Color.Transparent)))) {
+                Row(modifier = Modifier.fillMaxSize().padding(horizontal = 8.dp), verticalAlignment = Alignment.CenterVertically) {
+                    IconButton(onClick = onBack) { Icon(Icons.Default.ArrowBack, contentDescription = "Back", tint = Color.White) }
+                    Text(text = image.user.name, style = MaterialTheme.typography.bodyMedium, color = Color.White, fontWeight = FontWeight.Bold, modifier = Modifier.weight(1f))
+                    IconButton(onClick = { showInfo = !showInfo }) { Icon(Icons.Default.Info, contentDescription = "Info", tint = if (showInfo) MaterialTheme.colorScheme.primary else Color.White) }
                 }
             }
         }
 
-        // Layer 4: Bottom bar
-        AnimatedVisibility(
-            visible = showBottomBar && progress == 0f,
-            enter = fadeIn() + slideInVertically(),
-            exit = fadeOut() + slideOutVertically(),
-            modifier = Modifier.align(Alignment.BottomCenter)
-        ) {
-            Box(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .height(100.dp)
-                    .background(
-                        brush = androidx.compose.ui.graphics.Brush.verticalGradient(
-                            listOf(Color.Transparent, Color.Black.copy(alpha = 0.8f))
-                        )
-                    )
-            ) {
-                Row(
-                    modifier = Modifier.fillMaxSize().padding(horizontal = 16.dp),
-                    verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.SpaceEvenly
-                ) {
-                    IconButton(onClick = onFavorite) {
-                        Icon(
-                            if (isFavorite) Icons.Default.Favorite else Icons.Default.FavoriteBorder,
-                            contentDescription = "收藏",
-                            tint = if (isFavorite) Color.Red else Color.White,
-                            modifier = Modifier.size(28.dp)
-                        )
-                    }
-                    IconButton(onClick = onFollow) {
-                        Icon(
-                            if (isFollowing) Icons.Default.PersonRemove else Icons.Default.PersonAdd,
-                            contentDescription = if (isFollowing) "取消关注" else "关注画师",
-                            tint = if (isFollowing) MaterialTheme.colorScheme.primary else Color.White,
-                            modifier = Modifier.size(28.dp)
-                        )
-                    }
-                    IconButton(onClick = { ImageUtils.shareImage(context, image.urls.regular) }) {
-                        Icon(Icons.Default.Share, contentDescription = "分享", tint = Color.White, modifier = Modifier.size(28.dp))
-                    }
-                    IconButton(onClick = {
-                        scope.launch {
-                            val success = ImageUtils.downloadImage(context, image.urls.regular)
-                            Toast.makeText(context, if (success) "下载成功" else "下载失败", Toast.LENGTH_SHORT).show()
-                        }
-                    }) {
-                        Icon(Icons.Default.Download, contentDescription = "下载", tint = Color.White, modifier = Modifier.size(28.dp))
-                    }
+        AnimatedVisibility(visible = showBottomBar, enter = fadeIn() + slideInVertically(), exit = fadeOut() + slideOutVertically(), modifier = Modifier.align(Alignment.BottomCenter)) {
+            Box(modifier = Modifier.fillMaxWidth().height(100.dp).background(brush = androidx.compose.ui.graphics.Brush.verticalGradient(listOf(Color.Transparent, Color.Black.copy(alpha = 0.8f))))) {
+                Row(modifier = Modifier.fillMaxSize().padding(horizontal = 16.dp), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.SpaceEvenly) {
+                    IconButton(onClick = onFavorite) { Icon(if (isFavorite) Icons.Default.Favorite else Icons.Default.FavoriteBorder, contentDescription = "Favorite", tint = if (isFavorite) Color.Red else Color.White, modifier = Modifier.size(28.dp)) }
+                    IconButton(onClick = onFollow) { Icon(if (isFollowing) Icons.Default.PersonRemove else Icons.Default.PersonAdd, contentDescription = "Follow", tint = if (isFollowing) MaterialTheme.colorScheme.primary else Color.White, modifier = Modifier.size(28.dp)) }
+                    IconButton(onClick = { ImageUtils.shareImage(context, image.urls.regular) }) { Icon(Icons.Default.Share, contentDescription = "Share", tint = Color.White, modifier = Modifier.size(28.dp)) }
+                    IconButton(onClick = { scope.launch { val s = ImageUtils.downloadImage(context, image.urls.regular); Toast.makeText(context, if (s) "Downloaded" else "Failed", Toast.LENGTH_SHORT).show() } }) { Icon(Icons.Default.Download, contentDescription = "Download", tint = Color.White, modifier = Modifier.size(28.dp)) }
                 }
             }
         }
 
-        // Layer 5: Info panel
-        AnimatedVisibility(
-            visible = showInfo && progress == 0f,
-            enter = slideInVertically(initialOffsetY = { it }) + fadeIn(),
-            exit = slideOutVertically(targetOffsetY = { it }) + fadeOut(),
-            modifier = Modifier.align(Alignment.BottomCenter)
-        ) {
-            Card(
-                modifier = Modifier.fillMaxWidth().height(320.dp),
-                shape = RoundedCornerShape(topStart = 16.dp, topEnd = 16.dp),
-                colors = CardDefaults.cardColors(containerColor = Color.Black.copy(alpha = 0.9f))
-            ) {
-                Column(
-                    modifier = Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(16.dp)
-                ) {
+        AnimatedVisibility(visible = showInfo, enter = slideInVertically(initialOffsetY = { it }) + fadeIn(), exit = slideOutVertically(targetOffsetY = { it }) + fadeOut(), modifier = Modifier.align(Alignment.BottomCenter)) {
+            Card(modifier = Modifier.fillMaxWidth().height(320.dp), shape = RoundedCornerShape(topStart = 16.dp, topEnd = 16.dp), colors = CardDefaults.cardColors(containerColor = Color.Black.copy(alpha = 0.9f))) {
+                Column(modifier = Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(16.dp)) {
                     Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically) {
-                        Text("图片信息", style = MaterialTheme.typography.titleMedium, color = Color.White)
-                        IconButton(onClick = { showInfo = false }) {
-                            Icon(Icons.Default.Info, contentDescription = "关闭", tint = Color.White)
-                        }
+                        Text("Image Info", style = MaterialTheme.typography.titleMedium, color = Color.White)
+                        IconButton(onClick = { showInfo = false }) { Icon(Icons.Default.Info, contentDescription = "Close", tint = Color.White) }
                     }
                     HorizontalDivider(color = Color.White.copy(alpha = 0.2f))
                     Spacer(modifier = Modifier.height(12.dp))
-                    InfoRow("画师", image.user.name)
-                    if (image.user.username != image.user.name) InfoRow("用户名", image.user.username)
-                    if (image.description != null) InfoRow("描述", image.description)
+                    InfoRow("Artist", image.user.name)
+                    if (image.user.username != image.user.name) InfoRow("Username", image.user.username)
+                    if (image.description != null) InfoRow("Description", image.description)
                     if (image.width > 0 && image.height > 0) {
-                        InfoRow("分辨率", "${image.width} × ${image.height}")
-                        InfoRow("宽高比", "%.2f".format(image.aspectRatio))
+                        InfoRow("Resolution", "${image.width} x ${image.height}")
+                        InfoRow("Aspect Ratio", "%.2f".format(image.aspectRatio))
                     }
                     if (image.tags.isNotEmpty()) {
                         Spacer(modifier = Modifier.height(8.dp))
-                        Text("标签", style = MaterialTheme.typography.bodySmall, color = Color.White.copy(alpha = 0.6f))
+                        Text("Tags", style = MaterialTheme.typography.bodySmall, color = Color.White.copy(alpha = 0.6f))
                         Spacer(modifier = Modifier.height(4.dp))
                         FlowRow(horizontalArrangement = Arrangement.spacedBy(4.dp), verticalArrangement = Arrangement.spacedBy(4.dp)) {
-                            image.tags.forEach { tag ->
-                                SuggestionChip(onClick = {}, label = { Text(tag, style = MaterialTheme.typography.labelSmall) })
-                            }
+                            image.tags.forEach { tag -> SuggestionChip(onClick = {}, label = { Text(tag, style = MaterialTheme.typography.labelSmall) }) }
                         }
                     }
                     Spacer(modifier = Modifier.height(16.dp))

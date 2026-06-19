@@ -1,7 +1,7 @@
 package com.randomimage.ui.screens
 
 import android.widget.Toast
-import androidx.activity.compose.PredictiveBackHandler
+import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.rememberScrollState
@@ -32,59 +32,29 @@ import com.randomimage.util.LogManager
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun LogScreen(
-    onBack: () -> Unit
-) {
+fun LogScreen(onBack: () -> Unit) {
     val context = LocalContext.current
     var logs by remember { mutableStateOf("") }
 
-    PredictiveBackHandler { backEvents ->
-        backEvents.collect { }
-        onBack()
-    }
+    BackHandler { onBack() }
 
-    LaunchedEffect(Unit) {
-        logs = LogManager.getLogs()
-    }
+    LaunchedEffect(Unit) { logs = LogManager.getLogs() }
 
     Scaffold(
         topBar = {
             TopAppBar(
                 title = { Text("应用日志") },
-                navigationIcon = {
-                    IconButton(onClick = onBack) {
-                        Icon(Icons.Default.ArrowBack, contentDescription = "返回")
-                    }
-                },
+                navigationIcon = { IconButton(onClick = onBack) { Icon(Icons.Default.ArrowBack, contentDescription = "返回") } },
                 actions = {
-                    IconButton(onClick = {
-                        LogManager.shareLogs(context)
-                    }) {
-                        Icon(Icons.Default.Share, contentDescription = "分享")
-                    }
-                    IconButton(onClick = {
-                        LogManager.clearLogs()
-                        logs = ""
-                        Toast.makeText(context, "日志已清除", Toast.LENGTH_SHORT).show()
-                    }) {
+                    IconButton(onClick = { LogManager.shareLogs(context) }) { Icon(Icons.Default.Share, contentDescription = "分享") }
+                    IconButton(onClick = { LogManager.clearLogs(); logs = ""; Toast.makeText(context, "日志已清除", Toast.LENGTH_SHORT).show() }) {
                         Icon(Icons.Default.Delete, contentDescription = "清除")
                     }
                 }
             )
         }
     ) { paddingValues ->
-        Text(
-            text = logs.ifEmpty { "暂无日志" },
-            modifier = Modifier
-                .fillMaxSize()
-                .padding(paddingValues)
-                .padding(16.dp)
-                .verticalScroll(rememberScrollState()),
-            style = MaterialTheme.typography.bodySmall.copy(
-                fontFamily = FontFamily.Monospace,
-                fontSize = 11.sp,
-                lineHeight = 16.sp
-            )
-        )
+        Text(text = logs.ifEmpty { "暂无日志" }, modifier = Modifier.fillMaxSize().padding(paddingValues).padding(16.dp).verticalScroll(rememberScrollState()),
+            style = MaterialTheme.typography.bodySmall.copy(fontFamily = FontFamily.Monospace, fontSize = 11.sp, lineHeight = 16.sp))
     }
 }
