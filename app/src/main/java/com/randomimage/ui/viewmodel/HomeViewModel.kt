@@ -49,7 +49,7 @@ data class HomeUiState(
     val detailImage: ImageModel? = null,
     val expandImageBounds: androidx.compose.ui.geometry.Rect? = null,
     val imageQuality: ImageQuality = ImageQuality.MEDIUM,
-    val popularTags: List<com.randomimage.data.local.TagEntity> = emptyList(),
+    val popularTags: List<com.randomimage.data.local.TagData> = emptyList(),
     val memoryImages: List<ImageModel> = emptyList()
 )
 
@@ -63,8 +63,7 @@ enum class ImageQuality(val label: String, val size: Int) {
 class HomeViewModel @Inject constructor(
     application: Application,
     private val apiManager: ApiManager,
-    private val repository: ImageRepository,
-    private val favoriteGroupDao: com.randomimage.data.local.FavoriteGroupDao
+    private val repository: ImageRepository
 ) : AndroidViewModel(application) {
 
     private val loadMoreMutex = Mutex()
@@ -317,7 +316,7 @@ class HomeViewModel @Inject constructor(
 
     private fun checkFavorite() {
         viewModelScope.launch {
-            val currentImage = getCurrentImage()
+            val currentImage = _uiState.value.detailImage ?: getCurrentImage()
             if (currentImage != null) {
                 val isFavorite = repository.isFavorite(currentImage.id)
                 _uiState.value = _uiState.value.copy(isFavorite = isFavorite)
@@ -326,7 +325,7 @@ class HomeViewModel @Inject constructor(
     }
 
     fun toggleFavorite() {
-        val currentImage = getCurrentImage() ?: return
+        val currentImage = _uiState.value.detailImage ?: getCurrentImage() ?: return
         viewModelScope.launch {
             if (_uiState.value.isFavorite) {
                 repository.removeFromFavorites(currentImage.id)
@@ -341,7 +340,7 @@ class HomeViewModel @Inject constructor(
         }
     }
 
-    fun addToFavoritesWithGroup(image: ImageModel, groupId: Long) {
+    fun addToFavoritesWithGroup(image: ImageModel, groupId: String) {
         viewModelScope.launch {
             repository.addToFavoritesWithGroup(image, groupId)
             _uiState.value = _uiState.value.copy(isFavorite = true)
@@ -350,8 +349,8 @@ class HomeViewModel @Inject constructor(
         }
     }
 
-    suspend fun getGroups(): List<com.randomimage.data.local.FavoriteGroupEntity> {
-        return favoriteGroupDao.getAllGroupsSync()
+    suspend fun getGroups(): List<com.randomimage.data.local.GroupData> {
+        return repository.getGroups().first()
     }
 
     fun clearHistory() {
@@ -461,7 +460,7 @@ class HomeViewModel @Inject constructor(
                 Timber.d("Unfollowed artist: ${image.user.name}")
             } else {
                 repository.followArtist(
-                    com.randomimage.data.local.ArtistEntity(
+                    com.randomimage.data.local.ArtistData(
                         uid = image.user.id,
                         name = image.user.name
                     )

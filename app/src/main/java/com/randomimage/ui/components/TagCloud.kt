@@ -10,12 +10,12 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
-import com.randomimage.data.local.TagEntity
+import com.randomimage.data.local.TagData
 
 @OptIn(ExperimentalLayoutApi::class)
 @Composable
 fun TagCloud(
-    tags: List<TagEntity>,
+    tags: List<TagData>,
     onTagClick: (String) -> Unit,
     modifier: Modifier = Modifier
 ) {

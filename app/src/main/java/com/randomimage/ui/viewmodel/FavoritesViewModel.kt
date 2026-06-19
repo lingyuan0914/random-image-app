@@ -2,8 +2,7 @@ package com.randomimage.ui.viewmodel
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.randomimage.data.local.FavoriteGroupDao
-import com.randomimage.data.local.FavoriteGroupEntity
+import com.randomimage.data.local.GroupData
 import com.randomimage.data.repository.ImageRepository
 import com.randomimage.domain.model.ImageModel
 import dagger.hilt.android.lifecycle.HiltViewModel
@@ -15,14 +14,13 @@ import javax.inject.Inject
 
 data class FavoritesUiState(
     val favorites: List<ImageModel> = emptyList(),
-    val groups: List<FavoriteGroupEntity> = emptyList(),
+    val groups: List<GroupData> = emptyList(),
     val isLoading: Boolean = false
 )
 
 @HiltViewModel
 class FavoritesViewModel @Inject constructor(
-    private val repository: ImageRepository,
-    private val favoriteGroupDao: FavoriteGroupDao
+    private val repository: ImageRepository
 ) : ViewModel() {
 
     private val _uiState = MutableStateFlow(FavoritesUiState())
@@ -47,7 +45,7 @@ class FavoritesViewModel @Inject constructor(
 
     private fun loadGroups() {
         viewModelScope.launch {
-            favoriteGroupDao.getAllGroups().collect { groups ->
+            repository.getGroups().collect { groups ->
                 _uiState.value = _uiState.value.copy(groups = groups)
             }
         }
@@ -55,13 +53,13 @@ class FavoritesViewModel @Inject constructor(
 
     fun addGroup(name: String) {
         viewModelScope.launch {
-            favoriteGroupDao.insertGroup(FavoriteGroupEntity(name = name))
+            repository.addGroup(GroupData(id = "group_${System.currentTimeMillis()}", name = name))
         }
     }
 
-    fun deleteGroup(group: FavoriteGroupEntity) {
+    fun deleteGroup(group: GroupData) {
         viewModelScope.launch {
-            favoriteGroupDao.deleteGroup(group)
+            repository.removeGroup(group.id)
         }
     }
 
@@ -71,7 +69,7 @@ class FavoritesViewModel @Inject constructor(
         }
     }
 
-    fun moveImageToGroup(imageId: String, groupId: Long) {
+    fun moveImageToGroup(imageId: String, groupId: String) {
         viewModelScope.launch {
             repository.moveImageToGroup(imageId, groupId)
         }

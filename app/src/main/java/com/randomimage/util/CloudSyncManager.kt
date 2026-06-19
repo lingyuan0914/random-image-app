@@ -1,12 +1,13 @@
 package com.randomimage.util
 
 import android.content.Context
-import com.randomimage.data.local.AppDatabase
-import com.randomimage.data.local.FavoriteEntity
+import com.randomimage.data.local.AppDataStore
+import com.randomimage.data.local.FavoriteData
 import com.squareup.moshi.Moshi
 import com.squareup.moshi.Types
 import com.squareup.moshi.kotlin.reflect.KotlinJsonAdapterFactory
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.withContext
 import timber.log.Timber
 import java.io.File
@@ -18,11 +19,16 @@ object CloudSyncManager {
     private var webdavUrl: String = ""
     private var username: String = ""
     private var password: String = ""
+    private var dataStore: AppDataStore? = null
 
     fun configure(url: String, user: String, pass: String) {
         webdavUrl = url
         username = user
         password = pass
+    }
+
+    fun init(store: AppDataStore) {
+        dataStore = store
     }
 
     suspend fun uploadFile(context: Context, localFile: File, remoteName: String): Boolean {
@@ -66,13 +72,8 @@ object CloudSyncManager {
     suspend fun exportFavorites(context: Context): Boolean {
         return withContext(Dispatchers.IO) {
             try {
-                val db = androidx.room.Room.databaseBuilder(
-                    context,
-                    AppDatabase::class.java,
-                    "random_image_db"
-                ).build()
-
-                val favorites = db.favoriteDao().getAllFavoritesSync()
+                val store = dataStore ?: return@withContext false
+                val favorites = store.getFavorites().first()
                 val json = favoritesToJson(favorites)
 
                 val file = File(context.filesDir, "favorites_backup.json")
@@ -96,14 +97,9 @@ object CloudSyncManager {
                 val json = file.readText()
                 val favorites = jsonToFavorites(json)
 
-                val db = androidx.room.Room.databaseBuilder(
-                    context,
-                    AppDatabase::class.java,
-                    "random_image_db"
-                ).build()
-
+                val store = dataStore ?: return@withContext false
                 favorites.forEach { favorite ->
-                    db.favoriteDao().insertFavorite(favorite)
+                    store.addFavorite(favorite)
                 }
 
                 Timber.d("Favorites imported: ${favorites.size} items")
@@ -115,23 +111,23 @@ object CloudSyncManager {
         }
     }
 
-    private fun favoritesToJson(favorites: List<FavoriteEntity>): String {
+    private fun favoritesToJson(favorites: List<FavoriteData>): String {
         val moshi = Moshi.Builder()
             .addLast(KotlinJsonAdapterFactory())
             .build()
 
-        val type = Types.newParameterizedType(List::class.java, FavoriteEntity::class.java)
-        val adapter = moshi.adapter<List<FavoriteEntity>>(type)
+        val type = Types.newParameterizedType(List::class.java, FavoriteData::class.java)
+        val adapter = moshi.adapter<List<FavoriteData>>(type)
         return adapter.toJson(favorites)
     }
 
-    private fun jsonToFavorites(json: String): List<FavoriteEntity> {
+    private fun jsonToFavorites(json: String): List<FavoriteData> {
         val moshi = Moshi.Builder()
             .addLast(KotlinJsonAdapterFactory())
             .build()
 
-        val type = Types.newParameterizedType(List::class.java, FavoriteEntity::class.java)
-        val adapter = moshi.adapter<List<FavoriteEntity>>(type)
+        val type = Types.newParameterizedType(List::class.java, FavoriteData::class.java)
+        val adapter = moshi.adapter<List<FavoriteData>>(type)
         return adapter.fromJson(json) ?: emptyList()
     }
 }

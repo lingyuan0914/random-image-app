@@ -67,7 +67,7 @@ fun FavoritesScreen(
     } else {
         val group = uiState.groups.getOrNull(selectedGroupIndex - 1)
         if (group != null) {
-            uiState.favorites.filter { it.groupId == group.id }
+            uiState.favorites.filter { it.groupId.toString() == group.id }
         } else {
             uiState.favorites
         }

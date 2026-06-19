@@ -86,18 +86,18 @@ dependencies {
     implementation("androidx.navigation:navigation-compose:2.7.7")
 
     // Networking
-    implementation("com.squareup.retrofit2:retrofit:2.9.0")
-    implementation("com.squareup.retrofit2:converter-moshi:2.9.0")
-    implementation("com.squareup.moshi:moshi-kotlin:1.15.0")
+    implementation("com.squareup.okhttp3:okhttp:4.12.0")
     implementation("com.squareup.okhttp3:logging-interceptor:4.12.0")
+
+    // JSON
+    implementation("com.squareup.moshi:moshi-kotlin:1.15.0")
+    implementation("org.json:json:20231013")
+
+    // Local Storage
+    implementation("androidx.datastore:datastore-preferences:1.1.1")
 
     // Image Loading
     implementation("io.coil-kt:coil-compose:2.5.0")
-
-    // Local Storage
-    implementation("androidx.room:room-runtime:2.6.1")
-    implementation("androidx.room:room-ktx:2.6.1")
-    kapt("androidx.room:room-compiler:2.6.1")
 
     // DI
     implementation("com.google.dagger:hilt-android:2.50")
