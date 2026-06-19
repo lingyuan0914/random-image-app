@@ -110,10 +110,7 @@ fun ImageDetailScreen(
                 detectTapGestures(
                     onDoubleTap = {
                         scale = if (scale > 1.5f) 1f else 2.5f
-                        if (scale <= 1f) {
-                            offsetX = 0f
-                            offsetY = 0f
-                        }
+                        if (scale <= 1f) { offsetX = 0f; offsetY = 0f }
                     },
                     onTap = {
                         showTopBar = !showTopBar
@@ -122,7 +119,7 @@ fun ImageDetailScreen(
                 )
             }
     ) {
-        // Blurred background - fades out during back gesture
+        // Layer 1: Blurred background — fades out during back gesture
         SubcomposeAsyncImage(
             model = ImageRequest.Builder(context)
                 .data(image.localPath ?: image.urls.thumb)
@@ -136,12 +133,10 @@ fun ImageDetailScreen(
             modifier = Modifier
                 .fillMaxSize()
                 .blur(20.dp)
-                .graphicsLayer {
-                    alpha = 0.7f * (1f - progress)
-                }
+                .graphicsLayer { alpha = 0.7f * (1f - progress) }
         )
 
-        // Main image - scales down and fades during back gesture
+        // Layer 2: Main image — scales down and fades during back gesture
         SubcomposeAsyncImage(
             model = ImageRequest.Builder(context)
                 .data(image.localPath ?: image.urls.thumb)
@@ -161,80 +156,22 @@ fun ImageDetailScreen(
             modifier = Modifier
                 .fillMaxSize()
                 .graphicsLayer {
-                    scaleX = scale * (1f - progress * 0.6f)
-                    scaleY = scale * (1f - progress * 0.6f)
-                    translationX = offsetX
-                    translationY = offsetY
-                    alpha = 1f - progress * 0.3f
-                }
-                .pointerInput(Unit) {
-                    detectTransformGestures { _, pan, zoom, _ ->
-                        scale = (scale * zoom).coerceIn(0.5f, 5f)
-                        if (scale > 1f) {
-                            offsetX += pan.x
-                            offsetY += pan.y
-                        } else {
-                            offsetX = 0f
-                            offsetY = 0f
-                        }
-                    }
-                }
-                .pointerInput(Unit) {
-                    detectHorizontalDragGestures(
-                        onDragEnd = {
-                            if (scale <= 1f) {
-                                if (offsetX > 100) onSwipeRight()
-                                else if (offsetX < -100) onSwipeLeft()
-                                offsetX = 0f
-                            }
-                        },
-                        onHorizontalDrag = { _, dragAmount ->
-                            if (scale <= 1f) offsetX += dragAmount
-                        }
-                    )
-                }
-        )
-
-        SubcomposeAsyncImage(
-            model = ImageRequest.Builder(context)
-                .data(image.localPath ?: image.urls.thumb)
-                .memoryCacheKey(image.id)
-                .crossfade(false)
-                .size(Size.ORIGINAL)
-                .allowHardware(true)
-                .build(),
-            contentDescription = image.description,
-            contentScale = ContentScale.Fit,
-            loading = {
-                CircularProgressIndicator(
-                    modifier = Modifier.align(Alignment.Center),
-                    color = Color.White
-                )
-            },
-            modifier = Modifier
-                .fillMaxSize()
-                .graphicsLayer {
-                    // Apply zoom from user gestures
+                    // User zoom
                     scaleX = scale
                     scaleY = scale
                     translationX = offsetX
                     translationY = offsetY
-                    // Apply back gesture animation: scale down and fade
+                    // Back gesture: scale down + fade
                     val backScale = 1f - progress * 0.5f
                     scaleX *= backScale
                     scaleY *= backScale
-                    alpha = 1f - progress
+                    alpha = 1f - progress * 0.4f
                 }
                 .pointerInput(Unit) {
                     detectTransformGestures { _, pan, zoom, _ ->
                         scale = (scale * zoom).coerceIn(0.5f, 5f)
-                        if (scale > 1f) {
-                            offsetX += pan.x
-                            offsetY += pan.y
-                        } else {
-                            offsetX = 0f
-                            offsetY = 0f
-                        }
+                        if (scale > 1f) { offsetX += pan.x; offsetY += pan.y }
+                        else { offsetX = 0f; offsetY = 0f }
                     }
                 }
                 .pointerInput(Unit) {
@@ -253,7 +190,7 @@ fun ImageDetailScreen(
                 }
         )
 
-        // Top bar - fades out during back gesture
+        // Layer 3: Top bar
         AnimatedVisibility(
             visible = showTopBar && progress == 0f,
             enter = fadeIn() + slideInVertically(),
@@ -266,14 +203,12 @@ fun ImageDetailScreen(
                     .height(80.dp)
                     .background(
                         brush = androidx.compose.ui.graphics.Brush.verticalGradient(
-                            colors = listOf(Color.Black.copy(alpha = 0.7f), Color.Transparent)
+                            listOf(Color.Black.copy(alpha = 0.7f), Color.Transparent)
                         )
                     )
             ) {
                 Row(
-                    modifier = Modifier
-                        .fillMaxSize()
-                        .padding(horizontal = 8.dp),
+                    modifier = Modifier.fillMaxSize().padding(horizontal = 8.dp),
                     verticalAlignment = Alignment.CenterVertically
                 ) {
                     IconButton(onClick = onBack) {
@@ -288,8 +223,7 @@ fun ImageDetailScreen(
                     )
                     IconButton(onClick = { showInfo = !showInfo }) {
                         Icon(
-                            Icons.Default.Info,
-                            contentDescription = "信息",
+                            Icons.Default.Info, contentDescription = "信息",
                             tint = if (showInfo) MaterialTheme.colorScheme.primary else Color.White
                         )
                     }
@@ -297,7 +231,7 @@ fun ImageDetailScreen(
             }
         }
 
-        // Bottom bar - fades out during back gesture
+        // Layer 4: Bottom bar
         AnimatedVisibility(
             visible = showBottomBar && progress == 0f,
             enter = fadeIn() + slideInVertically(),
@@ -310,14 +244,12 @@ fun ImageDetailScreen(
                     .height(100.dp)
                     .background(
                         brush = androidx.compose.ui.graphics.Brush.verticalGradient(
-                            colors = listOf(Color.Transparent, Color.Black.copy(alpha = 0.8f))
+                            listOf(Color.Transparent, Color.Black.copy(alpha = 0.8f))
                         )
                     )
             ) {
                 Row(
-                    modifier = Modifier
-                        .fillMaxSize()
-                        .padding(horizontal = 16.dp),
+                    modifier = Modifier.fillMaxSize().padding(horizontal = 16.dp),
                     verticalAlignment = Alignment.CenterVertically,
                     horizontalArrangement = Arrangement.SpaceEvenly
                 ) {
@@ -352,7 +284,7 @@ fun ImageDetailScreen(
             }
         }
 
-        // Info panel - fades out during back gesture
+        // Layer 5: Info panel
         AnimatedVisibility(
             visible = showInfo && progress == 0f,
             enter = slideInVertically(initialOffsetY = { it }) + fadeIn(),
@@ -360,39 +292,24 @@ fun ImageDetailScreen(
             modifier = Modifier.align(Alignment.BottomCenter)
         ) {
             Card(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .height(320.dp),
+                modifier = Modifier.fillMaxWidth().height(320.dp),
                 shape = RoundedCornerShape(topStart = 16.dp, topEnd = 16.dp),
                 colors = CardDefaults.cardColors(containerColor = Color.Black.copy(alpha = 0.9f))
             ) {
                 Column(
-                    modifier = Modifier
-                        .fillMaxSize()
-                        .verticalScroll(rememberScrollState())
-                        .padding(16.dp)
+                    modifier = Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(16.dp)
                 ) {
-                    Row(
-                        modifier = Modifier.fillMaxWidth(),
-                        horizontalArrangement = Arrangement.SpaceBetween,
-                        verticalAlignment = Alignment.CenterVertically
-                    ) {
+                    Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically) {
                         Text("图片信息", style = MaterialTheme.typography.titleMedium, color = Color.White)
                         IconButton(onClick = { showInfo = false }) {
                             Icon(Icons.Default.Info, contentDescription = "关闭", tint = Color.White)
                         }
                     }
-
                     HorizontalDivider(color = Color.White.copy(alpha = 0.2f))
                     Spacer(modifier = Modifier.height(12.dp))
-
                     InfoRow("画师", image.user.name)
-                    if (image.user.username != image.user.name) {
-                        InfoRow("用户名", image.user.username)
-                    }
-                    if (image.description != null) {
-                        InfoRow("描述", image.description)
-                    }
+                    if (image.user.username != image.user.name) InfoRow("用户名", image.user.username)
+                    if (image.description != null) InfoRow("描述", image.description)
                     if (image.width > 0 && image.height > 0) {
                         InfoRow("分辨率", "${image.width} × ${image.height}")
                         InfoRow("宽高比", "%.2f".format(image.aspectRatio))
@@ -401,15 +318,9 @@ fun ImageDetailScreen(
                         Spacer(modifier = Modifier.height(8.dp))
                         Text("标签", style = MaterialTheme.typography.bodySmall, color = Color.White.copy(alpha = 0.6f))
                         Spacer(modifier = Modifier.height(4.dp))
-                        FlowRow(
-                            horizontalArrangement = Arrangement.spacedBy(4.dp),
-                            verticalArrangement = Arrangement.spacedBy(4.dp)
-                        ) {
+                        FlowRow(horizontalArrangement = Arrangement.spacedBy(4.dp), verticalArrangement = Arrangement.spacedBy(4.dp)) {
                             image.tags.forEach { tag ->
-                                SuggestionChip(
-                                    onClick = {},
-                                    label = { Text(tag, style = MaterialTheme.typography.labelSmall) }
-                                )
+                                SuggestionChip(onClick = {}, label = { Text(tag, style = MaterialTheme.typography.labelSmall) })
                             }
                         }
                     }
@@ -422,23 +333,8 @@ fun ImageDetailScreen(
 
 @Composable
 private fun InfoRow(label: String, value: String) {
-    Row(
-        modifier = Modifier
-            .fillMaxWidth()
-            .padding(vertical = 4.dp),
-        horizontalArrangement = Arrangement.SpaceBetween
-    ) {
-        Text(
-            text = label,
-            style = MaterialTheme.typography.bodySmall,
-            color = Color.White.copy(alpha = 0.6f)
-        )
-        Text(
-            text = value,
-            style = MaterialTheme.typography.bodySmall,
-            color = Color.White,
-            modifier = Modifier.weight(1f),
-            textAlign = TextAlign.End
-        )
+    Row(modifier = Modifier.fillMaxWidth().padding(vertical = 4.dp), horizontalArrangement = Arrangement.SpaceBetween) {
+        Text(text = label, style = MaterialTheme.typography.bodySmall, color = Color.White.copy(alpha = 0.6f))
+        Text(text = value, style = MaterialTheme.typography.bodySmall, color = Color.White, modifier = Modifier.weight(1f), textAlign = TextAlign.End)
     }
 }
