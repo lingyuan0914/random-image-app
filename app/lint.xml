@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<lint>
+    <!-- 抑制 Compose/Lifecycle 库 lint 检查 API 不兼容警告（库级别问题） -->
+    <issue id="ObsoleteLintCustomCheck" severity="ignore" />
+
+    <!-- 抑制 enableOnBackInvokedCallback 低版本警告（为 Android 16 预测性返回准备） -->
+    <issue id="UnusedAttribute" severity="ignore" />
+</lint>
