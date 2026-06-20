@@ -14,9 +14,19 @@ import java.io.FileOutputStream
 
 object ShareUtils {
 
+    private var sharedImageLoader: ImageLoader? = null
+
+    fun init(imageLoader: ImageLoader) {
+        sharedImageLoader = imageLoader
+    }
+
+    private fun getLoader(context: Context): ImageLoader {
+        return sharedImageLoader ?: ImageLoader(context)
+    }
+
     suspend fun shareImage(context: Context, imageUrl: String, appName: String? = null) {
         try {
-            val loader = ImageLoader(context)
+            val loader = getLoader(context)
             val request = ImageRequest.Builder(context)
                 .data(imageUrl)
                 .allowHardware(false)
@@ -59,7 +69,7 @@ object ShareUtils {
 
     suspend fun shareImageToWechat(context: Context, imageUrl: String) {
         try {
-            val loader = ImageLoader(context)
+            val loader = getLoader(context)
             val request = ImageRequest.Builder(context)
                 .data(imageUrl)
                 .allowHardware(false)
@@ -85,7 +95,7 @@ object ShareUtils {
 
     suspend fun shareImageToQQ(context: Context, imageUrl: String) {
         try {
-            val loader = ImageLoader(context)
+            val loader = getLoader(context)
             val request = ImageRequest.Builder(context)
                 .data(imageUrl)
                 .allowHardware(false)

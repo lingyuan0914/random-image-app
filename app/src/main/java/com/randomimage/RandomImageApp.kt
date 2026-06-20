@@ -9,6 +9,7 @@ import com.randomimage.util.CloudSyncManager
 import com.randomimage.util.DownloadManager
 import com.randomimage.util.ImageUtils
 import com.randomimage.util.LogManager
+import com.randomimage.util.ShareUtils
 import dagger.hilt.android.HiltAndroidApp
 import timber.log.Timber
 import javax.inject.Inject
@@ -32,6 +33,7 @@ class RandomImageApp : Application() {
         Timber.plant(LogManagerTree())
         ImageUtils.init(imageLoader)
         DownloadManager.init(imageLoader)
+        ShareUtils.init(imageLoader)
         apiManager.init(this)
         CloudSyncManager.init(dataStore, this)
         Timber.d("Application started")

@@ -111,7 +111,7 @@ fun ImageDetailScreen(
             }
     ) {
         SubcomposeAsyncImage(
-            model = ImageRequest.Builder(context).data(image.localPath ?: image.urls.regular).memoryCacheKey("${image.id}_blur").crossfade(false).size(Size.ORIGINAL).allowHardware(true).build(),
+            model = ImageRequest.Builder(context).data(image.localPath ?: image.urls.regular).memoryCacheKey("${image.id}_blur").crossfade(false).size(300, 300).allowHardware(true).build(),
             contentDescription = null, contentScale = ContentScale.Crop,
             modifier = Modifier.fillMaxSize().blur(20.dp)
         )

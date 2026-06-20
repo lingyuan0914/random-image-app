@@ -58,7 +58,7 @@ object AppModule {
             .diskCache {
                 DiskCache.Builder()
                     .directory(context.cacheDir.resolve("image_cache"))
-                    .maxSizePercent(0.05)
+                    .maxSizePercent(0.10)
                     .build()
             }
             .respectCacheHeaders(false)
