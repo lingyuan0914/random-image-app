@@ -10,13 +10,39 @@ object ThemeManager {
     private const val PREFS_NAME = "theme_prefs"
     private const val KEY_THEME_MODE = "theme_mode"
     private const val KEY_PREDICTIVE_BACK = "predictive_back"
+    private const val KEY_COLOR_MODE = "color_mode"
+    private const val KEY_KEY_COLOR = "key_color"
+    private const val KEY_AMOLED = "amoled_mode"
 
     const val THEME_LIGHT = 0
     const val THEME_DARK = 1
     const val THEME_SYSTEM = 2
 
+    val keyColorOptions = listOf(
+        0xFFF44336.toInt(), // Red
+        0xFFE91E63.toInt(), // Pink
+        0xFF9C27B0.toInt(), // Purple
+        0xFF673AB7.toInt(), // Deep Purple
+        0xFF3F51B5.toInt(), // Indigo
+        0xFF2196F3.toInt(), // Blue
+        0xFF00BCD4.toInt(), // Cyan
+        0xFF009688.toInt(), // Teal
+        0xFF4CAF50.toInt(), // Green
+        0xFFFFEB3B.toInt(), // Yellow
+        0xFFFFC107.toInt(), // Amber
+        0xFFFF9800.toInt(), // Orange
+        0xFF795548.toInt(), // Brown
+        0xFF607D8B.toInt(), // Blue Grey
+    )
+
     private val _themeModeFlow = MutableStateFlow(THEME_SYSTEM)
     val themeModeFlow: StateFlow<Int> = _themeModeFlow.asStateFlow()
+
+    private val _keyColorFlow = MutableStateFlow(0xFF2196F3.toInt())
+    val keyColorFlow: StateFlow<Int> = _keyColorFlow.asStateFlow()
+
+    private val _amoledFlow = MutableStateFlow(false)
+    val amoledFlow: StateFlow<Boolean> = _amoledFlow.asStateFlow()
 
     private var initialized = false
 
@@ -27,10 +53,16 @@ object ThemeManager {
     fun init(context: Context) {
         if (initialized) return
         initialized = true
-        _themeModeFlow.value = getPrefs(context).getInt(KEY_THEME_MODE, THEME_SYSTEM)
-        getPrefs(context).registerOnSharedPreferenceChangeListener { _, key ->
-            if (key == KEY_THEME_MODE) {
-                _themeModeFlow.value = getPrefs(context).getInt(KEY_THEME_MODE, THEME_SYSTEM)
+        val prefs = getPrefs(context)
+        _themeModeFlow.value = prefs.getInt(KEY_THEME_MODE, THEME_SYSTEM)
+        _keyColorFlow.value = prefs.getInt(KEY_KEY_COLOR, 0xFF2196F3.toInt())
+        _amoledFlow.value = prefs.getBoolean(KEY_AMOLED, false)
+
+        prefs.registerOnSharedPreferenceChangeListener { _, key ->
+            when (key) {
+                KEY_THEME_MODE -> _themeModeFlow.value = prefs.getInt(KEY_THEME_MODE, THEME_SYSTEM)
+                KEY_KEY_COLOR -> _keyColorFlow.value = prefs.getInt(KEY_KEY_COLOR, 0xFF2196F3.toInt())
+                KEY_AMOLED -> _amoledFlow.value = prefs.getBoolean(KEY_AMOLED, false)
             }
         }
     }
@@ -41,6 +73,22 @@ object ThemeManager {
 
     fun setThemeMode(context: Context, mode: Int) {
         getPrefs(context).edit().putInt(KEY_THEME_MODE, mode).apply()
+    }
+
+    fun getKeyColor(context: Context): Int {
+        return getPrefs(context).getInt(KEY_KEY_COLOR, 0xFF2196F3.toInt())
+    }
+
+    fun setKeyColor(context: Context, color: Int) {
+        getPrefs(context).edit().putInt(KEY_KEY_COLOR, color).apply()
+    }
+
+    fun getAmoled(context: Context): Boolean {
+        return getPrefs(context).getBoolean(KEY_AMOLED, false)
+    }
+
+    fun setAmoled(context: Context, enabled: Boolean) {
+        getPrefs(context).edit().putBoolean(KEY_AMOLED, enabled).apply()
     }
 
     fun getPredictiveBack(context: Context): Boolean {

@@ -27,7 +27,10 @@ class ApiManager @Inject constructor(
         }
 
     val allApis: List<ImageApi>
-        get() = customApis.filter { it.config.enabled }
+        get() {
+            val enabledApis = customApis.filter { it.config.enabled }
+            return listOf(AggregateApi(enabledApis)) + enabledApis
+        }
 
     val availableApis: List<ImageApi> get() = allApis
 
@@ -70,6 +73,31 @@ class ApiManager @Inject constructor(
 
     suspend fun fetchRandomImagesNSFW(count: Int = 10): List<ImageModel> {
         return currentApi.fetchRandomImagesNSFW(count)
+    }
+}
+
+private class AggregateApi(private val apis: List<ImageApi>) : ImageApi {
+    override val name = "聚合"
+    override val supportsSearch = apis.any { it.supportsSearch }
+    override val supportsNSFW = apis.any { it.supportsNSFW }
+
+    private fun getRandomApi(): ImageApi {
+        return apis.filter { it.name != "聚合" }.randomOrNull() ?: NoOpApi()
+    }
+
+    override suspend fun fetchRandomImages(count: Int): List<ImageModel> {
+        val api = getRandomApi()
+        return api.fetchRandomImages(count)
+    }
+
+    override suspend fun searchImages(query: String, count: Int): List<ImageModel> {
+        val api = getRandomApi()
+        return api.searchImages(query, count)
+    }
+
+    override suspend fun fetchRandomImagesNSFW(count: Int): List<ImageModel> {
+        val api = getRandomApi()
+        return api.fetchRandomImagesNSFW(count)
     }
 }
 

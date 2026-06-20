@@ -2,17 +2,24 @@ package com.randomimage.ui.screens
 
 import android.widget.Toast
 import androidx.activity.compose.BackHandler
+import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.ExperimentalLayoutApi
+import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
@@ -24,16 +31,21 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.RadioButton
+import androidx.compose.material3.Switch
+import androidx.compose.material3.SwitchDefaults
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
 import com.randomimage.ui.components.StatsChart
@@ -42,7 +54,7 @@ import com.randomimage.util.CacheManager
 import com.randomimage.util.StatsManager
 import com.randomimage.util.ThemeManager
 
-@OptIn(ExperimentalMaterial3Api::class)
+@OptIn(ExperimentalMaterial3Api::class, ExperimentalLayoutApi::class)
 @Composable
 fun SettingsScreen(
     onBack: () -> Unit,
@@ -63,44 +75,62 @@ fun SettingsScreen(
     var showThemeDialog by remember { mutableStateOf(false) }
     var showQualityDialog by remember { mutableStateOf(false) }
     val themeMode = remember { mutableStateOf(ThemeManager.getThemeMode(context)) }
-    var imageQuality by remember { mutableStateOf("\u4e2d\u7b49") }
+    val keyColor by ThemeManager.keyColorFlow.collectAsState()
+    val amoled by ThemeManager.amoledFlow.collectAsState()
+    var imageQuality by remember { mutableStateOf("中等") }
 
     Column(modifier = Modifier.fillMaxSize()) {
-        TopAppBar(title = { Text("\u8bbe\u7f6e") }, navigationIcon = { IconButton(onClick = { onBack() }) { Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "\u8fd4\u56de") } })
+        TopAppBar(title = { Text("设置") }, navigationIcon = { IconButton(onClick = { onBack() }) { Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "返回") } })
 
         Column(modifier = Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(16.dp)) {
             Card(modifier = Modifier.fillMaxWidth(), elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)) {
                 Column(modifier = Modifier.padding(16.dp)) {
-                    Text("\u4f7f\u7528\u7edf\u8ba1", style = MaterialTheme.typography.titleMedium)
+                    Text("使用统计", style = MaterialTheme.typography.titleMedium)
                     Spacer(modifier = Modifier.height(8.dp))
-                    Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) { Text("\u6d4f\u89c8\u56fe\u7247"); Text("${StatsManager.getViewCount(context)} \u5f20") }
+                    Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) { Text("浏览图片"); Text("${StatsManager.getViewCount(context)} 张") }
                     Spacer(modifier = Modifier.height(4.dp))
-                    Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) { Text("\u6536\u85cf\u56fe\u7247"); Text("${StatsManager.getFavoriteCount(context)} \u5f20") }
+                    Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) { Text("收藏图片"); Text("${StatsManager.getFavoriteCount(context)} 张") }
                     Spacer(modifier = Modifier.height(4.dp))
-                    Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) { Text("\u4e0b\u8f7d\u56fe\u7247"); Text("${StatsManager.getDownloadCount(context)} \u5f20") }
+                    Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) { Text("下载图片"); Text("${StatsManager.getDownloadCount(context)} 张") }
                     Spacer(modifier = Modifier.height(4.dp))
-                    Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) { Text("\u641c\u7d22\u6b21\u6570"); Text("${StatsManager.getSearchCount(context)} \u6b21") }
+                    Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) { Text("搜索次数"); Text("${StatsManager.getSearchCount(context)} 次") }
                     Spacer(modifier = Modifier.height(4.dp))
-                    Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) { Text("\u4f7f\u7528\u5929\u6570"); Text("${StatsManager.getDaysSinceFirstOpen(context)} \u5929") }
+                    Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) { Text("使用天数"); Text("${StatsManager.getDaysSinceFirstOpen(context)} 天") }
                     Spacer(modifier = Modifier.height(12.dp))
-                    StatsChart(items = listOf(StatsItem("\u6d4f\u89c8", StatsManager.getViewCount(context), MaterialTheme.colorScheme.primary), StatsItem("\u6536\u85cf", StatsManager.getFavoriteCount(context), MaterialTheme.colorScheme.error), StatsItem("\u4e0b\u8f7d", StatsManager.getDownloadCount(context), MaterialTheme.colorScheme.tertiary), StatsItem("\u641c\u7d22", StatsManager.getSearchCount(context), MaterialTheme.colorScheme.secondary)))
+                    StatsChart(items = listOf(StatsItem("浏览", StatsManager.getViewCount(context), MaterialTheme.colorScheme.primary), StatsItem("收藏", StatsManager.getFavoriteCount(context), MaterialTheme.colorScheme.error), StatsItem("下载", StatsManager.getDownloadCount(context), MaterialTheme.colorScheme.tertiary), StatsItem("搜索", StatsManager.getSearchCount(context), MaterialTheme.colorScheme.secondary)))
                 }
             }
             Spacer(modifier = Modifier.height(16.dp))
             Card(modifier = Modifier.fillMaxWidth(), elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)) {
                 Column(modifier = Modifier.padding(16.dp)) {
-                    Text("\u5916\u89c2\u8bbe\u7f6e", style = MaterialTheme.typography.titleMedium)
+                    Text("外观设置", style = MaterialTheme.typography.titleMedium)
                     Spacer(modifier = Modifier.height(8.dp))
                     Row(modifier = Modifier.fillMaxWidth().clickable { showThemeDialog = true }, verticalAlignment = Alignment.CenterVertically) {
                         Column(modifier = Modifier.weight(1f)) {
-                            Text("\u4e3b\u9898\u6a21\u5f0f")
-                            Text(when (themeMode.value) { ThemeManager.THEME_LIGHT -> "\u6d45\u8272\u6a21\u5f0f"; ThemeManager.THEME_DARK -> "\u6df1\u8272\u6a21\u5f0f"; else -> "\u8ddf\u968f\u7cfb\u7edf" }, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                            Text("主题模式")
+                            Text(when (themeMode.value) { ThemeManager.THEME_LIGHT -> "浅色模式"; ThemeManager.THEME_DARK -> "深色模式"; else -> "跟随系统" }, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
                         }
                     }
+                    Spacer(modifier = Modifier.height(12.dp))
+                    Row(modifier = Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
+                        Column(modifier = Modifier.weight(1f)) {
+                            Text("AMOLED 深色")
+                            Text("纯黑色背景，省电护眼", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                        }
+                        Switch(checked = amoled, onCheckedChange = { ThemeManager.setAmoled(context, it) }, colors = SwitchDefaults.colors(checkedThumbColor = MaterialTheme.colorScheme.primary))
+                    }
+                    Spacer(modifier = Modifier.height(12.dp))
+                    Text("主题色", style = MaterialTheme.typography.bodyMedium)
                     Spacer(modifier = Modifier.height(8.dp))
+                    FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                        ThemeManager.keyColorOptions.forEach { color ->
+                            Box(modifier = Modifier.size(36.dp).clip(CircleShape).background(Color(color)).border(if (keyColor == color) 3.dp else 0.dp, MaterialTheme.colorScheme.primary, CircleShape).clickable { ThemeManager.setKeyColor(context, color) })
+                        }
+                    }
+                    Spacer(modifier = Modifier.height(12.dp))
                     Row(modifier = Modifier.fillMaxWidth().clickable { showQualityDialog = true }, verticalAlignment = Alignment.CenterVertically) {
                         Column(modifier = Modifier.weight(1f)) {
-                            Text("\u56fe\u7247\u8d28\u91cf")
+                            Text("图片质量")
                             Text(imageQuality, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
                         }
                     }
@@ -109,36 +139,36 @@ fun SettingsScreen(
             Spacer(modifier = Modifier.height(16.dp))
             Card(modifier = Modifier.fillMaxWidth(), elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)) {
                 Column(modifier = Modifier.padding(16.dp)) {
-                    Text("\u6570\u636e\u7ba1\u7406", style = MaterialTheme.typography.titleMedium)
+                    Text("数据管理", style = MaterialTheme.typography.titleMedium)
                     Spacer(modifier = Modifier.height(8.dp))
                     val cacheStats = CacheManager.getCacheStats(context)
-                    Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) { Text("\u56fe\u7247\u7f13\u5b58"); Text("${cacheStats.imageCount} \u5f20 / ${CacheManager.formatSize(cacheStats.imageSize)}") }
+                    Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) { Text("图片缓存"); Text("${cacheStats.imageCount} 张 / ${CacheManager.formatSize(cacheStats.imageSize)}") }
                     Spacer(modifier = Modifier.height(8.dp))
-                    Row(modifier = Modifier.fillMaxWidth().clickable { onPreviewCache() }, verticalAlignment = Alignment.CenterVertically) { Column(modifier = Modifier.weight(1f)) { Text("\u9884\u89c8\u7f13\u5b58\u56fe\u7247"); Text("\u67e5\u770b\u548c\u7ba1\u7406\u5df2\u7f13\u5b58\u7684\u56fe\u7247", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant) } }
+                    Row(modifier = Modifier.fillMaxWidth().clickable { onPreviewCache() }, verticalAlignment = Alignment.CenterVertically) { Column(modifier = Modifier.weight(1f)) { Text("预览缓存图片"); Text("查看和管理已缓存的图片", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant) } }
                     Spacer(modifier = Modifier.height(8.dp))
-                    Row(modifier = Modifier.fillMaxWidth().clickable { showClearCacheDialog = true }, verticalAlignment = Alignment.CenterVertically) { Column(modifier = Modifier.weight(1f)) { Text("\u6e05\u9664\u56fe\u7247\u7f13\u5b58"); Text("\u6e05\u9664\u5df2\u7f13\u5b58\u7684\u56fe\u7247\uff0c\u4e0b\u6b21\u52a0\u8f7d\u4f1a\u91cd\u65b0\u4e0b\u8f7d", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant) } }
+                    Row(modifier = Modifier.fillMaxWidth().clickable { showClearCacheDialog = true }, verticalAlignment = Alignment.CenterVertically) { Column(modifier = Modifier.weight(1f)) { Text("清除图片缓存"); Text("清除已缓存的图片，下次加载会重新下载", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant) } }
                     Spacer(modifier = Modifier.height(16.dp))
-                    Row(modifier = Modifier.fillMaxWidth().clickable { showClearHistoryDialog = true }, verticalAlignment = Alignment.CenterVertically) { Column(modifier = Modifier.weight(1f)) { Text("\u6e05\u9664\u6d4f\u89c8\u5386\u53f2"); Text("\u6e05\u9664\u6240\u6709\u6d4f\u89c8\u8fc7\u7684\u56fe\u7247\u8bb0\u5f55", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant) } }
+                    Row(modifier = Modifier.fillMaxWidth().clickable { showClearHistoryDialog = true }, verticalAlignment = Alignment.CenterVertically) { Column(modifier = Modifier.weight(1f)) { Text("清除浏览历史"); Text("清除所有浏览过的图片记录", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant) } }
                     Spacer(modifier = Modifier.height(16.dp))
-                    Row(modifier = Modifier.fillMaxWidth().clickable { showClearSearchDialog = true }, verticalAlignment = Alignment.CenterVertically) { Column(modifier = Modifier.weight(1f)) { Text("\u6e05\u9664\u641c\u7d22\u5386\u53f2"); Text("\u6e05\u9664\u6240\u6709\u641c\u7d22\u8bb0\u5f55", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant) } }
+                    Row(modifier = Modifier.fillMaxWidth().clickable { showClearSearchDialog = true }, verticalAlignment = Alignment.CenterVertically) { Column(modifier = Modifier.weight(1f)) { Text("清除搜索历史"); Text("清除所有搜索记录", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant) } }
                     Spacer(modifier = Modifier.height(16.dp))
-                    Row(modifier = Modifier.fillMaxWidth().clickable { onCloudSync() }, verticalAlignment = Alignment.CenterVertically) { Column(modifier = Modifier.weight(1f)) { Text("\u4e91\u540c\u6b65"); Text("\u5907\u4efd\u548c\u6062\u590d\u6536\u85cf\u6570\u636e", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant) } }
+                    Row(modifier = Modifier.fillMaxWidth().clickable { onCloudSync() }, verticalAlignment = Alignment.CenterVertically) { Column(modifier = Modifier.weight(1f)) { Text("云同步"); Text("备份和恢复收藏数据", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant) } }
                     Spacer(modifier = Modifier.height(16.dp))
-                    Row(modifier = Modifier.fillMaxWidth().clickable { onManageApis() }, verticalAlignment = Alignment.CenterVertically) { Column(modifier = Modifier.weight(1f)) { Text("\u81ea\u5b9a\u4e49API"); Text("\u6dfb\u52a0\u548c\u7ba1\u7406\u81ea\u5b9a\u4e49\u56fe\u7247\u6e90", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant) } }
+                    Row(modifier = Modifier.fillMaxWidth().clickable { onManageApis() }, verticalAlignment = Alignment.CenterVertically) { Column(modifier = Modifier.weight(1f)) { Text("自定义API"); Text("添加和管理自定义图片源", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant) } }
                     Spacer(modifier = Modifier.height(16.dp))
-                    Row(modifier = Modifier.fillMaxWidth().clickable { onLogs() }, verticalAlignment = Alignment.CenterVertically) { Column(modifier = Modifier.weight(1f)) { Text("\u5e94\u7528\u65e5\u5fd7"); Text("\u67e5\u770b\u548c\u5206\u4eab\u5e94\u7528\u8fd0\u884c\u65e5\u5fd7", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant) } }
+                    Row(modifier = Modifier.fillMaxWidth().clickable { onLogs() }, verticalAlignment = Alignment.CenterVertically) { Column(modifier = Modifier.weight(1f)) { Text("应用日志"); Text("查看和分享应用运行日志", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant) } }
                 }
             }
             Spacer(modifier = Modifier.height(16.dp))
             Card(modifier = Modifier.fillMaxWidth(), elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)) {
                 Column(modifier = Modifier.padding(16.dp)) {
-                    Text("\u5173\u4e8e", style = MaterialTheme.typography.titleMedium)
+                    Text("关于", style = MaterialTheme.typography.titleMedium)
                     Spacer(modifier = Modifier.height(8.dp))
-                    Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) { Text("\u7248\u672c"); Text(com.randomimage.BuildConfig.VERSION_NAME) }
+                    Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) { Text("版本"); Text(com.randomimage.BuildConfig.VERSION_NAME) }
                     Spacer(modifier = Modifier.height(4.dp))
-                    Text("\u968f\u673a\u56fe\u7247 - \u4e8c\u6b21\u5143\u56fe\u7247\u6d4f\u89c8\u5e94\u7528")
+                    Text("随机图片 - 二次元图片浏览应用")
                     Spacer(modifier = Modifier.height(4.dp))
-                    Text("\u652f\u6301API: Lolicon, \u840c\u56fe, \u8272\u56feAPI, Kori\u56fe\u5e93, \u968f\u673a\u7f8e\u56fe, \u4e8c\u6b21\u5143\u98ce\u666f + \u81ea\u5b9a\u4e49API", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                    Text("支持API: Lolicon, Elaina, 萌图, 色图API, Kori图库, 随机美图, 二次元风景 + 自定义API + 聚合", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
                 }
             }
             Spacer(modifier = Modifier.height(32.dp))
@@ -146,41 +176,41 @@ fun SettingsScreen(
     }
 
     if (showThemeDialog) {
-        AlertDialog(onDismissRequest = { showThemeDialog = false }, title = { Text("\u4e3b\u9898\u6a21\u5f0f") }, text = {
+        AlertDialog(onDismissRequest = { showThemeDialog = false }, title = { Text("主题模式") }, text = {
             Column {
                 Row(modifier = Modifier.fillMaxWidth().clickable { themeMode.value = ThemeManager.THEME_SYSTEM; ThemeManager.setThemeMode(context, ThemeManager.THEME_SYSTEM); showThemeDialog = false }, verticalAlignment = Alignment.CenterVertically) {
-                    RadioButton(selected = themeMode.value == ThemeManager.THEME_SYSTEM, onClick = { themeMode.value = ThemeManager.THEME_SYSTEM; ThemeManager.setThemeMode(context, ThemeManager.THEME_SYSTEM); showThemeDialog = false }); Spacer(modifier = Modifier.width(8.dp)); Text("\u8ddf\u968f\u7cfb\u7edf")
+                    RadioButton(selected = themeMode.value == ThemeManager.THEME_SYSTEM, onClick = { themeMode.value = ThemeManager.THEME_SYSTEM; ThemeManager.setThemeMode(context, ThemeManager.THEME_SYSTEM); showThemeDialog = false }); Spacer(modifier = Modifier.width(8.dp)); Text("跟随系统")
                 }
                 Spacer(modifier = Modifier.height(8.dp))
                 Row(modifier = Modifier.fillMaxWidth().clickable { themeMode.value = ThemeManager.THEME_LIGHT; ThemeManager.setThemeMode(context, ThemeManager.THEME_LIGHT); showThemeDialog = false }, verticalAlignment = Alignment.CenterVertically) {
-                    RadioButton(selected = themeMode.value == ThemeManager.THEME_LIGHT, onClick = { themeMode.value = ThemeManager.THEME_LIGHT; ThemeManager.setThemeMode(context, ThemeManager.THEME_LIGHT); showThemeDialog = false }); Spacer(modifier = Modifier.width(8.dp)); Text("\u6d45\u8272\u6a21\u5f0f")
+                    RadioButton(selected = themeMode.value == ThemeManager.THEME_LIGHT, onClick = { themeMode.value = ThemeManager.THEME_LIGHT; ThemeManager.setThemeMode(context, ThemeManager.THEME_LIGHT); showThemeDialog = false }); Spacer(modifier = Modifier.width(8.dp)); Text("浅色模式")
                 }
                 Spacer(modifier = Modifier.height(8.dp))
                 Row(modifier = Modifier.fillMaxWidth().clickable { themeMode.value = ThemeManager.THEME_DARK; ThemeManager.setThemeMode(context, ThemeManager.THEME_DARK); showThemeDialog = false }, verticalAlignment = Alignment.CenterVertically) {
-                    RadioButton(selected = themeMode.value == ThemeManager.THEME_DARK, onClick = { themeMode.value = ThemeManager.THEME_DARK; ThemeManager.setThemeMode(context, ThemeManager.THEME_DARK); showThemeDialog = false }); Spacer(modifier = Modifier.width(8.dp)); Text("\u6df1\u8272\u6a21\u5f0f")
+                    RadioButton(selected = themeMode.value == ThemeManager.THEME_DARK, onClick = { themeMode.value = ThemeManager.THEME_DARK; ThemeManager.setThemeMode(context, ThemeManager.THEME_DARK); showThemeDialog = false }); Spacer(modifier = Modifier.width(8.dp)); Text("深色模式")
                 }
             }
-        }, confirmButton = { TextButton(onClick = { showThemeDialog = false }) { Text("\u53d6\u6d88") } })
+        }, confirmButton = { TextButton(onClick = { showThemeDialog = false }) { Text("取消") } })
     }
 
     if (showClearCacheDialog) {
-        AlertDialog(onDismissRequest = { showClearCacheDialog = false }, title = { Text("\u6e05\u9664\u7f13\u5b58") }, text = { Text("\u786e\u5b9a\u8981\u6e05\u9664\u6240\u6709\u56fe\u7247\u7f13\u5b58\u5417\uff1f") }, confirmButton = { TextButton(onClick = { onClearCache(); showClearCacheDialog = false; Toast.makeText(context, "\u7f13\u5b58\u5df2\u6e05\u9664", Toast.LENGTH_SHORT).show() }) { Text("\u786e\u5b9a") } }, dismissButton = { TextButton(onClick = { showClearCacheDialog = false }) { Text("\u53d6\u6d88") } })
+        AlertDialog(onDismissRequest = { showClearCacheDialog = false }, title = { Text("清除缓存") }, text = { Text("确定要清除所有图片缓存吗？") }, confirmButton = { TextButton(onClick = { onClearCache(); showClearCacheDialog = false; Toast.makeText(context, "缓存已清除", Toast.LENGTH_SHORT).show() }) { Text("确定") } }, dismissButton = { TextButton(onClick = { showClearCacheDialog = false }) { Text("取消") } })
     }
     if (showClearHistoryDialog) {
-        AlertDialog(onDismissRequest = { showClearHistoryDialog = false }, title = { Text("\u6e05\u9664\u5386\u53f2") }, text = { Text("\u786e\u5b9a\u8981\u6e05\u9664\u6240\u6709\u6d4f\u89c8\u5386\u53f2\u5417\uff1f") }, confirmButton = { TextButton(onClick = { onClearHistory(); showClearHistoryDialog = false; Toast.makeText(context, "\u5386\u53f2\u5df2\u6e05\u9664", Toast.LENGTH_SHORT).show() }) { Text("\u786e\u5b9a") } }, dismissButton = { TextButton(onClick = { showClearHistoryDialog = false }) { Text("\u53d6\u6d88") } })
+        AlertDialog(onDismissRequest = { showClearHistoryDialog = false }, title = { Text("清除历史") }, text = { Text("确定要清除所有浏览历史吗？") }, confirmButton = { TextButton(onClick = { onClearHistory(); showClearHistoryDialog = false; Toast.makeText(context, "历史已清除", Toast.LENGTH_SHORT).show() }) { Text("确定") } }, dismissButton = { TextButton(onClick = { showClearHistoryDialog = false }) { Text("取消") } })
     }
     if (showClearSearchDialog) {
-        AlertDialog(onDismissRequest = { showClearSearchDialog = false }, title = { Text("\u6e05\u9664\u641c\u7d22\u5386\u53f2") }, text = { Text("\u786e\u5b9a\u8981\u6e05\u9664\u6240\u6709\u641c\u7d22\u5386\u53f2\u5417\uff1f") }, confirmButton = { TextButton(onClick = { onClearSearchHistory(); showClearSearchDialog = false; Toast.makeText(context, "\u641c\u7d22\u5386\u53f2\u5df2\u6e05\u9664", Toast.LENGTH_SHORT).show() }) { Text("\u786e\u5b9a") } }, dismissButton = { TextButton(onClick = { showClearSearchDialog = false }) { Text("\u53d6\u6d88") } })
+        AlertDialog(onDismissRequest = { showClearSearchDialog = false }, title = { Text("清除搜索历史") }, text = { Text("确定要清除所有搜索历史吗？") }, confirmButton = { TextButton(onClick = { onClearSearchHistory(); showClearSearchDialog = false; Toast.makeText(context, "搜索历史已清除", Toast.LENGTH_SHORT).show() }) { Text("确定") } }, dismissButton = { TextButton(onClick = { showClearSearchDialog = false }) { Text("取消") } })
     }
     if (showQualityDialog) {
-        AlertDialog(onDismissRequest = { showQualityDialog = false }, title = { Text("\u56fe\u7247\u8d28\u91cf") }, text = {
+        AlertDialog(onDismissRequest = { showQualityDialog = false }, title = { Text("图片质量") }, text = {
             Column {
-                listOf("\u7f29\u7565\u56fe", "\u4e2d\u7b49", "\u539f\u56fe").forEach { quality ->
+                listOf("缩略图", "中等", "原图").forEach { quality ->
                     Row(modifier = Modifier.fillMaxWidth().clickable { imageQuality = quality; onQualityChanged(quality); showQualityDialog = false }, verticalAlignment = Alignment.CenterVertically) {
                         RadioButton(selected = imageQuality == quality, onClick = { imageQuality = quality; onQualityChanged(quality); showQualityDialog = false }); Spacer(modifier = Modifier.width(8.dp)); Text(quality)
                     }
                 }
             }
-        }, confirmButton = { TextButton(onClick = { showQualityDialog = false }) { Text("\u53d6\u6d88") } })
+        }, confirmButton = { TextButton(onClick = { showQualityDialog = false }) { Text("取消") } })
     }
 }

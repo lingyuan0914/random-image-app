@@ -156,13 +156,30 @@ fun ImageDetailScreen(
                     }
                     HorizontalDivider(color = Color.White.copy(alpha = 0.2f))
                     Spacer(modifier = Modifier.height(12.dp))
-                    InfoRow("Artist", image.user.name)
-                    if (image.user.username != image.user.name) InfoRow("Username", image.user.username)
-                    if (image.description != null) InfoRow("Description", image.description)
-                    if (image.width > 0 && image.height > 0) {
-                        InfoRow("Resolution", "${image.width} x ${image.height}")
-                        InfoRow("Aspect Ratio", "%.2f".format(image.aspectRatio))
+                    InfoRow("Author", image.user.name)
+                    if (image.user.username != image.user.name) InfoRow("Username", "@${image.user.username}")
+                    if (image.description != null) {
+                        Spacer(modifier = Modifier.height(4.dp))
+                        Text("Description", style = MaterialTheme.typography.bodySmall, color = Color.White.copy(alpha = 0.6f))
+                        Text(image.description, style = MaterialTheme.typography.bodySmall, color = Color.White)
                     }
+                    if (image.width > 0 && image.height > 0) {
+                        InfoRow("Resolution", "${image.width} × ${image.height}")
+                        InfoRow("Aspect Ratio", "%.2f".format(image.aspectRatio))
+                        InfoRow("Megapixels", "%.1f MP".format((image.width.toLong() * image.height.toLong()) / 1_000_000.0))
+                    }
+                    if (image.urls.raw.isNotEmpty()) {
+                        val apiSource = when {
+                            image.urls.raw.contains("lolicon") -> "Lolicon API"
+                            image.urls.raw.contains("elaina") -> "Elaina API"
+                            image.urls.raw.contains("yppp") -> "Yppp API"
+                            image.urls.raw.contains("picsum") -> "Picsum Photos"
+                            image.urls.raw.contains("unsplash") -> "Unsplash API"
+                            else -> "Custom API"
+                        }
+                        InfoRow("Source", apiSource)
+                    }
+                    InfoRow("Image ID", image.id.take(12) + "...")
                     if (image.tags.isNotEmpty()) {
                         Spacer(modifier = Modifier.height(8.dp))
                         Text("Tags", style = MaterialTheme.typography.bodySmall, color = Color.White.copy(alpha = 0.6f))

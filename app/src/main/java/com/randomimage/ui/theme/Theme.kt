@@ -10,6 +10,8 @@ import androidx.compose.material3.lightColorScheme
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.toArgb
 import androidx.compose.ui.platform.LocalContext
 import com.randomimage.util.ThemeManager
 
@@ -33,6 +35,8 @@ fun RandomImageTheme(
     val context = LocalContext.current
     ThemeManager.init(context)
     val themeMode by ThemeManager.themeModeFlow.collectAsState()
+    val keyColor by ThemeManager.keyColorFlow.collectAsState()
+    val amoled by ThemeManager.amoledFlow.collectAsState()
 
     val darkTheme = when (themeMode) {
         ThemeManager.THEME_LIGHT -> false
@@ -44,8 +48,21 @@ fun RandomImageTheme(
         dynamicColor && Build.VERSION.SDK_INT >= Build.VERSION_CODES.S -> {
             if (darkTheme) dynamicDarkColorScheme(context) else dynamicLightColorScheme(context)
         }
-        darkTheme -> DarkColorScheme
-        else -> LightColorScheme
+        darkTheme -> {
+            if (amoled) {
+                darkColorScheme(
+                    primary = Color(keyColor),
+                    secondary = PurpleGrey80,
+                    tertiary = Pink80,
+                    background = Color.Black,
+                    surface = Color.Black,
+                    surfaceVariant = Color(0xFF1C1C1C)
+                )
+            } else {
+                DarkColorScheme.copy(primary = Color(keyColor))
+            }
+        }
+        else -> LightColorScheme.copy(primary = Color(keyColor))
     }
 
     MaterialTheme(
