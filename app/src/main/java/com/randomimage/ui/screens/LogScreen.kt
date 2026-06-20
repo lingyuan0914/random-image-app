@@ -7,7 +7,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.ArrowBack
+import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.Share
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -44,7 +44,7 @@ fun LogScreen(onBack: () -> Unit) {
         topBar = {
             TopAppBar(
                 title = { Text("应用日志") },
-                navigationIcon = { IconButton(onClick = onBack) { Icon(Icons.Default.ArrowBack, contentDescription = "返回") } },
+                navigationIcon = { IconButton(onClick = onBack) { Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "返回") } },
                 actions = {
                     IconButton(onClick = { LogManager.shareLogs(context) }) { Icon(Icons.Default.Share, contentDescription = "分享") }
                     IconButton(onClick = { LogManager.clearLogs(); logs = ""; Toast.makeText(context, "日志已清除", Toast.LENGTH_SHORT).show() }) {
