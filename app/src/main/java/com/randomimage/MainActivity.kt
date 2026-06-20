@@ -36,6 +36,7 @@ import com.randomimage.ui.screens.ImageCropScreen
 import com.randomimage.ui.screens.ImageDetailScreen
 import com.randomimage.ui.screens.LogScreen
 import com.randomimage.ui.screens.SettingsScreen
+import com.randomimage.ui.screens.ThemeSettingsScreen
 import com.randomimage.ui.screens.WaterfallScreen
 import com.randomimage.ui.theme.RandomImageTheme
 import com.randomimage.ui.viewmodel.HomeViewModel
@@ -149,6 +150,7 @@ class MainActivity : ComponentActivity() {
                                 onCloudSync = { navController.navigate("cloud_sync") },
                                 onLogs = { navController.navigate("logs") },
                                 onManageApis = { navController.navigate("custom_apis") },
+                                onThemeSettings = { navController.navigate("theme_settings") },
                                 onQualityChanged = { quality ->
                                     val q = when (quality) {
                                         "缩略图" -> com.randomimage.ui.viewmodel.ImageQuality.THUMBNAIL
@@ -158,6 +160,9 @@ class MainActivity : ComponentActivity() {
                                     homeViewModel.setImageQuality(q)
                                 }
                             )
+                        }
+                        composable("theme_settings") {
+                            ThemeSettingsScreen(onBack = { navController.popBackStack() })
                         }
                         composable("cache_preview") {
                             CachePreviewScreen(
