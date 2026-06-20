@@ -1,3 +1,6 @@
+# Keep all app classes
+-keep class com.randomimage.** { *; }
+
 # Moshi
 -keep class com.squareup.moshi.** { *; }
 -keep class com.squareup.moshi.kotlin.reflect.** { *; }
@@ -35,21 +38,23 @@
     volatile <fields>;
 }
 
-# Keep data classes for JSON serialization
--keep class com.randomimage.data.local.** { *; }
--keep class com.randomimage.domain.model.** { *; }
-
-# Google Error Prone Annotations (used by Tink/Security)
+# Google Error Prone Annotations
 -dontwarn com.google.errorprone.annotations.**
-
-# Keep Hilt generated classes
--keep class * extends dagger.hilt.android.internal.managers.ViewComponentManager$FragmentContextWrapper { *; }
--keep class * extends dagger.hilt.android.internal.managers.ViewComponentManager$ViewWithFragmentContextWrapper { *; }
--keep class * extends dagger.hilt.android.internal.lifecycle.HiltViewModelFactory$ActivityEntryPoint { *; }
--keep class * extends dagger.hilt.android.internal.lifecycle.HiltViewModelFactory$DefaultActivityEntryPoint { *; }
 
 # Timber
 -keep class timber.log.Timber { *; }
 
 # EncryptedSharedPreferences
 -keep class androidx.security.crypto.** { *; }
+
+# Keep UI screens and components
+-keep class com.randomimage.ui.** { *; }
+
+# Keep ViewModels
+-keep class * extends androidx.lifecycle.ViewModel { *; }
+
+# Keep Hilt generated
+-keep class * extends dagger.hilt.android.internal.** { *; }
+-keep class **_Factory { *; }
+-keep class **_MembersInjector { *; }
+-keep class **Hilt_** { *; }
