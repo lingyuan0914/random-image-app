@@ -2,6 +2,16 @@
 
 一款支持自定义API源的随机图片浏览应用，主打二次元内容，支持瀑布流浏览、收藏管理、预测性返回动画等功能。
 
+## 截图预览
+
+| 首页瀑布流 | 图片详情 | 收藏页面 |
+|:---:|:---:|:---:|
+| ![首页](screenshots/home.png) | ![详情](screenshots/detail.png) | ![收藏](screenshots/favorites.png) |
+
+| 设置页面 | 自定义API |
+|:---:|:---:|
+| ![设置](screenshots/settings.png) | ![API](screenshots/api.png) |
+
 ## 功能特性
 
 ### 自定义 API 数据源
@@ -56,25 +66,6 @@
 - **本地存储**: DataStore + Moshi JSON
 - **图片加载**: Coil
 - **网络请求**: OkHttp
-
-## 项目结构
-
-```
-app/src/main/java/com/randomimage/
-├── data/
-│   ├── local/          # DataStore 数据存储
-│   ├── remote/         # API 接口
-│   └── repository/     # 数据仓库
-├── domain/
-│   └── model/          # 数据模型
-├── ui/
-│   ├── components/     # UI 组件
-│   ├── screens/        # 页面
-│   ├── theme/          # 主题
-│   └── viewmodel/      # ViewModel
-├── di/                 # 依赖注入
-└── util/               # 工具类
-```
 
 ## 安装使用
 
