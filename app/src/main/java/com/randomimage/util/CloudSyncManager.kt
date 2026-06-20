@@ -20,6 +20,7 @@ import timber.log.Timber
 import java.io.File
 import java.util.concurrent.TimeUnit
 
+@Suppress("StaticFieldLeak")
 object CloudSyncManager {
     private const val PREFS_NAME = "cloud_sync_prefs"
     private const val KEY_WEBDAV_URL = "webdav_url"

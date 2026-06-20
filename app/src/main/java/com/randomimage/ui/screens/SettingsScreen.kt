@@ -15,7 +15,7 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.ArrowBack
+import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
@@ -66,7 +66,7 @@ fun SettingsScreen(
     var imageQuality by remember { mutableStateOf("\u4e2d\u7b49") }
 
     Column(modifier = Modifier.fillMaxSize()) {
-        TopAppBar(title = { Text("\u8bbe\u7f6e") }, navigationIcon = { IconButton(onClick = { onBack() }) { Icon(Icons.Default.ArrowBack, contentDescription = "\u8fd4\u56de") } })
+        TopAppBar(title = { Text("\u8bbe\u7f6e") }, navigationIcon = { IconButton(onClick = { onBack() }) { Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "\u8fd4\u56de") } })
 
         Column(modifier = Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(16.dp)) {
             Card(modifier = Modifier.fillMaxWidth(), elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)) {
