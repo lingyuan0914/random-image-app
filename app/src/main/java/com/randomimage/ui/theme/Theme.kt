@@ -1,6 +1,6 @@
 package com.randomimage.ui.theme
 
-import android.content.Context
+import android.app.Activity
 import android.os.Build
 import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.material3.MaterialTheme
@@ -9,11 +9,12 @@ import androidx.compose.material3.dynamicDarkColorScheme
 import androidx.compose.material3.dynamicLightColorScheme
 import androidx.compose.material3.lightColorScheme
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.staticCompositionLocalOf
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
+import androidx.core.view.WindowInsetsControllerCompat
 import com.randomimage.util.ThemeManager
 
 enum class ColorMode(val value: Int) {
@@ -88,12 +89,17 @@ fun RandomImageTheme(
         }
     }
 
+    LaunchedEffect(darkTheme) {
+        val window = (context as? Activity)?.window ?: return@LaunchedEffect
+        WindowInsetsControllerCompat(window, window.decorView).apply {
+            isAppearanceLightStatusBars = !darkTheme
+            isAppearanceLightNavigationBars = !darkTheme
+        }
+    }
+
     MaterialTheme(
         colorScheme = colorScheme,
         typography = Typography,
         content = content
     )
 }
-
-val LocalColorMode = staticCompositionLocalOf { 0 }
-val LocalEnableBlur = staticCompositionLocalOf { false }
