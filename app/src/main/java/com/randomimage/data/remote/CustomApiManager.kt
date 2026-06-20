@@ -16,9 +16,9 @@ enum class ApiType(val label: String) {
 }
 
 data class CustomApiConfig(
-    val id: String,
-    val name: String,
-    val url: String,
+    val id: String = "",
+    val name: String = "",
+    val url: String = "",
     val enabled: Boolean = true,
     val apiType: String = ApiType.AUTO.name,
     val rateLimit: Int = 0,
