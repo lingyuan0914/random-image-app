@@ -1,5 +1,6 @@
 package com.randomimage.ui.screens
 
+import android.os.Build
 import android.widget.Toast
 import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.background
@@ -50,6 +51,7 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
 import com.randomimage.ui.components.StatsChart
 import com.randomimage.ui.components.StatsItem
+import com.randomimage.ui.theme.ColorMode
 import com.randomimage.util.CacheManager
 import com.randomimage.util.StatsManager
 import com.randomimage.util.ThemeManager
@@ -72,15 +74,20 @@ fun SettingsScreen(
     var showClearCacheDialog by remember { mutableStateOf(false) }
     var showClearHistoryDialog by remember { mutableStateOf(false) }
     var showClearSearchDialog by remember { mutableStateOf(false) }
-    var showThemeDialog by remember { mutableStateOf(false) }
+    var showColorModeDialog by remember { mutableStateOf(false) }
     var showQualityDialog by remember { mutableStateOf(false) }
-    val themeMode = remember { mutableStateOf(ThemeManager.getThemeMode(context)) }
+
+    val colorMode by ThemeManager.colorModeFlow.collectAsState()
     val keyColor by ThemeManager.keyColorFlow.collectAsState()
+    val dynamicColor by ThemeManager.dynamicColorFlow.collectAsState()
     val amoled by ThemeManager.amoledFlow.collectAsState()
     var imageQuality by remember { mutableStateOf("中等") }
 
     Column(modifier = Modifier.fillMaxSize()) {
-        TopAppBar(title = { Text("设置") }, navigationIcon = { IconButton(onClick = { onBack() }) { Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "返回") } })
+        TopAppBar(
+            title = { Text("设置") },
+            navigationIcon = { IconButton(onClick = { onBack() }) { Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "返回") } }
+        )
 
         Column(modifier = Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(16.dp)) {
             Card(modifier = Modifier.fillMaxWidth(), elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)) {
@@ -97,36 +104,81 @@ fun SettingsScreen(
                     Spacer(modifier = Modifier.height(4.dp))
                     Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) { Text("使用天数"); Text("${StatsManager.getDaysSinceFirstOpen(context)} 天") }
                     Spacer(modifier = Modifier.height(12.dp))
-                    StatsChart(items = listOf(StatsItem("浏览", StatsManager.getViewCount(context), MaterialTheme.colorScheme.primary), StatsItem("收藏", StatsManager.getFavoriteCount(context), MaterialTheme.colorScheme.error), StatsItem("下载", StatsManager.getDownloadCount(context), MaterialTheme.colorScheme.tertiary), StatsItem("搜索", StatsManager.getSearchCount(context), MaterialTheme.colorScheme.secondary)))
+                    StatsChart(items = listOf(
+                        StatsItem("浏览", StatsManager.getViewCount(context), MaterialTheme.colorScheme.primary),
+                        StatsItem("收藏", StatsManager.getFavoriteCount(context), MaterialTheme.colorScheme.error),
+                        StatsItem("下载", StatsManager.getDownloadCount(context), MaterialTheme.colorScheme.tertiary),
+                        StatsItem("搜索", StatsManager.getSearchCount(context), MaterialTheme.colorScheme.secondary)
+                    ))
                 }
             }
+
             Spacer(modifier = Modifier.height(16.dp))
+
             Card(modifier = Modifier.fillMaxWidth(), elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)) {
                 Column(modifier = Modifier.padding(16.dp)) {
                     Text("外观设置", style = MaterialTheme.typography.titleMedium)
-                    Spacer(modifier = Modifier.height(8.dp))
-                    Row(modifier = Modifier.fillMaxWidth().clickable { showThemeDialog = true }, verticalAlignment = Alignment.CenterVertically) {
+                    Spacer(modifier = Modifier.height(12.dp))
+
+                    Row(modifier = Modifier.fillMaxWidth().clickable { showColorModeDialog = true }, verticalAlignment = Alignment.CenterVertically) {
                         Column(modifier = Modifier.weight(1f)) {
-                            Text("主题模式")
-                            Text(when (themeMode.value) { ThemeManager.THEME_LIGHT -> "浅色模式"; ThemeManager.THEME_DARK -> "深色模式"; else -> "跟随系统" }, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                            Text("颜色模式")
+                            Text(when (colorMode) {
+                                ColorMode.SYSTEM -> "跟随系统"
+                                ColorMode.LIGHT -> "浅色"
+                                ColorMode.DARK -> "深色"
+                                ColorMode.MONET_SYSTEM -> "动态颜色(跟随系统)"
+                                ColorMode.MONET_LIGHT -> "动态颜色(浅色)"
+                                ColorMode.MONET_DARK -> "动态颜色(深色)"
+                                ColorMode.DARK_AMOLED -> "AMOLED 深色"
+                            }, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
                         }
                     }
+
+                    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
+                        Spacer(modifier = Modifier.height(12.dp))
+                        Row(modifier = Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
+                            Column(modifier = Modifier.weight(1f)) {
+                                Text("动态取色")
+                                Text("使用系统壁纸颜色主题", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                            }
+                            Switch(
+                                checked = dynamicColor,
+                                onCheckedChange = { ThemeManager.setDynamicColor(context, it) },
+                                colors = SwitchDefaults.colors(checkedThumbColor = MaterialTheme.colorScheme.primary)
+                            )
+                        }
+                    }
+
                     Spacer(modifier = Modifier.height(12.dp))
                     Row(modifier = Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
                         Column(modifier = Modifier.weight(1f)) {
                             Text("AMOLED 深色")
                             Text("纯黑色背景，省电护眼", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
                         }
-                        Switch(checked = amoled, onCheckedChange = { ThemeManager.setAmoled(context, it) }, colors = SwitchDefaults.colors(checkedThumbColor = MaterialTheme.colorScheme.primary))
+                        Switch(
+                            checked = amoled,
+                            onCheckedChange = { ThemeManager.setAmoled(context, it) },
+                            colors = SwitchDefaults.colors(checkedThumbColor = MaterialTheme.colorScheme.primary)
+                        )
                     }
+
                     Spacer(modifier = Modifier.height(12.dp))
                     Text("主题色", style = MaterialTheme.typography.bodyMedium)
                     Spacer(modifier = Modifier.height(8.dp))
                     FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
                         ThemeManager.keyColorOptions.forEach { color ->
-                            Box(modifier = Modifier.size(36.dp).clip(CircleShape).background(Color(color)).border(if (keyColor == color) 3.dp else 0.dp, MaterialTheme.colorScheme.primary, CircleShape).clickable { ThemeManager.setKeyColor(context, color) })
+                            Box(
+                                modifier = Modifier
+                                    .size(36.dp)
+                                    .clip(CircleShape)
+                                    .background(Color(color))
+                                    .border(if (keyColor == color) 3.dp else 0.dp, MaterialTheme.colorScheme.primary, CircleShape)
+                                    .clickable { ThemeManager.setKeyColor(context, color) }
+                            )
                         }
                     }
+
                     Spacer(modifier = Modifier.height(12.dp))
                     Row(modifier = Modifier.fillMaxWidth().clickable { showQualityDialog = true }, verticalAlignment = Alignment.CenterVertically) {
                         Column(modifier = Modifier.weight(1f)) {
@@ -136,7 +188,9 @@ fun SettingsScreen(
                     }
                 }
             }
+
             Spacer(modifier = Modifier.height(16.dp))
+
             Card(modifier = Modifier.fillMaxWidth(), elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)) {
                 Column(modifier = Modifier.padding(16.dp)) {
                     Text("数据管理", style = MaterialTheme.typography.titleMedium)
@@ -159,7 +213,9 @@ fun SettingsScreen(
                     Row(modifier = Modifier.fillMaxWidth().clickable { onLogs() }, verticalAlignment = Alignment.CenterVertically) { Column(modifier = Modifier.weight(1f)) { Text("应用日志"); Text("查看和分享应用运行日志", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant) } }
                 }
             }
+
             Spacer(modifier = Modifier.height(16.dp))
+
             Card(modifier = Modifier.fillMaxWidth(), elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)) {
                 Column(modifier = Modifier.padding(16.dp)) {
                     Text("关于", style = MaterialTheme.typography.titleMedium)
@@ -168,29 +224,82 @@ fun SettingsScreen(
                     Spacer(modifier = Modifier.height(4.dp))
                     Text("随机图片 - 二次元图片浏览应用")
                     Spacer(modifier = Modifier.height(4.dp))
-                    Text("支持API: Lolicon, Elaina, 萌图, 色图API, Kori图库, 随机美图, 二次元风景 + 自定义API + 聚合", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                    Text("主题系统参考 SukiSU Ultra", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
                 }
             }
+
             Spacer(modifier = Modifier.height(32.dp))
         }
     }
 
-    if (showThemeDialog) {
-        AlertDialog(onDismissRequest = { showThemeDialog = false }, title = { Text("主题模式") }, text = {
-            Column {
-                Row(modifier = Modifier.fillMaxWidth().clickable { themeMode.value = ThemeManager.THEME_SYSTEM; ThemeManager.setThemeMode(context, ThemeManager.THEME_SYSTEM); showThemeDialog = false }, verticalAlignment = Alignment.CenterVertically) {
-                    RadioButton(selected = themeMode.value == ThemeManager.THEME_SYSTEM, onClick = { themeMode.value = ThemeManager.THEME_SYSTEM; ThemeManager.setThemeMode(context, ThemeManager.THEME_SYSTEM); showThemeDialog = false }); Spacer(modifier = Modifier.width(8.dp)); Text("跟随系统")
+    if (showColorModeDialog) {
+        AlertDialog(
+            onDismissRequest = { showColorModeDialog = false },
+            title = { Text("颜色模式") },
+            text = {
+                Column {
+                    val modes = listOf(
+                        ColorMode.SYSTEM to "跟随系统",
+                        ColorMode.LIGHT to "浅色",
+                        ColorMode.DARK to "深色",
+                        ColorMode.DARK_AMOLED to "AMOLED 深色"
+                    )
+                    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
+                        modes.filter { !it.first.isMonet }.forEach { (mode, label) ->
+                            Row(modifier = Modifier.fillMaxWidth().clickable {
+                                ThemeManager.setColorMode(context, mode)
+                                showColorModeDialog = false
+                            }, verticalAlignment = Alignment.CenterVertically) {
+                                RadioButton(selected = colorMode == mode, onClick = {
+                                    ThemeManager.setColorMode(context, mode)
+                                    showColorModeDialog = false
+                                })
+                                Spacer(modifier = Modifier.width(8.dp))
+                                Text(label)
+                            }
+                            Spacer(modifier = Modifier.height(4.dp))
+                        }
+                        Spacer(modifier = Modifier.height(8.dp))
+                        Text("动态颜色", style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.primary)
+                        Spacer(modifier = Modifier.height(4.dp))
+                        listOf(
+                            ColorMode.MONET_SYSTEM to "动态(跟随系统)",
+                            ColorMode.MONET_LIGHT to "动态(浅色)",
+                            ColorMode.MONET_DARK to "动态(深色)"
+                        ).forEach { (mode, label) ->
+                            Row(modifier = Modifier.fillMaxWidth().clickable {
+                                ThemeManager.setColorMode(context, mode)
+                                showColorModeDialog = false
+                            }, verticalAlignment = Alignment.CenterVertically) {
+                                RadioButton(selected = colorMode == mode, onClick = {
+                                    ThemeManager.setColorMode(context, mode)
+                                    showColorModeDialog = false
+                                })
+                                Spacer(modifier = Modifier.width(8.dp))
+                                Text(label)
+                            }
+                            Spacer(modifier = Modifier.height(4.dp))
+                        }
+                    } else {
+                        modes.forEach { (mode, label) ->
+                            Row(modifier = Modifier.fillMaxWidth().clickable {
+                                ThemeManager.setColorMode(context, mode)
+                                showColorModeDialog = false
+                            }, verticalAlignment = Alignment.CenterVertically) {
+                                RadioButton(selected = colorMode == mode, onClick = {
+                                    ThemeManager.setColorMode(context, mode)
+                                    showColorModeDialog = false
+                                })
+                                Spacer(modifier = Modifier.width(8.dp))
+                                Text(label)
+                            }
+                            Spacer(modifier = Modifier.height(4.dp))
+                        }
+                    }
                 }
-                Spacer(modifier = Modifier.height(8.dp))
-                Row(modifier = Modifier.fillMaxWidth().clickable { themeMode.value = ThemeManager.THEME_LIGHT; ThemeManager.setThemeMode(context, ThemeManager.THEME_LIGHT); showThemeDialog = false }, verticalAlignment = Alignment.CenterVertically) {
-                    RadioButton(selected = themeMode.value == ThemeManager.THEME_LIGHT, onClick = { themeMode.value = ThemeManager.THEME_LIGHT; ThemeManager.setThemeMode(context, ThemeManager.THEME_LIGHT); showThemeDialog = false }); Spacer(modifier = Modifier.width(8.dp)); Text("浅色模式")
-                }
-                Spacer(modifier = Modifier.height(8.dp))
-                Row(modifier = Modifier.fillMaxWidth().clickable { themeMode.value = ThemeManager.THEME_DARK; ThemeManager.setThemeMode(context, ThemeManager.THEME_DARK); showThemeDialog = false }, verticalAlignment = Alignment.CenterVertically) {
-                    RadioButton(selected = themeMode.value == ThemeManager.THEME_DARK, onClick = { themeMode.value = ThemeManager.THEME_DARK; ThemeManager.setThemeMode(context, ThemeManager.THEME_DARK); showThemeDialog = false }); Spacer(modifier = Modifier.width(8.dp)); Text("深色模式")
-                }
-            }
-        }, confirmButton = { TextButton(onClick = { showThemeDialog = false }) { Text("取消") } })
+            },
+            confirmButton = { TextButton(onClick = { showColorModeDialog = false }) { Text("取消") } }
+        )
     }
 
     if (showClearCacheDialog) {
@@ -207,7 +316,9 @@ fun SettingsScreen(
             Column {
                 listOf("缩略图", "中等", "原图").forEach { quality ->
                     Row(modifier = Modifier.fillMaxWidth().clickable { imageQuality = quality; onQualityChanged(quality); showQualityDialog = false }, verticalAlignment = Alignment.CenterVertically) {
-                        RadioButton(selected = imageQuality == quality, onClick = { imageQuality = quality; onQualityChanged(quality); showQualityDialog = false }); Spacer(modifier = Modifier.width(8.dp)); Text(quality)
+                        RadioButton(selected = imageQuality == quality, onClick = { imageQuality = quality; onQualityChanged(quality); showQualityDialog = false })
+                        Spacer(modifier = Modifier.width(8.dp))
+                        Text(quality)
                     }
                 }
             }
