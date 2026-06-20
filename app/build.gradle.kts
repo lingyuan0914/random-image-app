@@ -95,6 +95,11 @@ dependencies {
 
     // Local Storage
     implementation("androidx.datastore:datastore-preferences:1.1.1")
+    implementation("androidx.security:security-crypto:1.1.0-alpha06")
+
+    // Paging
+    implementation("androidx.paging:paging-runtime-ktx:3.3.0")
+    implementation("androidx.paging:paging-compose:3.3.0")
 
     // Image Loading
     implementation("io.coil-kt:coil-compose:2.5.0")

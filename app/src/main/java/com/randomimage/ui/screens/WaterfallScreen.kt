@@ -16,7 +16,7 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.staggeredgrid.LazyVerticalStaggeredGrid
 import androidx.compose.foundation.lazy.staggeredgrid.StaggeredGridCells
-import androidx.compose.foundation.lazy.staggeredgrid.itemsIndexed
+import androidx.compose.foundation.lazy.staggeredgrid.items
 import androidx.compose.foundation.lazy.staggeredgrid.rememberLazyStaggeredGridState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Card
@@ -37,8 +37,8 @@ import androidx.compose.material3.SuggestionChip
 import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
+import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
@@ -56,9 +56,10 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
+import androidx.paging.LoadState
+import androidx.paging.compose.collectAsLazyPagingItems
 import coil.compose.AsyncImage
 import coil.request.ImageRequest
-import coil.size.Size
 import com.randomimage.ui.viewmodel.HomeViewModel
 
 @OptIn(ExperimentalMaterial3Api::class, ExperimentalLayoutApi::class)
@@ -68,28 +69,12 @@ fun WaterfallScreen(
     onImageClick: (com.randomimage.domain.model.ImageModel) -> Unit = {}
 ) {
     val uiState by viewModel.uiState.collectAsState()
+    val pagingImages = viewModel.pagingImages.collectAsLazyPagingItems()
     val context = LocalContext.current
     val configuration = LocalConfiguration.current
     var expanded by remember { mutableStateOf(false) }
     var showNsfwDialog by remember { mutableStateOf(false) }
     val gridState = rememberLazyStaggeredGridState()
-    var lastLoadTime by remember { mutableStateOf(0L) }
-
-    val shouldLoadMore by remember {
-        derivedStateOf {
-            val lastVisibleItem = gridState.layoutInfo.visibleItemsInfo.lastOrNull()?.index ?: 0
-            val totalItems = gridState.layoutInfo.totalItemsCount
-            val currentTime = System.currentTimeMillis()
-            lastVisibleItem >= totalItems - 6 && totalItems > 0 && currentTime - lastLoadTime > 1500
-        }
-    }
-
-    LaunchedEffect(shouldLoadMore) {
-        if (shouldLoadMore && uiState.images.isNotEmpty() && !uiState.isLoading) {
-            lastLoadTime = System.currentTimeMillis()
-            viewModel.loadMoreImages()
-        }
-    }
 
     Column(modifier = Modifier.fillMaxSize()) {
         Row(
@@ -110,7 +95,6 @@ fun WaterfallScreen(
                     label = { Text("数据源", style = MaterialTheme.typography.labelSmall) },
                     trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = expanded) },
                     modifier = Modifier
-                        .menuAnchor()
                         .fillMaxWidth()
                         .height(56.dp),
                     textStyle = MaterialTheme.typography.bodyMedium
@@ -166,7 +150,7 @@ fun WaterfallScreen(
             IconButton(
                 onClick = {
                     if (uiState.searchQuery.isNotBlank()) {
-                        viewModel.searchImages(uiState.searchQuery)
+                        viewModel.searchPagingImages(uiState.searchQuery)
                     }
                 }
             ) {
@@ -191,7 +175,7 @@ fun WaterfallScreen(
                 ) {
                     uiState.recentSearches.take(6).forEach { query ->
                         SuggestionChip(
-                            onClick = { viewModel.setSearchQuery(query); viewModel.searchImages(query) },
+                            onClick = { viewModel.setSearchQuery(query); viewModel.searchPagingImages(query) },
                             label = { Text(query, style = MaterialTheme.typography.labelSmall) }
                         )
                     }
@@ -216,7 +200,7 @@ fun WaterfallScreen(
                 ) {
                     uiState.recommendedTags.take(6).forEach { tag ->
                         SuggestionChip(
-                            onClick = { viewModel.setSearchQuery(tag.name); viewModel.searchImages(tag.name) },
+                            onClick = { viewModel.setSearchQuery(tag.name); viewModel.searchPagingImages(tag.name) },
                             label = { Text(tag.displayName, style = MaterialTheme.typography.labelSmall) }
                         )
                     }
@@ -228,15 +212,16 @@ fun WaterfallScreen(
 
         Box(modifier = Modifier.weight(1f)) {
             when {
-                uiState.isLoading && uiState.images.isEmpty() -> {
+                pagingImages.loadState.refresh is LoadState.Loading -> {
                     CircularProgressIndicator(modifier = Modifier.align(Alignment.Center))
                 }
-                uiState.error != null && uiState.images.isEmpty() -> {
-                    TextButton(onClick = { viewModel.loadImages() }, modifier = Modifier.align(Alignment.Center)) {
-                        Text(uiState.error ?: "错误", style = MaterialTheme.typography.bodyLarge)
+                pagingImages.loadState.refresh is LoadState.Error -> {
+                    val error = (pagingImages.loadState.refresh as LoadState.Error).error
+                    TextButton(onClick = { pagingImages.retry() }, modifier = Modifier.align(Alignment.Center)) {
+                        Text(error.message ?: "错误，点击重试", style = MaterialTheme.typography.bodyLarge)
                     }
                 }
-                uiState.images.isNotEmpty() -> {
+                pagingImages.itemCount > 0 -> {
                     val columns = when {
                         configuration.screenWidthDp < 400 -> 2
                         configuration.screenWidthDp < 600 -> 3
@@ -250,18 +235,22 @@ fun WaterfallScreen(
                         horizontalArrangement = Arrangement.spacedBy(3.dp),
                         verticalItemSpacing = 3.dp
                     ) {
-                        itemsIndexed(
-                            items = uiState.images,
-                            key = { index, image -> "${image.id}_$index" }
-                        ) { index, image ->
-                            var itemBounds by remember { mutableStateOf(androidx.compose.ui.geometry.Rect.Zero) }
+                        items(
+                            count = pagingImages.itemCount,
+                            key = { index ->
+                                val item = pagingImages.peek(index)
+                                "${item?.id}_$index"
+                            }
+                        ) { index ->
+                            val image = pagingImages[index] ?: return@items
+                            var itemBounds by remember { mutableStateOf(Rect.Zero) }
                             Card(
                                 modifier = Modifier
                                     .fillMaxWidth()
                                     .onGloballyPositioned { coordinates ->
                                         val pos = coordinates.positionInRoot()
                                         val size = coordinates.size
-                                        itemBounds = androidx.compose.ui.geometry.Rect(
+                                        itemBounds = Rect(
                                             pos.x, pos.y, pos.x + size.width, pos.y + size.height
                                         )
                                     }
@@ -291,7 +280,7 @@ fun WaterfallScreen(
                             }
                         }
 
-                        if (uiState.isLoading) {
+                        if (pagingImages.loadState.append is LoadState.Loading) {
                             item {
                                 Box(
                                     modifier = Modifier

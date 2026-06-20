@@ -5,19 +5,26 @@ import com.randomimage.domain.model.ImageModel
 import okhttp3.OkHttpClient
 import timber.log.Timber
 import java.io.File
+import java.util.concurrent.atomic.AtomicInteger
 import javax.inject.Inject
 import javax.inject.Singleton
 
 @Singleton
 class ApiManager @Inject constructor(
-    private val okHttpClient: OkHttpClient
+    private val okHttpClient: OkHttpClient,
+    private val customApiManager: CustomApiManager
 ) {
+    @Volatile
     private var customApis: List<CustomApiImageApi> = emptyList()
-    private var currentIndex = 0
+    private val currentIndex = AtomicInteger(0)
     private var cacheDir: File? = null
 
     val currentApi: ImageApi
-        get() = allApis.getOrElse(currentIndex) { allApis.firstOrNull() ?: NoOpApi() }
+        get() {
+            val apis = allApis
+            val idx = currentIndex.get()
+            return apis.getOrElse(idx) { apis.firstOrNull() ?: NoOpApi() }
+        }
 
     val allApis: List<ImageApi>
         get() = customApis.filter { it.config.enabled }
@@ -25,30 +32,31 @@ class ApiManager @Inject constructor(
     val availableApis: List<ImageApi> get() = allApis
 
     fun init(context: Context) {
-        CustomApiManager.init(context)
+        customApiManager.init(context)
         cacheDir = context.cacheDir
         refreshCustomApis()
     }
 
     fun refreshCustomApis() {
-        customApis = CustomApiManager.getCustomApis()
+        customApis = customApiManager.getCustomApis()
             .filter { it.enabled }
             .map { CustomApiImageApi(it, okHttpClient, cacheDir) }
-        if (currentIndex >= allApis.size) {
-            currentIndex = 0
+        val maxIndex = allApis.size - 1
+        if (currentIndex.get() > maxIndex) {
+            currentIndex.set(0)
         }
     }
 
     fun switchApi(index: Int) {
         if (index in allApis.indices) {
-            currentIndex = index
+            currentIndex.set(index)
         }
     }
 
     fun switchApiByName(name: String) {
         val index = allApis.indexOfFirst { it.name == name }
         if (index >= 0) {
-            currentIndex = index
+            currentIndex.set(index)
         }
     }
 

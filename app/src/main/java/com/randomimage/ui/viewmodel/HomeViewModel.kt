@@ -4,8 +4,13 @@ import android.app.Application
 import android.content.Context
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
+import androidx.paging.Pager
+import androidx.paging.PagingConfig
+import androidx.paging.PagingData
+import androidx.paging.cachedIn
 import coil.ImageLoader
 import com.randomimage.data.remote.ApiManager
+import com.randomimage.data.remote.ImagePagingSource
 import com.randomimage.data.repository.ImageRepository
 import com.randomimage.domain.model.ImageModel
 import com.randomimage.util.StatsManager
@@ -71,6 +76,9 @@ class HomeViewModel @Inject constructor(
     private val _uiState = MutableStateFlow(HomeUiState())
     val uiState: StateFlow<HomeUiState> = _uiState.asStateFlow()
 
+    private val _pagingImages = MutableStateFlow<PagingData<ImageModel>>(PagingData.empty())
+    val pagingImages: StateFlow<PagingData<ImageModel>> = _pagingImages.asStateFlow()
+
     private val favoritesFlow = repository.getFavorites()
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
 
@@ -79,6 +87,9 @@ class HomeViewModel @Inject constructor(
 
     private val recentSearchesFlow = repository.getRecentSearches()
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
+
+    private val favoriteIdsCache = mutableSetOf<String>()
+    private val followingCache = mutableSetOf<String>()
 
     init {
         StatsManager.updateFirstOpenTime(getApplication())
@@ -90,6 +101,8 @@ class HomeViewModel @Inject constructor(
 
         viewModelScope.launch {
             favoritesFlow.collect { favorites ->
+                favoriteIdsCache.clear()
+                favoriteIdsCache.addAll(favorites.map { it.id })
                 _uiState.value = _uiState.value.copy(favorites = favorites)
             }
         }
@@ -105,27 +118,52 @@ class HomeViewModel @Inject constructor(
         }
 
         loadMemoryImages()
-        loadImages()
+        loadPagingImages()
     }
 
-    // TODO: HistoryData doesn't store actual timestamps, so we approximate "last year today"
-    // using hashCode().toLong() % 365L as a pseudo-random offset. This means images shown
-    // as "memories" won't actually be from the same date last year.
     private fun loadMemoryImages() {
         viewModelScope.launch {
             val hist = repository.getHistory().first()
             val cal = java.util.Calendar.getInstance()
             val month = cal.get(java.util.Calendar.MONTH)
             val day = cal.get(java.util.Calendar.DAY_OF_MONTH)
+            val yearAgo = System.currentTimeMillis() - 365L * 24 * 60 * 60 * 1000
+            val monthAgo = System.currentTimeMillis() - 30L * 24 * 60 * 60 * 1000
             val memoryImages = hist.filter { image ->
-                val imageCal = java.util.Calendar.getInstance().apply {
-                    timeInMillis = System.currentTimeMillis() - (image.hashCode().toLong() % 365L * 24 * 60 * 60 * 1000)
+                val viewedAt = image.viewedAt
+                when {
+                    viewedAt in yearAgo..yearAgo + 2L * 24 * 60 * 60 * 1000 -> {
+                        val viewedCal = java.util.Calendar.getInstance().apply { timeInMillis = viewedAt }
+                        viewedCal.get(java.util.Calendar.MONTH) == month &&
+                        viewedCal.get(java.util.Calendar.DAY_OF_MONTH) == day
+                    }
+                    viewedAt in monthAgo..System.currentTimeMillis() -> true
+                    else -> false
                 }
-                imageCal.get(java.util.Calendar.MONTH) == month &&
-                imageCal.get(java.util.Calendar.DAY_OF_MONTH) == day
             }.take(5)
             _uiState.value = _uiState.value.copy(memoryImages = memoryImages)
         }
+    }
+
+    fun loadPagingImages() {
+        viewModelScope.launch {
+            Pager(
+                config = PagingConfig(
+                    pageSize = 20,
+                    prefetchDistance = 10,
+                    enablePlaceholders = false
+                ),
+                pagingSourceFactory = {
+                    ImagePagingSource(
+                        apiManager = apiManager,
+                        isNSFW = _uiState.value.isNSFW
+                    )
+                }
+            ).flow.cachedIn(viewModelScope).collect { pagingData ->
+                _pagingImages.value = pagingData
+            }
+        }
+        _uiState.value = _uiState.value.copy(currentApiName = apiManager.currentApi.name)
     }
 
     fun loadImages() {
@@ -217,6 +255,33 @@ class HomeViewModel @Inject constructor(
         }
     }
 
+    fun searchPagingImages(query: String) {
+        if (query.isBlank()) {
+            loadPagingImages()
+            return
+        }
+        viewModelScope.launch {
+            _uiState.value = _uiState.value.copy(isSearching = true, searchQuery = query)
+            repository.addSearchHistory(query)
+            StatsManager.incrementSearchCount(getApplication())
+            Pager(
+                config = PagingConfig(
+                    pageSize = 20,
+                    prefetchDistance = 10,
+                    enablePlaceholders = false
+                ),
+                pagingSourceFactory = {
+                    ImagePagingSource(
+                        apiManager = apiManager,
+                        searchQuery = query
+                    )
+                }
+            ).flow.cachedIn(viewModelScope).collect { pagingData ->
+                _pagingImages.value = pagingData
+            }
+        }
+    }
+
     fun clearSearch() {
         _uiState.value = _uiState.value.copy(searchQuery = "", isSearching = false)
         loadImages()
@@ -236,7 +301,7 @@ class HomeViewModel @Inject constructor(
             isLoading = true,
             error = null
         )
-        loadImages()
+        loadPagingImages()
     }
 
     fun refreshApis() {
@@ -250,7 +315,7 @@ class HomeViewModel @Inject constructor(
         val newState = !_uiState.value.isNSFW
         _uiState.value = _uiState.value.copy(isNSFW = newState)
         Timber.d("NSFW toggled to $newState")
-        loadImages()
+        loadPagingImages()
     }
 
     private fun nextImage() {
@@ -314,7 +379,7 @@ class HomeViewModel @Inject constructor(
         viewModelScope.launch {
             val currentImage = _uiState.value.detailImage ?: getCurrentImage()
             if (currentImage != null) {
-                val isFavorite = repository.isFavorite(currentImage.id)
+                val isFavorite = currentImage.id in favoriteIdsCache
                 _uiState.value = _uiState.value.copy(isFavorite = isFavorite)
             }
         }
@@ -325,10 +390,12 @@ class HomeViewModel @Inject constructor(
         viewModelScope.launch {
             if (_uiState.value.isFavorite) {
                 repository.removeFromFavorites(currentImage.id)
+                favoriteIdsCache.remove(currentImage.id)
                 _uiState.value = _uiState.value.copy(isFavorite = false)
                 Timber.d("Removed from favorites: ${currentImage.id}")
             } else {
                 repository.addToFavorites(currentImage)
+                favoriteIdsCache.add(currentImage.id)
                 _uiState.value = _uiState.value.copy(isFavorite = true)
                 StatsManager.incrementFavoriteCount(getApplication())
                 Timber.d("Added to favorites: ${currentImage.id}")
@@ -339,6 +406,7 @@ class HomeViewModel @Inject constructor(
     fun addToFavoritesWithGroup(image: ImageModel, groupId: String) {
         viewModelScope.launch {
             repository.addToFavoritesWithGroup(image, groupId)
+            favoriteIdsCache.add(image.id)
             _uiState.value = _uiState.value.copy(isFavorite = true)
             StatsManager.incrementFavoriteCount(getApplication())
             Timber.d("Added to favorites with group $groupId: ${image.id}")
@@ -452,6 +520,7 @@ class HomeViewModel @Inject constructor(
         viewModelScope.launch {
             if (_uiState.value.isFollowingArtist) {
                 repository.unfollowArtist(image.user.id)
+                followingCache.remove(image.user.id)
                 _uiState.value = _uiState.value.copy(isFollowingArtist = false)
                 Timber.d("Unfollowed artist: ${image.user.name}")
             } else {
@@ -461,6 +530,7 @@ class HomeViewModel @Inject constructor(
                         name = image.user.name
                     )
                 )
+                followingCache.add(image.user.id)
                 _uiState.value = _uiState.value.copy(isFollowingArtist = true)
                 Timber.d("Followed artist: ${image.user.name}")
             }
@@ -470,16 +540,19 @@ class HomeViewModel @Inject constructor(
     fun checkFollowingArtist() {
         val image = getCurrentImage() ?: return
         viewModelScope.launch {
-            val following = repository.isFollowingArtist(image.user.id)
+            val following = image.user.id in followingCache
             _uiState.value = _uiState.value.copy(isFollowingArtist = following)
         }
     }
 
+    private var tagsLoaded = false
+
     fun loadPopularTags() {
+        if (tagsLoaded) return
         viewModelScope.launch {
-            repository.getAllTags().collect { tags ->
-                _uiState.value = _uiState.value.copy(popularTags = tags)
-            }
+            val tags = repository.getAllTags().first()
+            _uiState.value = _uiState.value.copy(popularTags = tags)
+            tagsLoaded = true
         }
     }
 

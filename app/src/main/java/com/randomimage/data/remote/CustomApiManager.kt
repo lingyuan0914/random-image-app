@@ -6,6 +6,8 @@ import com.squareup.moshi.Moshi
 import com.squareup.moshi.Types
 import com.squareup.moshi.kotlin.reflect.KotlinJsonAdapterFactory
 import timber.log.Timber
+import javax.inject.Inject
+import javax.inject.Singleton
 
 enum class ApiType(val label: String) {
     AUTO("自动检测"),
@@ -30,10 +32,8 @@ data class PresetApi(
     val description: String = ""
 )
 
-object CustomApiManager {
-    private const val PREFS_NAME = "custom_api_prefs"
-    private const val KEY_APIS = "custom_apis"
-
+@Singleton
+class CustomApiManager @Inject constructor() {
     private var prefs: SharedPreferences? = null
     private val moshi = Moshi.Builder()
         .addLast(KotlinJsonAdapterFactory())
@@ -99,5 +99,10 @@ object CustomApiManager {
         val type = Types.newParameterizedType(List::class.java, CustomApiConfig::class.java)
         val json = moshi.adapter<List<CustomApiConfig>>(type).toJson(apis)
         prefs?.edit()?.putString(KEY_APIS, json)?.apply()
+    }
+
+    companion object {
+        private const val PREFS_NAME = "custom_api_prefs"
+        private const val KEY_APIS = "custom_apis"
     }
 }

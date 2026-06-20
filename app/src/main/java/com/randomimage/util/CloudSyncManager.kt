@@ -1,6 +1,9 @@
 package com.randomimage.util
 
 import android.content.Context
+import android.content.SharedPreferences
+import androidx.security.crypto.EncryptedSharedPreferences
+import androidx.security.crypto.MasterKeys
 import com.randomimage.data.local.AppDataStore
 import com.randomimage.data.local.FavoriteData
 import com.squareup.moshi.Moshi
@@ -9,63 +12,95 @@ import com.squareup.moshi.kotlin.reflect.KotlinJsonAdapterFactory
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.withContext
+import okhttp3.MediaType.Companion.toMediaType
+import okhttp3.OkHttpClient
+import okhttp3.Request
+import okhttp3.RequestBody.Companion.toRequestBody
 import timber.log.Timber
 import java.io.File
-import java.net.HttpURLConnection
-import java.net.URL
-import java.util.Base64
+import java.util.concurrent.TimeUnit
 
 object CloudSyncManager {
-    private var webdavUrl: String = ""
-    private var username: String = ""
-    private var password: String = "" // TODO: encrypt or use Android Keystore instead of storing in plain text
+    private const val PREFS_NAME = "cloud_sync_prefs"
+    private const val KEY_WEBDAV_URL = "webdav_url"
+    private const val KEY_USERNAME = "username"
+    private const val KEY_PASSWORD = "password"
+
+    private var prefs: SharedPreferences? = null
     private var dataStore: AppDataStore? = null
+    private var client: OkHttpClient? = null
 
     private val moshi: Moshi = Moshi.Builder()
         .addLast(KotlinJsonAdapterFactory())
         .build()
 
+    private val favoritesType = Types.newParameterizedType(List::class.java, FavoriteData::class.java)
+    private val favoritesAdapter by lazy { moshi.adapter<List<FavoriteData>>(favoritesType) }
+
     fun configure(url: String, user: String, pass: String) {
-        webdavUrl = url
-        username = user
-        password = pass
+        prefs?.edit()?.apply {
+            putString(KEY_WEBDAV_URL, url)
+            putString(KEY_USERNAME, user)
+            putString(KEY_PASSWORD, pass)
+            apply()
+        }
     }
 
-    fun init(store: AppDataStore) {
+    fun init(store: AppDataStore, context: Context) {
         dataStore = store
+        try {
+            val masterKeyAlias = MasterKeys.getOrCreate(MasterKeys.AES256_GCM_SPEC)
+            prefs = EncryptedSharedPreferences.create(
+                PREFS_NAME,
+                masterKeyAlias,
+                context,
+                EncryptedSharedPreferences.PrefKeyEncryptionScheme.AES256_SIV,
+                EncryptedSharedPreferences.PrefValueEncryptionScheme.AES256_GCM
+            )
+        } catch (e: Exception) {
+            Timber.e(e, "Failed to create encrypted prefs, falling back to regular prefs")
+            prefs = context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
+        }
+
+        client = OkHttpClient.Builder()
+            .connectTimeout(15, TimeUnit.SECONDS)
+            .readTimeout(15, TimeUnit.SECONDS)
+            .writeTimeout(15, TimeUnit.SECONDS)
+            .build()
+    }
+
+    private fun getConfig(): Triple<String, String, String> {
+        val url = prefs?.getString(KEY_WEBDAV_URL, "") ?: ""
+        val user = prefs?.getString(KEY_USERNAME, "") ?: ""
+        val pass = prefs?.getString(KEY_PASSWORD, "") ?: ""
+        return Triple(url, user, pass)
     }
 
     suspend fun uploadFile(context: Context, localFile: File, remoteName: String): Boolean {
         return withContext(Dispatchers.IO) {
             try {
+                val (webdavUrl, username, password) = getConfig()
+                val httpClient = client ?: return@withContext false
+
                 if (webdavUrl.isBlank()) {
                     Timber.w("WebDAV not configured")
                     return@withContext false
                 }
 
-                val url = URL("${webdavUrl.trimEnd('/')}/$remoteName")
-                val connection = url.openConnection() as HttpURLConnection
-                connection.requestMethod = "PUT"
-                connection.doOutput = true
-                connection.connectTimeout = 15000
-                connection.readTimeout = 15000
+                val url = "${webdavUrl.trimEnd('/')}/$remoteName"
+                val requestBody = localFile.readBytes().toRequestBody("application/octet-stream".toMediaType())
 
-                val auth = Base64.getEncoder().encodeToString("$username:$password".toByteArray())
-                connection.setRequestProperty("Authorization", "Basic $auth")
-                connection.setRequestProperty("Content-Type", "application/octet-stream")
-                connection.setRequestProperty("Content-Length", localFile.length().toString())
+                val request = Request.Builder()
+                    .url(url)
+                    .put(requestBody)
+                    .header("Authorization", "Basic ${android.util.Base64.encodeToString("$username:$password".toByteArray(), android.util.Base64.NO_WRAP)}")
+                    .build()
 
-                localFile.inputStream().use { input ->
-                    connection.outputStream.use { output ->
-                        input.copyTo(output)
-                    }
+                httpClient.newCall(request).execute().use { response ->
+                    val success = response.isSuccessful
+                    Timber.d("WebDAV upload: $remoteName -> HTTP ${response.code}")
+                    success
                 }
-
-                val code = connection.responseCode
-                val success = code in 200..299
-                Timber.d("WebDAV upload: $remoteName -> HTTP $code")
-                connection.disconnect()
-                success
             } catch (e: Exception) {
                 Timber.e(e, "WebDAV upload failed")
                 false
@@ -78,7 +113,7 @@ object CloudSyncManager {
             try {
                 val store = dataStore ?: return@withContext false
                 val favorites = store.getFavorites().first()
-                val json = favoritesToJson(favorites)
+                val json = favoritesAdapter.toJson(favorites)
 
                 val file = File(context.filesDir, "favorites_backup.json")
                 file.writeText(json)
@@ -99,7 +134,7 @@ object CloudSyncManager {
                 if (!file.exists()) return@withContext false
 
                 val json = file.readText()
-                val favorites = jsonToFavorites(json)
+                val favorites = favoritesAdapter.fromJson(json) ?: emptyList()
 
                 val store = dataStore ?: return@withContext false
                 favorites.forEach { favorite ->
@@ -113,17 +148,5 @@ object CloudSyncManager {
                 false
             }
         }
-    }
-
-    private fun favoritesToJson(favorites: List<FavoriteData>): String {
-        val type = Types.newParameterizedType(List::class.java, FavoriteData::class.java)
-        val adapter = moshi.adapter<List<FavoriteData>>(type)
-        return adapter.toJson(favorites)
-    }
-
-    private fun jsonToFavorites(json: String): List<FavoriteData> {
-        val type = Types.newParameterizedType(List::class.java, FavoriteData::class.java)
-        val adapter = moshi.adapter<List<FavoriteData>>(type)
-        return adapter.fromJson(json) ?: emptyList()
     }
 }

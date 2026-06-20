@@ -18,11 +18,10 @@ object CacheManager {
         var metadataSize = 0L
         var imageCount = 0
 
-        // Coil disk cache
         val coilCacheDir = File(context.cacheDir, "image_cache")
         if (coilCacheDir.exists()) {
             coilCacheDir.walkTopDown()
-                .filter { it.isFile && it.name != "journal" }
+                .filter { it.isFile }
                 .forEach { file ->
                     val size = file.length()
                     totalSize += size
@@ -35,7 +34,6 @@ object CacheManager {
                 }
         }
 
-        // Custom API images
         val customDir = File(context.cacheDir, "custom_api_images")
         if (customDir.exists()) {
             customDir.walkTopDown()
@@ -49,6 +47,18 @@ object CacheManager {
         }
 
         return CacheStats(totalSize, imageSize, metadataSize, imageCount)
+    }
+
+    fun getCoilCacheSize(context: Context): Long {
+        val cacheDir = File(context.cacheDir, "image_cache")
+        if (!cacheDir.exists()) return 0L
+        return cacheDir.walkTopDown().filter { it.isFile }.sumOf { it.length() }
+    }
+
+    fun getCustomApiCacheSize(context: Context): Long {
+        val customDir = File(context.cacheDir, "custom_api_images")
+        if (!customDir.exists()) return 0L
+        return customDir.walkTopDown().filter { it.isFile }.sumOf { it.length() }
     }
 
     fun getCacheSize(context: Context): Long {

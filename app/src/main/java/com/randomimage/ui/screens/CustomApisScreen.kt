@@ -32,6 +32,7 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -40,15 +41,20 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
+import androidx.hilt.navigation.compose.hiltViewModel
 import com.randomimage.data.remote.ApiType
-import com.randomimage.data.remote.CustomApiManager
+import com.randomimage.ui.viewmodel.CustomApisViewModel
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun CustomApisScreen(onBack: () -> Unit, onApisChanged: () -> Unit = {}) {
+fun CustomApisScreen(
+    onBack: () -> Unit,
+    onApisChanged: () -> Unit = {},
+    viewModel: CustomApisViewModel = hiltViewModel()
+) {
     BackHandler { onBack() }
     val context = LocalContext.current
-    var apis by remember { mutableStateOf(CustomApiManager.getCustomApis()) }
+    val uiState by viewModel.uiState.collectAsState()
     var showAddDialog by remember { mutableStateOf(false) }
     var showPresets by remember { mutableStateOf(false) }
     var newName by remember { mutableStateOf("") }
@@ -64,7 +70,7 @@ fun CustomApisScreen(onBack: () -> Unit, onApisChanged: () -> Unit = {}) {
             }
         )
 
-        if (apis.isEmpty()) {
+        if (uiState.apis.isEmpty()) {
             Column(modifier = Modifier.fillMaxSize().padding(16.dp), horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.Center) {
                 Text("暂无自定义API", style = MaterialTheme.typography.bodyLarge)
                 Spacer(modifier = Modifier.height(8.dp))
@@ -75,7 +81,7 @@ fun CustomApisScreen(onBack: () -> Unit, onApisChanged: () -> Unit = {}) {
             }
         } else {
             LazyColumn(modifier = Modifier.fillMaxSize().padding(16.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                items(apis, key = { it.id }) { api ->
+                items(uiState.apis, key = { it.id }) { api ->
                     Card(modifier = Modifier.fillMaxWidth(), elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)) {
                         Row(modifier = Modifier.fillMaxWidth().padding(16.dp), verticalAlignment = Alignment.CenterVertically) {
                             Column(modifier = Modifier.weight(1f)) {
@@ -86,11 +92,20 @@ fun CustomApisScreen(onBack: () -> Unit, onApisChanged: () -> Unit = {}) {
                                 val rateText = if (api.rateLimit <= 0) "无限制" else "${api.rateLimit} 次/${api.rateLimitWindow}秒"
                                 Text("速率限制: $rateText", style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
                                 Spacer(modifier = Modifier.height(4.dp))
-                                Slider(value = api.rateLimit.toFloat(), onValueChange = { newValue -> apis = apis.map { if (it.id == api.id) it.copy(rateLimit = newValue.toInt()) else it } },
-                                    onValueChangeFinished = { CustomApiManager.updateRateLimit(api.id, api.rateLimit, api.rateLimitWindow); onApisChanged() }, valueRange = 0f..50f, steps = 49, modifier = Modifier.fillMaxWidth())
+                                Slider(value = api.rateLimit.toFloat(), onValueChange = { newValue ->
+                                    viewModel.updateRateLimit(api.id, newValue.toInt(), api.rateLimitWindow)
+                                    onApisChanged()
+                                }, valueRange = 0f..50f, steps = 49, modifier = Modifier.fillMaxWidth())
                             }
-                            Switch(checked = api.enabled, onCheckedChange = { CustomApiManager.toggleCustomApi(api.id); apis = CustomApiManager.getCustomApis(); onApisChanged() })
-                            IconButton(onClick = { CustomApiManager.removeCustomApi(api.id); apis = CustomApiManager.getCustomApis(); onApisChanged(); Toast.makeText(context, "已删除", Toast.LENGTH_SHORT).show() }) {
+                            Switch(checked = api.enabled, onCheckedChange = {
+                                viewModel.toggleCustomApi(api.id)
+                                onApisChanged()
+                            })
+                            IconButton(onClick = {
+                                viewModel.removeCustomApi(api.id)
+                                onApisChanged()
+                                Toast.makeText(context, "已删除", Toast.LENGTH_SHORT).show()
+                            }) {
                                 Icon(Icons.Default.Delete, contentDescription = "删除", tint = MaterialTheme.colorScheme.error)
                             }
                         }
@@ -103,10 +118,15 @@ fun CustomApisScreen(onBack: () -> Unit, onApisChanged: () -> Unit = {}) {
     if (showPresets) {
         AlertDialog(onDismissRequest = { showPresets = false }, title = { Text("推荐API") }, text = {
             LazyColumn(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                items(CustomApiManager.presetApis) { preset ->
-                    val alreadyAdded = apis.any { it.url == preset.url }
-                    Card(modifier = Modifier.fillMaxWidth().clickable { if (!alreadyAdded) { CustomApiManager.addCustomApi(preset.name, preset.url, preset.apiType); apis = CustomApiManager.getCustomApis(); onApisChanged(); Toast.makeText(context, "已添加 ${preset.name}", Toast.LENGTH_SHORT).show() } },
-                        elevation = CardDefaults.cardElevation(defaultElevation = 1.dp)) {
+                items(uiState.presetApis) { preset ->
+                    val alreadyAdded = uiState.apis.any { it.url == preset.url }
+                    Card(modifier = Modifier.fillMaxWidth().clickable {
+                        if (!alreadyAdded) {
+                            viewModel.addCustomApi(preset.name, preset.url, preset.apiType)
+                            onApisChanged()
+                            Toast.makeText(context, "已添加 ${preset.name}", Toast.LENGTH_SHORT).show()
+                        }
+                    }, elevation = CardDefaults.cardElevation(defaultElevation = 1.dp)) {
                         Row(modifier = Modifier.fillMaxWidth().padding(12.dp), verticalAlignment = Alignment.CenterVertically) {
                             Column(modifier = Modifier.weight(1f)) {
                                 Text(preset.name, style = MaterialTheme.typography.bodyLarge, color = if (alreadyAdded) MaterialTheme.colorScheme.onSurfaceVariant else MaterialTheme.colorScheme.onSurface)
@@ -130,7 +150,11 @@ fun CustomApisScreen(onBack: () -> Unit, onApisChanged: () -> Unit = {}) {
             }
         }, confirmButton = {
             TextButton(onClick = {
-                if (newName.isNotBlank() && newUrl.isNotBlank()) { CustomApiManager.addCustomApi(newName, newUrl); apis = CustomApiManager.getCustomApis(); onApisChanged(); Toast.makeText(context, "已添加", Toast.LENGTH_SHORT).show() }
+                if (newName.isNotBlank() && newUrl.isNotBlank()) {
+                    viewModel.addCustomApi(newName, newUrl)
+                    onApisChanged()
+                    Toast.makeText(context, "已添加", Toast.LENGTH_SHORT).show()
+                }
                 showAddDialog = false; newName = ""; newUrl = ""
             }) { Text("添加") }
         }, dismissButton = { TextButton(onClick = { showAddDialog = false; newName = ""; newUrl = "" }) { Text("取消") } })

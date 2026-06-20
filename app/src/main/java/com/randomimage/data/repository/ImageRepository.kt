@@ -109,6 +109,10 @@ class ImageRepository @Inject constructor(
         return dataStore.isFavorite(imageId)
     }
 
+    suspend fun getFavoriteIds(): Set<String> {
+        return dataStore.getFavoriteIds()
+    }
+
     fun getFavoriteCount(): Flow<Int> {
         return dataStore.getFavorites().map { it.size }
     }
@@ -172,5 +176,5 @@ class ImageRepository @Inject constructor(
 
     suspend fun isFollowingArtist(uid: String): Boolean = dataStore.isFollowing(uid)
 
-    suspend fun getFollowedUids(): List<String> = dataStore.getAllFollowedUids()
+    suspend fun getFollowedUids(): List<String> = dataStore.getFollowedUids()
 }

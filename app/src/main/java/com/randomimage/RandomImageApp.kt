@@ -33,7 +33,7 @@ class RandomImageApp : Application() {
         ImageUtils.init(imageLoader)
         DownloadManager.init(imageLoader)
         apiManager.init(this)
-        CloudSyncManager.init(dataStore)
+        CloudSyncManager.init(dataStore, this)
         Timber.d("Application started")
     }
 

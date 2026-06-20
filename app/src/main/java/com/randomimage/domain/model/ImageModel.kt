@@ -10,7 +10,8 @@ data class ImageModel(
     val height: Int = 0,
     val groupId: Long = 0,
     val tags: List<String> = emptyList(),
-    val localPath: String? = null
+    val localPath: String? = null,
+    val viewedAt: Long = 0L
 ) {
     val aspectRatio: Float
         get() = if (width > 0 && height > 0) width.toFloat() / height.toFloat() else 1f

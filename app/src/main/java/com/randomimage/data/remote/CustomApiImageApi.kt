@@ -72,28 +72,27 @@ class CustomApiImageApi(
             val baseUrl = config.url.trimEnd('/')
             val images = mutableListOf<ImageModel>()
 
-            repeat(count) {
+            repeat(count) { _ ->
                 val c = counter.incrementAndGet()
                 val request = Request.Builder()
                     .url(baseUrl)
                     .header("User-Agent", "RandomImageApp/1.0")
                     .build()
 
-                val response = client.newCall(request).execute()
-                val body = response.body ?: return@repeat
-                val localFile = saveToLocal(body.byteStream(), "custom_${config.id}_$c.jpg")
-                response.close()
-
-                if (localFile != null) {
-                    val fileUri = "file://${localFile.absolutePath}"
-                    images.add(ImageModel(
-                        id = "custom_${config.id}_${System.nanoTime()}_$c",
-                        urls = ImageUrls(raw = fileUri, full = fileUri, regular = fileUri, small = fileUri, thumb = fileUri),
-                        user = User(id = config.id, username = config.name, name = config.name),
-                        description = "${config.name} #$c",
-                        likes = 0,
-                        localPath = localFile.absolutePath
-                    ))
+                client.newCall(request).execute().use { response ->
+                    val body = response.body ?: return@use
+                    val localFile = saveToLocal(body.byteStream(), "custom_${config.id}_$c.jpg")
+                    if (localFile != null) {
+                        val fileUri = "file://${localFile.absolutePath}"
+                        images.add(ImageModel(
+                            id = "custom_${config.id}_${System.nanoTime()}_$c",
+                            urls = ImageUrls(raw = fileUri, full = fileUri, regular = fileUri, small = fileUri, thumb = fileUri),
+                            user = User(id = config.id, username = config.name, name = config.name),
+                            description = "${config.name} #$c",
+                            likes = 0,
+                            localPath = localFile.absolutePath
+                        ))
+                    }
                 }
             }
             images
@@ -108,35 +107,33 @@ class CustomApiImageApi(
             val baseUrl = config.url.trimEnd('/')
             val images = mutableListOf<ImageModel>()
 
-            repeat(count) {
+            repeat(count) { _ ->
                 val c = counter.incrementAndGet()
                 val request = Request.Builder()
                     .url(baseUrl)
                     .header("User-Agent", "RandomImageApp/1.0")
                     .build()
 
-                val response = client.newCall(request).execute()
-                val contentType = response.header("Content-Type") ?: ""
+                client.newCall(request).execute().use { response ->
+                    val contentType = response.header("Content-Type") ?: ""
 
-                if (contentType.contains("image/")) {
-                    val body = response.body ?: return@repeat
-                    val localFile = saveToLocal(body.byteStream(), "custom_${config.id}_$c.jpg")
-                    response.close()
-                    if (localFile != null) {
-                        val fileUri = "file://${localFile.absolutePath}"
-                        images.add(makeImageModel(fileUri, c, localPath = localFile.absolutePath))
-                    }
-                } else if (contentType.contains("json")) {
-                    val responseBody = response.body?.string() ?: ""
-                    response.close()
-                    images.addAll(parseGenericJson(responseBody, c))
-                } else {
-                    val body = response.body ?: return@repeat
-                    val localFile = saveToLocal(body.byteStream(), "custom_${config.id}_$c.jpg")
-                    response.close()
-                    if (localFile != null) {
-                        val fileUri = "file://${localFile.absolutePath}"
-                        images.add(makeImageModel(fileUri, c, localPath = localFile.absolutePath))
+                    if (contentType.contains("image/")) {
+                        val body = response.body ?: return@use
+                        val localFile = saveToLocal(body.byteStream(), "custom_${config.id}_$c.jpg")
+                        if (localFile != null) {
+                            val fileUri = "file://${localFile.absolutePath}"
+                            images.add(makeImageModel(fileUri, c, localPath = localFile.absolutePath))
+                        }
+                    } else if (contentType.contains("json")) {
+                        val responseBody = response.body?.string() ?: ""
+                        images.addAll(parseGenericJson(responseBody, c))
+                    } else {
+                        val body = response.body ?: return@use
+                        val localFile = saveToLocal(body.byteStream(), "custom_${config.id}_$c.jpg")
+                        if (localFile != null) {
+                            val fileUri = "file://${localFile.absolutePath}"
+                            images.add(makeImageModel(fileUri, c, localPath = localFile.absolutePath))
+                        }
                     }
                 }
             }
@@ -167,41 +164,46 @@ class CustomApiImageApi(
             val baseUrl = config.url.trimEnd('/')
             val images = mutableListOf<ImageModel>()
 
-            repeat(count) {
+            val batchSize = minOf(count, 20)
+            val requestCount = (count + batchSize - 1) / batchSize
+
+            repeat(requestCount) { batchIdx ->
                 val c = counter.incrementAndGet()
                 val hasQuery = baseUrl.contains("?")
                 val separator = if (hasQuery) "&" else "?"
-                val url = "${baseUrl}${separator}r18=0&num=1&size=original"
+                val actualBatchSize = minOf(batchSize, count - batchIdx * batchSize)
+                val url = "${baseUrl}${separator}r18=0&num=$actualBatchSize&size=original"
                 val request = Request.Builder()
                     .url(url)
                     .header("User-Agent", "RandomImageApp/1.0")
                     .build()
 
-                val response = client.newCall(request).execute()
-                val body = response.body?.string() ?: ""
-                response.close()
-
-                val json = JSONObject(body)
-                if (json.optString("error") == "success") {
-                    val dataArray = json.optJSONArray("data")
-                    if (dataArray != null && dataArray.length() > 0) {
-                        val item = dataArray.getJSONObject(0)
-                        val urls = item.optJSONObject("urls")
-                        if (urls != null) {
-                            val originalUrl = urls.optString("original", "")
-                            val smallUrl = urls.optString("small", originalUrl)
-                            val thumbUrl = urls.optString("thumb", smallUrl)
-                            if (originalUrl.isNotEmpty()) {
-                                images.add(ImageModel(
-                                    id = "custom_${config.id}_${item.optLong("pid")}_${item.optInt("p")}_$c",
-                                    urls = ImageUrls(raw = originalUrl, full = originalUrl, regular = originalUrl, small = smallUrl, thumb = thumbUrl),
-                                    user = User(id = item.optLong("uid").toString(), username = item.optString("author", config.name), name = item.optString("author", config.name)),
-                                    description = item.optString("title"),
-                                    likes = 0,
-                                    width = item.optInt("width"),
-                                    height = item.optInt("height"),
-                                    tags = parseJsonArrayToStringList(item.optJSONArray("tags"))
-                                ))
+                client.newCall(request).execute().use { response ->
+                    val body = response.body?.string() ?: ""
+                    val json = JSONObject(body)
+                    if (json.optString("error") == "success") {
+                        val dataArray = json.optJSONArray("data")
+                        if (dataArray != null) {
+                            for (i in 0 until dataArray.length()) {
+                                val item = dataArray.getJSONObject(i)
+                                val urls = item.optJSONObject("urls")
+                                if (urls != null) {
+                                    val originalUrl = urls.optString("original", "")
+                                    val smallUrl = urls.optString("small", originalUrl)
+                                    val thumbUrl = urls.optString("thumb", smallUrl)
+                                    if (originalUrl.isNotEmpty()) {
+                                        images.add(ImageModel(
+                                            id = "custom_${config.id}_${item.optLong("pid")}_${item.optInt("p")}_$c",
+                                            urls = ImageUrls(raw = originalUrl, full = originalUrl, regular = originalUrl, small = smallUrl, thumb = thumbUrl),
+                                            user = User(id = item.optLong("uid").toString(), username = item.optString("author", config.name), name = item.optString("author", config.name)),
+                                            description = item.optString("title"),
+                                            likes = 0,
+                                            width = item.optInt("width"),
+                                            height = item.optInt("height"),
+                                            tags = parseJsonArrayToStringList(item.optJSONArray("tags"))
+                                        ))
+                                    }
+                                }
                             }
                         }
                     }
