@@ -3,15 +3,12 @@ package com.randomimage.util
 import android.content.Context
 import android.content.SharedPreferences
 import com.randomimage.ui.theme.ColorMode
-import com.randomimage.ui.theme.ThemeController
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 
 object ThemeManager {
     private const val PREFS_NAME = "theme_prefs"
-    private const val KEY_THEME_MODE = "theme_mode"
-    private const val KEY_PREDICTIVE_BACK = "predictive_back"
 
     const val THEME_LIGHT = 0
     const val THEME_DARK = 1
@@ -59,44 +56,37 @@ object ThemeManager {
         if (initialized) return
         initialized = true
         val prefs = getPrefs(context)
-        _themeModeFlow.value = prefs.getInt(KEY_THEME_MODE, THEME_SYSTEM)
+        _themeModeFlow.value = prefs.getInt("theme_mode", THEME_SYSTEM)
         _keyColorFlow.value = prefs.getInt("key_color", 0xFF2196F3.toInt())
         _amoledFlow.value = prefs.getBoolean("amoled_mode", false)
         _dynamicColorFlow.value = prefs.getBoolean("use_dynamic_color", true)
-
-        val colorModeValue = prefs.getInt("color_mode", ColorMode.SYSTEM.value)
-        _colorModeFlow.value = ColorMode.fromValue(colorModeValue)
+        _colorModeFlow.value = ColorMode.fromValue(prefs.getInt("color_mode", ColorMode.SYSTEM.value))
 
         prefs.registerOnSharedPreferenceChangeListener { _, key ->
             when (key) {
-                KEY_THEME_MODE -> _themeModeFlow.value = prefs.getInt(KEY_THEME_MODE, THEME_SYSTEM)
+                "theme_mode" -> _themeModeFlow.value = prefs.getInt("theme_mode", THEME_SYSTEM)
                 "key_color" -> _keyColorFlow.value = prefs.getInt("key_color", 0xFF2196F3.toInt())
                 "amoled_mode" -> _amoledFlow.value = prefs.getBoolean("amoled_mode", false)
                 "use_dynamic_color" -> _dynamicColorFlow.value = prefs.getBoolean("use_dynamic_color", true)
-                "color_mode" -> {
-                    val value = prefs.getInt("color_mode", ColorMode.SYSTEM.value)
-                    _colorModeFlow.value = ColorMode.fromValue(value)
-                }
+                "color_mode" -> _colorModeFlow.value = ColorMode.fromValue(prefs.getInt("color_mode", ColorMode.SYSTEM.value))
             }
         }
     }
 
     fun getThemeMode(context: Context): Int {
-        return getPrefs(context).getInt(KEY_THEME_MODE, THEME_SYSTEM)
+        return getPrefs(context).getInt("theme_mode", THEME_SYSTEM)
     }
 
     fun setThemeMode(context: Context, mode: Int) {
-        getPrefs(context).edit().putInt(KEY_THEME_MODE, mode).apply()
+        getPrefs(context).edit().putInt("theme_mode", mode).apply()
     }
 
     fun getColorMode(context: Context): ColorMode {
-        val value = getPrefs(context).getInt("color_mode", ColorMode.SYSTEM.value)
-        return ColorMode.fromValue(value)
+        return ColorMode.fromValue(getPrefs(context).getInt("color_mode", ColorMode.SYSTEM.value))
     }
 
     fun setColorMode(context: Context, mode: ColorMode) {
         getPrefs(context).edit().putInt("color_mode", mode.value).apply()
-        ThemeController.saveColorMode(context, mode)
     }
 
     fun getKeyColor(context: Context): Int {
@@ -105,7 +95,6 @@ object ThemeManager {
 
     fun setKeyColor(context: Context, color: Int) {
         getPrefs(context).edit().putInt("key_color", color).apply()
-        ThemeController.saveKeyColor(context, color)
     }
 
     fun getAmoled(context: Context): Boolean {
@@ -113,14 +102,12 @@ object ThemeManager {
     }
 
     fun setAmoled(context: Context, enabled: Boolean) {
-        getPrefs(context).edit().putBoolean("amoled_mode", enabled).apply()
+        val prefs = getPrefs(context)
+        prefs.edit().putBoolean("amoled_mode", enabled).apply()
         if (enabled) {
-            setColorMode(context, ColorMode.DARK_AMOLED)
-        } else {
-            val currentMode = getColorMode(context)
-            if (currentMode == ColorMode.DARK_AMOLED) {
-                setColorMode(context, ColorMode.DARK)
-            }
+            prefs.edit().putInt("color_mode", ColorMode.DARK_AMOLED.value).apply()
+        } else if (getColorMode(context) == ColorMode.DARK_AMOLED) {
+            prefs.edit().putInt("color_mode", ColorMode.DARK.value).apply()
         }
     }
 
@@ -130,14 +117,13 @@ object ThemeManager {
 
     fun setDynamicColor(context: Context, enabled: Boolean) {
         getPrefs(context).edit().putBoolean("use_dynamic_color", enabled).apply()
-        ThemeController.saveDynamicColor(context, enabled)
     }
 
     fun getPredictiveBack(context: Context): Boolean {
-        return getPrefs(context).getBoolean(KEY_PREDICTIVE_BACK, true)
+        return getPrefs(context).getBoolean("predictive_back", true)
     }
 
     fun setPredictiveBack(context: Context, enabled: Boolean) {
-        getPrefs(context).edit().putBoolean(KEY_PREDICTIVE_BACK, enabled).apply()
+        getPrefs(context).edit().putBoolean("predictive_back", enabled).apply()
     }
 }
