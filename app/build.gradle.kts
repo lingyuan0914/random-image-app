@@ -16,8 +16,8 @@ android {
         applicationId = "com.randomimage"
         minSdk = 26
         targetSdk = 36
-        versionCode = 25
-        versionName = "26.06.20-12"
+        versionCode = 26
+        versionName = "26.06.21-01"
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
 
