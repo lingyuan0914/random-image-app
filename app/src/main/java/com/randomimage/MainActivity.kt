@@ -39,8 +39,7 @@ import com.randomimage.ui.screens.LogScreen
 import com.randomimage.ui.screens.SettingsScreen
 import com.randomimage.ui.screens.ThemeSettingsScreen
 import com.randomimage.ui.screens.WaterfallScreen
-import com.randomimage.ui.theme.MaterialRandomImageTheme
-import com.randomimage.ui.theme.MiuixRandomImageTheme
+import com.randomimage.ui.theme.RandomImageTheme
 import com.randomimage.ui.viewmodel.HomeViewModel
 import com.randomimage.util.ThemeManager
 import dagger.hilt.android.AndroidEntryPoint
@@ -53,26 +52,8 @@ class MainActivity : ComponentActivity() {
         enableEdgeToEdge()
         ThemeManager.init(this)
         setContent {
-            val uiStyle by ThemeManager.uiStyleFlow.collectAsState()
-            val colorMode by ThemeManager.colorModeFlow.collectAsState()
-            val keyColor by ThemeManager.keyColorFlow.collectAsState()
-            val dynamicColor by ThemeManager.dynamicColorFlow.collectAsState()
-
-            if (uiStyle == "miuix") {
-                MiuixRandomImageTheme(
-                    colorMode = colorMode,
-                    keyColor = keyColor
-                ) {
-                    MainContent()
-                }
-            } else {
-                MaterialRandomImageTheme(
-                    colorMode = colorMode,
-                    keyColor = keyColor,
-                    useDynamicColor = dynamicColor
-                ) {
-                    MainContent()
-                }
+            RandomImageTheme {
+                MainContent()
             }
         }
     }
@@ -94,8 +75,17 @@ class MainActivity : ComponentActivity() {
                             IconButton(onClick = { homeViewModel.loadImages() }) {
                                 Icon(Icons.Default.Refresh, contentDescription = "刷新")
                             }
-                            IconButton(onClick = { homeViewModel.toggleTheme(this@MainActivity) }) {
-                                val isDark = ThemeManager.getColorMode(this@MainActivity).isDark
+                            IconButton(onClick = {
+                                val context = this@MainActivity
+                                val currentMode = ThemeManager.getThemeMode(context)
+                                val newMode = if (currentMode == ThemeManager.MODE_DARK) {
+                                    ThemeManager.MODE_LIGHT
+                                } else {
+                                    ThemeManager.MODE_DARK
+                                }
+                                ThemeManager.setThemeMode(context, newMode)
+                            }) {
+                                val isDark = ThemeManager.isDarkMode(this@MainActivity)
                                 Icon(
                                     imageVector = if (isDark) Icons.Default.LightMode else Icons.Default.DarkMode,
                                     contentDescription = if (isDark) "浅色模式" else "深色模式"

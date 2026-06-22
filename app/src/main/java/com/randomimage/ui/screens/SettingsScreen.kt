@@ -62,7 +62,6 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.randomimage.ui.components.StatsChart
 import com.randomimage.ui.components.StatsItem
-import com.randomimage.ui.theme.ColorMode
 import com.randomimage.util.CacheManager
 import com.randomimage.util.StatsManager
 import com.randomimage.util.ThemeManager
@@ -88,7 +87,7 @@ fun SettingsScreen(
     var showClearSearchDialog by remember { mutableStateOf(false) }
     var showQualityDialog by remember { mutableStateOf(false) }
 
-    val colorMode by ThemeManager.colorModeFlow.collectAsState()
+    val themeMode by ThemeManager.themeModeFlow.collectAsState()
     val keyColor by ThemeManager.keyColorFlow.collectAsState()
     var imageQuality by remember { mutableStateOf("中等") }
 

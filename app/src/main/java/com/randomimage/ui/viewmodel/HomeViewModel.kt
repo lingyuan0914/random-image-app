@@ -489,14 +489,14 @@ class HomeViewModel @Inject constructor(
     }
 
     fun toggleTheme(context: Context) {
-        val currentMode = ThemeManager.getColorMode(context)
-        val newMode = if (currentMode.isDark) {
-            com.randomimage.ui.theme.ColorMode.LIGHT
+        val currentMode = ThemeManager.getThemeMode(context)
+        val newMode = if (currentMode == ThemeManager.MODE_DARK) {
+            ThemeManager.MODE_LIGHT
         } else {
-            com.randomimage.ui.theme.ColorMode.DARK
+            ThemeManager.MODE_DARK
         }
-        ThemeManager.setColorMode(context, newMode)
-        Timber.d("Theme toggled to ${if (newMode.isDark) "dark" else "light"}")
+        ThemeManager.setThemeMode(context, newMode)
+        Timber.d("Theme toggled to ${if (newMode == ThemeManager.MODE_DARK) "dark" else "light"}")
     }
 
     fun setImageQuality(quality: ImageQuality) {
