@@ -11,7 +11,7 @@ import androidx.core.view.WindowInsetsControllerCompat
 import top.yukonga.miuix.kmp.theme.ColorSchemeMode
 import top.yukonga.miuix.kmp.theme.LocalContentColor
 import top.yukonga.miuix.kmp.theme.MiuixTheme
-import top.yukonga.miuix.kmp.theme.ThemeController
+import top.yukonga.miuix.kmp.theme.ThemeController as MiuixThemeController
 
 @Composable
 fun MiuixRandomImageTheme(
@@ -30,10 +30,10 @@ fun MiuixRandomImageTheme(
         ColorMode.MONET_SYSTEM -> ColorSchemeMode.MonetSystem
         ColorMode.MONET_LIGHT -> ColorSchemeMode.MonetLight
         ColorMode.MONET_DARK -> ColorSchemeMode.MonetDark
-        ColorMode.DARK_AMOLED -> ColorSchemeMode.Dark
+        ColorMode.DARK_AMOLED -> ColorSchemeMode.MonetDark
     }
 
-    val controller = ThemeController(
+    val controller = MiuixThemeController(
         colorSchemeMode = colorSchemeMode,
         keyColor = if (keyColor == 0) null else Color(keyColor),
         isDark = darkTheme,

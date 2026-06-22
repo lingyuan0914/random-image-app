@@ -16,8 +16,8 @@ android {
         applicationId = "com.randomimage"
         minSdk = 26
         targetSdk = 36
-        versionCode = 29
-        versionName = "26.06.22-02"
+        versionCode = 30
+        versionName = "26.06.22-03"
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
 
@@ -110,6 +110,9 @@ dependencies {
 
     // Miuix UI (KSU style)
     implementation("top.yukonga.miuix.kmp:miuix:0.7.2")
+
+    // MaterialKolor (dynamic color generation)
+    implementation("com.materialkolor:material-kolor:2.0.0")
 
     // DI
     implementation("com.google.dagger:hilt-android:2.53.1")

@@ -1,21 +1,12 @@
 package com.randomimage.ui.theme
 
-import android.app.Activity
+import android.content.Context
 import android.os.Build
 import androidx.compose.foundation.isSystemInDarkTheme
-import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.darkColorScheme
-import androidx.compose.material3.dynamicDarkColorScheme
-import androidx.compose.material3.dynamicLightColorScheme
-import androidx.compose.material3.lightColorScheme
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.collectAsState
-import androidx.compose.runtime.getValue
-import androidx.compose.ui.graphics.Color
+import androidx.compose.runtime.ReadOnlyComposable
+import androidx.compose.runtime.staticCompositionLocalOf
 import androidx.compose.ui.platform.LocalContext
-import androidx.core.view.WindowInsetsControllerCompat
-import com.randomimage.util.ThemeManager
 
 enum class ColorMode(val value: Int) {
     SYSTEM(0),
@@ -35,85 +26,44 @@ enum class ColorMode(val value: Int) {
     val isAmoled: Boolean get() = value == 6
     val isMonet: Boolean get() = value >= 3
 
-    fun toMonetMode(): Int = when (this) {
-        SYSTEM -> MONET_SYSTEM.value
-        LIGHT -> MONET_LIGHT.value
-        DARK, DARK_AMOLED -> MONET_DARK.value
+    fun toNonMonetMode(): Int = when (this) {
+        MONET_SYSTEM -> 0
+        MONET_LIGHT -> 1
+        MONET_DARK, DARK_AMOLED -> 2
         else -> value
     }
 
-    fun toNonMonetMode(): Int = when (this) {
-        MONET_SYSTEM -> SYSTEM.value
-        MONET_LIGHT -> LIGHT.value
-        MONET_DARK, DARK_AMOLED -> DARK.value
+    fun toMonetMode(): Int = when (this) {
+        SYSTEM -> 3
+        LIGHT -> 4
+        DARK -> 5
         else -> value
     }
 }
 
+enum class UiStyle(val value: String) {
+    Miuix("miuix"),
+    Material("material");
+
+    companion object {
+        fun fromValue(value: String): UiStyle = when (value) {
+            Material.value -> Material
+            else -> Miuix
+        }
+
+        val DEFAULT_VALUE = Material.value
+    }
+}
+
+val LocalUiStyle = staticCompositionLocalOf { UiStyle.Material }
+val LocalColorMode = staticCompositionLocalOf { 0 }
+
 @Composable
-fun RandomImageTheme(
-    content: @Composable () -> Unit
-) {
-    val context = LocalContext.current
-    ThemeManager.init(context)
-
-    val colorMode by ThemeManager.colorModeFlow.collectAsState()
-    val keyColor by ThemeManager.keyColorFlow.collectAsState()
-    val dynamicColor by ThemeManager.dynamicColorFlow.collectAsState()
-
-    val darkTheme = when (colorMode) {
-        ColorMode.LIGHT, ColorMode.MONET_LIGHT -> false
-        ColorMode.DARK, ColorMode.MONET_DARK, ColorMode.DARK_AMOLED -> true
+@ReadOnlyComposable
+fun isInDarkTheme(): Boolean {
+    return when (LocalColorMode.current) {
+        1, 4 -> false
+        2, 5, 6 -> true
         else -> isSystemInDarkTheme()
     }
-
-    val useDynamicColor = dynamicColor && Build.VERSION.SDK_INT >= Build.VERSION_CODES.S
-    val isAmoled = colorMode == ColorMode.DARK_AMOLED
-
-    val colorScheme = when {
-        useDynamicColor -> {
-            if (darkTheme) dynamicDarkColorScheme(context) else dynamicLightColorScheme(context)
-        }
-        darkTheme -> {
-            if (isAmoled) {
-                darkColorScheme(
-                    primary = Color(keyColor),
-                    secondary = PurpleGrey80,
-                    tertiary = Pink80,
-                    background = Color.Black,
-                    surface = Color.Black,
-                    surfaceVariant = Color(0xFF1C1C1C),
-                    onBackground = Color.White,
-                    onSurface = Color.White,
-                )
-            } else {
-                darkColorScheme(
-                    primary = Color(keyColor),
-                    secondary = PurpleGrey80,
-                    tertiary = Pink80
-                )
-            }
-        }
-        else -> {
-            lightColorScheme(
-                primary = Color(keyColor),
-                secondary = PurpleGrey40,
-                tertiary = Pink40
-            )
-        }
-    }
-
-    LaunchedEffect(darkTheme) {
-        val window = (context as? Activity)?.window ?: return@LaunchedEffect
-        WindowInsetsControllerCompat(window, window.decorView).apply {
-            isAppearanceLightStatusBars = !darkTheme
-            isAppearanceLightNavigationBars = !darkTheme
-        }
-    }
-
-    MaterialTheme(
-        colorScheme = colorScheme,
-        typography = Typography,
-        content = content
-    )
 }
