@@ -69,6 +69,7 @@ fun ThemeSettingsScreen(
     val keyColor by ThemeManager.keyColorFlow.collectAsState()
     val dynamicColor by ThemeManager.dynamicColorFlow.collectAsState()
     val amoled by ThemeManager.amoledFlow.collectAsState()
+    val uiStyle by ThemeManager.uiStyleFlow.collectAsState()
     val predictiveBack by remember { mutableStateOf(ThemeManager.getPredictiveBack(context)) }
     var uiScale by remember { mutableFloatStateOf(1f) }
 
@@ -100,6 +101,30 @@ fun ThemeSettingsScreen(
                     ThemeManager.setColorMode(context, mode)
                 }
             )
+
+            Spacer(modifier = Modifier.height(16.dp))
+
+            Card(modifier = Modifier.fillMaxWidth(), elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)) {
+                Column(modifier = Modifier.padding(16.dp)) {
+                    Text("界面风格", style = MaterialTheme.typography.bodyLarge)
+                    Text("选择应用的界面风格（需要重启应用）", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                    Spacer(modifier = Modifier.height(8.dp))
+                    Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                        StyleChip(
+                            label = "Miuix",
+                            selected = uiStyle == "miuix",
+                            onClick = { ThemeManager.setUiStyle(context, "miuix") },
+                            modifier = Modifier.weight(1f)
+                        )
+                        StyleChip(
+                            label = "Material",
+                            selected = uiStyle == "material",
+                            onClick = { ThemeManager.setUiStyle(context, "material") },
+                            modifier = Modifier.weight(1f)
+                        )
+                    }
+                }
+            }
 
             Spacer(modifier = Modifier.height(16.dp))
 
@@ -290,6 +315,34 @@ private fun SettingToggleItem(
             checked = checked,
             onCheckedChange = onCheckedChange,
             colors = SwitchDefaults.colors(checkedThumbColor = MaterialTheme.colorScheme.primary)
+        )
+    }
+}
+
+@Composable
+private fun StyleChip(
+    label: String,
+    selected: Boolean,
+    onClick: () -> Unit,
+    modifier: Modifier = Modifier
+) {
+    Box(
+        modifier = modifier
+            .height(40.dp)
+            .clip(RoundedCornerShape(8.dp))
+            .background(
+                if (selected) MaterialTheme.colorScheme.primary
+                else MaterialTheme.colorScheme.surfaceVariant
+            )
+            .clickable { onClick() },
+        contentAlignment = Alignment.Center
+    ) {
+        Text(
+            text = label,
+            color = if (selected) MaterialTheme.colorScheme.onPrimary
+            else MaterialTheme.colorScheme.onSurfaceVariant,
+            style = MaterialTheme.typography.bodyMedium,
+            fontWeight = if (selected) FontWeight.Bold else FontWeight.Normal
         )
     }
 }

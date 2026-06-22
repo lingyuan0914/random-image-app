@@ -16,8 +16,8 @@ android {
         applicationId = "com.randomimage"
         minSdk = 26
         targetSdk = 36
-        versionCode = 26
-        versionName = "26.06.21-01"
+        versionCode = 27
+        versionName = "26.06.21-02"
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
 
@@ -107,6 +107,9 @@ dependencies {
 
     // Image Loading
     implementation("io.coil-kt:coil-compose:2.7.0")
+
+    // Miuix UI (KSU style)
+    implementation("top.yukonga.miuix.kmp:miuix:0.7.2")
 
     // DI
     implementation("com.google.dagger:hilt-android:2.53.1")

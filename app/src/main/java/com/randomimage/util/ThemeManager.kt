@@ -46,6 +46,9 @@ object ThemeManager {
     private val _amoledFlow = MutableStateFlow(false)
     val amoledFlow: StateFlow<Boolean> = _amoledFlow.asStateFlow()
 
+    private val _uiStyleFlow = MutableStateFlow("material")
+    val uiStyleFlow: StateFlow<String> = _uiStyleFlow.asStateFlow()
+
     private var initialized = false
 
     private fun getPrefs(context: Context): SharedPreferences {
@@ -60,6 +63,7 @@ object ThemeManager {
         _keyColorFlow.value = prefs.getInt("key_color", 0xFF2196F3.toInt())
         _amoledFlow.value = prefs.getBoolean("amoled_mode", false)
         _dynamicColorFlow.value = prefs.getBoolean("use_dynamic_color", true)
+        _uiStyleFlow.value = prefs.getString("ui_style", "material") ?: "material"
         _colorModeFlow.value = ColorMode.fromValue(prefs.getInt("color_mode", ColorMode.SYSTEM.value))
 
         prefs.registerOnSharedPreferenceChangeListener { _, key ->
@@ -68,6 +72,7 @@ object ThemeManager {
                 "key_color" -> _keyColorFlow.value = prefs.getInt("key_color", 0xFF2196F3.toInt())
                 "amoled_mode" -> _amoledFlow.value = prefs.getBoolean("amoled_mode", false)
                 "use_dynamic_color" -> _dynamicColorFlow.value = prefs.getBoolean("use_dynamic_color", true)
+                "ui_style" -> _uiStyleFlow.value = prefs.getString("ui_style", "material") ?: "material"
                 "color_mode" -> _colorModeFlow.value = ColorMode.fromValue(prefs.getInt("color_mode", ColorMode.SYSTEM.value))
             }
         }
@@ -125,5 +130,13 @@ object ThemeManager {
 
     fun setPredictiveBack(context: Context, enabled: Boolean) {
         getPrefs(context).edit().putBoolean("predictive_back", enabled).apply()
+    }
+
+    fun getUiStyle(context: Context): String {
+        return getPrefs(context).getString("ui_style", "material") ?: "material"
+    }
+
+    fun setUiStyle(context: Context, style: String) {
+        getPrefs(context).edit().putString("ui_style", style).apply()
     }
 }
