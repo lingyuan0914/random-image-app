@@ -87,7 +87,7 @@ fun SettingsScreen(
     var showClearSearchDialog by remember { mutableStateOf(false) }
     var showQualityDialog by remember { mutableStateOf(false) }
 
-    val themeMode by ThemeManager.themeModeFlow.collectAsState()
+    val colorMode by ThemeManager.colorModeFlow.collectAsState()
     val keyColor by ThemeManager.keyColorFlow.collectAsState()
     var imageQuality by remember { mutableStateOf("中等") }
 

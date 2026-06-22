@@ -40,6 +40,7 @@ import com.randomimage.ui.screens.SettingsScreen
 import com.randomimage.ui.screens.ThemeSettingsScreen
 import com.randomimage.ui.screens.WaterfallScreen
 import com.randomimage.ui.theme.RandomImageTheme
+import com.randomimage.ui.theme.UiMode
 import com.randomimage.ui.viewmodel.HomeViewModel
 import com.randomimage.util.ThemeManager
 import dagger.hilt.android.AndroidEntryPoint
@@ -52,7 +53,10 @@ class MainActivity : ComponentActivity() {
         enableEdgeToEdge()
         ThemeManager.init(this)
         setContent {
-            RandomImageTheme {
+            val uiStyle by ThemeManager.uiStyleFlow.collectAsState()
+            val uiMode = UiMode.fromValue(uiStyle)
+
+            RandomImageTheme(uiMode = uiMode) {
                 MainContent()
             }
         }
@@ -77,13 +81,13 @@ class MainActivity : ComponentActivity() {
                             }
                             IconButton(onClick = {
                                 val context = this@MainActivity
-                                val currentMode = ThemeManager.getThemeMode(context)
-                                val newMode = if (currentMode == ThemeManager.MODE_DARK) {
-                                    ThemeManager.MODE_LIGHT
+                                val currentMode = ThemeManager.getColorMode(context)
+                                val newMode = if (currentMode.isDark) {
+                                    com.randomimage.ui.theme.ColorMode.LIGHT
                                 } else {
-                                    ThemeManager.MODE_DARK
+                                    com.randomimage.ui.theme.ColorMode.DARK
                                 }
-                                ThemeManager.setThemeMode(context, newMode)
+                                ThemeManager.setColorMode(context, newMode)
                             }) {
                                 val isDark = ThemeManager.isDarkMode(this@MainActivity)
                                 Icon(

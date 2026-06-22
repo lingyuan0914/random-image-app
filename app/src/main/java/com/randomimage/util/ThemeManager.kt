@@ -2,51 +2,43 @@ package com.randomimage.util
 
 import android.content.Context
 import android.content.SharedPreferences
+import com.randomimage.ui.theme.ColorMode
+import com.randomimage.ui.theme.UiMode
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 
-/**
- * 主题模式：0=跟随系统, 1=浅色, 2=深色
- */
 object ThemeManager {
     private const val PREFS_NAME = "theme_prefs"
-    private const val KEY_THEME_MODE = "theme_mode"
-    private const val KEY_KEY_COLOR = "key_color"
-    private const val KEY_AMOLED = "amoled_mode"
-    private const val KEY_UI_STYLE = "ui_style"
-
-    const val MODE_SYSTEM = 0
-    const val MODE_LIGHT = 1
-    const val MODE_DARK = 2
 
     val keyColorOptions = listOf(
-        0xFFF44336.toInt(), // Red
-        0xFFE91E63.toInt(), // Pink
-        0xFF9C27B0.toInt(), // Purple
-        0xFF673AB7.toInt(), // Deep Purple
-        0xFF3F51B5.toInt(), // Indigo
-        0xFF2196F3.toInt(), // Blue
-        0xFF00BCD4.toInt(), // Cyan
-        0xFF009688.toInt(), // Teal
-        0xFF4CAF50.toInt(), // Green
-        0xFFFFEB3B.toInt(), // Yellow
-        0xFFFFC107.toInt(), // Amber
-        0xFFFF9800.toInt(), // Orange
-        0xFF795548.toInt(), // Brown
-        0xFF607D8B.toInt(), // Blue Grey
+        0xFFF44336.toInt(),
+        0xFFE91E63.toInt(),
+        0xFF9C27B0.toInt(),
+        0xFF673AB7.toInt(),
+        0xFF3F51B5.toInt(),
+        0xFF2196F3.toInt(),
+        0xFF00BCD4.toInt(),
+        0xFF009688.toInt(),
+        0xFF4FAF50.toInt(),
+        0xFFFFEB3B.toInt(),
+        0xFFFFC107.toInt(),
+        0xFFFF9800.toInt(),
+        0xFF795548.toInt(),
+        0xFF607D8B.toInt(),
+        0xFFFF9CA8.toInt(),
     )
 
-    private val _themeModeFlow = MutableStateFlow(MODE_SYSTEM)
-    val themeModeFlow: StateFlow<Int> = _themeModeFlow.asStateFlow()
+    private val _colorModeFlow = MutableStateFlow(ColorMode.SYSTEM)
+    val colorModeFlow: StateFlow<ColorMode> = _colorModeFlow.asStateFlow()
 
-    private val _keyColorFlow = MutableStateFlow(0xFF2196F3.toInt())
+    private val _keyColorFlow = MutableStateFlow(0)
     val keyColorFlow: StateFlow<Int> = _keyColorFlow.asStateFlow()
 
     private val _amoledFlow = MutableStateFlow(false)
     val amoledFlow: StateFlow<Boolean> = _amoledFlow.asStateFlow()
 
-    private val _uiStyleFlow = MutableStateFlow("material")
+    private val _uiStyleFlow = MutableStateFlow(UiMode.DEFAULT_VALUE)
     val uiStyleFlow: StateFlow<String> = _uiStyleFlow.asStateFlow()
 
     private var initialized = false
@@ -60,63 +52,68 @@ object ThemeManager {
         initialized = true
         val prefs = getPrefs(context)
 
-        _themeModeFlow.value = prefs.getInt(KEY_THEME_MODE, MODE_SYSTEM)
-        _keyColorFlow.value = prefs.getInt(KEY_KEY_COLOR, 0xFF2196F3.toInt())
-        _amoledFlow.value = prefs.getBoolean(KEY_AMOLED, false)
-        _uiStyleFlow.value = prefs.getString(KEY_UI_STYLE, "material") ?: "material"
+        _keyColorFlow.value = prefs.getInt("key_color", 0)
+        _amoledFlow.value = prefs.getBoolean("amoled_mode", false)
+        _uiStyleFlow.value = prefs.getString("ui_style", UiMode.DEFAULT_VALUE) ?: UiMode.DEFAULT_VALUE
+        _colorModeFlow.value = ColorMode.fromValue(prefs.getInt("color_mode", ColorMode.SYSTEM.value))
 
         prefs.registerOnSharedPreferenceChangeListener { _, key ->
             when (key) {
-                KEY_THEME_MODE -> _themeModeFlow.value = prefs.getInt(KEY_THEME_MODE, MODE_SYSTEM)
-                KEY_KEY_COLOR -> _keyColorFlow.value = prefs.getInt(KEY_KEY_COLOR, 0xFF2196F3.toInt())
-                KEY_AMOLED -> _amoledFlow.value = prefs.getBoolean(KEY_AMOLED, false)
-                KEY_UI_STYLE -> _uiStyleFlow.value = prefs.getString(KEY_UI_STYLE, "material") ?: "material"
+                "key_color" -> _keyColorFlow.value = prefs.getInt("key_color", 0)
+                "amoled_mode" -> _amoledFlow.value = prefs.getBoolean("amoled_mode", false)
+                "ui_style" -> _uiStyleFlow.value = prefs.getString("ui_style", UiMode.DEFAULT_VALUE) ?: UiMode.DEFAULT_VALUE
+                "color_mode" -> _colorModeFlow.value = ColorMode.fromValue(prefs.getInt("color_mode", ColorMode.SYSTEM.value))
             }
         }
     }
 
-    fun getThemeMode(context: Context): Int {
-        return getPrefs(context).getInt(KEY_THEME_MODE, MODE_SYSTEM)
+    fun getColorMode(context: Context): ColorMode {
+        return ColorMode.fromValue(getPrefs(context).getInt("color_mode", ColorMode.SYSTEM.value))
     }
 
-    fun setThemeMode(context: Context, mode: Int) {
-        getPrefs(context).edit().putInt(KEY_THEME_MODE, mode).apply()
+    fun setColorMode(context: Context, mode: ColorMode) {
+        getPrefs(context).edit().putInt("color_mode", mode.value).apply()
     }
 
     fun getKeyColor(context: Context): Int {
-        return getPrefs(context).getInt(KEY_KEY_COLOR, 0xFF2196F3.toInt())
+        return getPrefs(context).getInt("key_color", 0)
     }
 
     fun setKeyColor(context: Context, color: Int) {
-        getPrefs(context).edit().putInt(KEY_KEY_COLOR, color).apply()
+        getPrefs(context).edit().putInt("key_color", color).apply()
     }
 
     fun getAmoled(context: Context): Boolean {
-        return getPrefs(context).getBoolean(KEY_AMOLED, false)
+        return getPrefs(context).getBoolean("amoled_mode", false)
     }
 
     fun setAmoled(context: Context, enabled: Boolean) {
-        getPrefs(context).edit().putBoolean(KEY_AMOLED, enabled).apply()
+        val prefs = getPrefs(context)
+        prefs.edit().putBoolean("amoled_mode", enabled).apply()
+        if (enabled) {
+            prefs.edit().putInt("color_mode", ColorMode.DARK_AMOLED.value).apply()
+        } else if (getColorMode(context) == ColorMode.DARK_AMOLED) {
+            prefs.edit().putInt("color_mode", ColorMode.DARK.value).apply()
+        }
+    }
+
+    fun getDynamicColor(context: Context): Boolean {
+        return getPrefs(context).getBoolean("use_dynamic_color", true)
+    }
+
+    fun setDynamicColor(context: Context, enabled: Boolean) {
+        getPrefs(context).edit().putBoolean("use_dynamic_color", enabled).apply()
     }
 
     fun getUiStyle(context: Context): String {
-        return getPrefs(context).getString(KEY_UI_STYLE, "material") ?: "material"
+        return getPrefs(context).getString("ui_style", UiMode.DEFAULT_VALUE) ?: UiMode.DEFAULT_VALUE
     }
 
     fun setUiStyle(context: Context, style: String) {
-        getPrefs(context).edit().putString(KEY_UI_STYLE, style).apply()
+        getPrefs(context).edit().putString("ui_style", style).apply()
     }
 
     fun isDarkMode(context: Context): Boolean {
-        val mode = getThemeMode(context)
-        return when (mode) {
-            MODE_LIGHT -> false
-            MODE_DARK -> true
-            else -> {
-                val nightModeFlags = context.resources.configuration.uiMode and
-                        android.content.res.Configuration.UI_MODE_NIGHT_MASK
-                nightModeFlags == android.content.res.Configuration.UI_MODE_NIGHT_YES
-            }
-        }
+        return getColorMode(context).isDark
     }
 }

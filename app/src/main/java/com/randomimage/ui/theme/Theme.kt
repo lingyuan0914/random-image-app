@@ -1,73 +1,107 @@
 package com.randomimage.ui.theme
 
-import android.app.Activity
+import android.content.Context
 import android.os.Build
 import androidx.compose.foundation.isSystemInDarkTheme
-import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.darkColorScheme
-import androidx.compose.material3.dynamicDarkColorScheme
-import androidx.compose.material3.dynamicLightColorScheme
-import androidx.compose.material3.lightColorScheme
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.collectAsState
-import androidx.compose.runtime.getValue
-import androidx.compose.ui.graphics.Color
+import androidx.compose.runtime.ReadOnlyComposable
+import androidx.compose.runtime.staticCompositionLocalOf
 import androidx.compose.ui.platform.LocalContext
-import androidx.core.view.WindowInsetsControllerCompat
-import com.randomimage.util.ThemeManager
+
+enum class ColorMode(val value: Int) {
+    SYSTEM(0),
+    LIGHT(1),
+    DARK(2),
+    MONET_SYSTEM(3),
+    MONET_LIGHT(4),
+    MONET_DARK(5),
+    DARK_AMOLED(6);
+
+    companion object {
+        fun fromValue(value: Int) = entries.find { it.value == value } ?: SYSTEM
+    }
+
+    val isSystem: Boolean get() = value == 0 || value == 3
+    val isDark: Boolean get() = value == 2 || value == 5 || value == 6
+    val isAmoled: Boolean get() = value == 6
+    val isMonet: Boolean get() = value >= 3
+
+    fun toNonMonetMode(): Int = when (this) {
+        MONET_SYSTEM -> 0
+        MONET_LIGHT -> 1
+        MONET_DARK, DARK_AMOLED -> 2
+        else -> value
+    }
+
+    fun toMonetMode(): Int = when (this) {
+        SYSTEM -> 3
+        LIGHT -> 4
+        DARK -> 5
+        else -> value
+    }
+}
+
+enum class UiMode(val value: String) {
+    Miuix("miuix"),
+    Material("material");
+
+    companion object {
+        fun fromValue(value: String): UiMode = when (value) {
+            Material.value -> Material
+            else -> Miuix
+        }
+
+        val DEFAULT_VALUE = Material.value
+    }
+}
+
+data class AppSettings(
+    val colorMode: ColorMode,
+    val keyColor: Int,
+)
+
+object ThemeController {
+    fun getAppSettings(context: Context): AppSettings {
+        val prefs = context.getSharedPreferences("theme_prefs", Context.MODE_PRIVATE)
+        val colorMode = ColorMode.fromValue(prefs.getInt("color_mode", ColorMode.SYSTEM.value))
+        val keyColor = prefs.getInt("key_color", 0)
+
+        return AppSettings(colorMode, keyColor)
+    }
+}
 
 @Composable
 fun RandomImageTheme(
+    appSettings: AppSettings? = null,
+    uiMode: UiMode = LocalUiMode.current,
     content: @Composable () -> Unit
 ) {
     val context = LocalContext.current
-    ThemeManager.init(context)
+    val currentAppSettings = appSettings ?: ThemeController.getAppSettings(context)
 
-    val themeMode by ThemeManager.themeModeFlow.collectAsState()
-    val keyColor by ThemeManager.keyColorFlow.collectAsState()
-    val amoled by ThemeManager.amoledFlow.collectAsState()
+    when (uiMode) {
+        UiMode.Miuix -> MiuixRandomImageTheme(
+            appSettings = currentAppSettings,
+            content = content
+        )
 
-    val darkTheme = when (themeMode) {
-        ThemeManager.MODE_LIGHT -> false
-        ThemeManager.MODE_DARK -> true
+        UiMode.Material -> MaterialRandomImageTheme(
+            appSettings = currentAppSettings,
+            content = content
+        )
+    }
+}
+
+@Composable
+@ReadOnlyComposable
+fun isInDarkTheme(): Boolean {
+    return when (LocalColorMode.current) {
+        1, 4 -> false
+        2, 5, 6 -> true
         else -> isSystemInDarkTheme()
     }
-
-    val colorScheme = when {
-        Build.VERSION.SDK_INT >= Build.VERSION_CODES.S -> {
-            if (darkTheme) dynamicDarkColorScheme(context) else dynamicLightColorScheme(context)
-        }
-        darkTheme -> {
-            if (amoled) {
-                darkColorScheme(
-                    primary = Color(keyColor),
-                    background = Color.Black,
-                    surface = Color.Black,
-                    surfaceVariant = Color(0xFF1C1C1C),
-                    onBackground = Color.White,
-                    onSurface = Color.White,
-                )
-            } else {
-                darkColorScheme(primary = Color(keyColor))
-            }
-        }
-        else -> {
-            lightColorScheme(primary = Color(keyColor))
-        }
-    }
-
-    LaunchedEffect(darkTheme) {
-        val window = (context as? Activity)?.window ?: return@LaunchedEffect
-        WindowInsetsControllerCompat(window, window.decorView).apply {
-            isAppearanceLightStatusBars = !darkTheme
-            isAppearanceLightNavigationBars = !darkTheme
-        }
-    }
-
-    MaterialTheme(
-        colorScheme = colorScheme,
-        typography = Typography,
-        content = content
-    )
 }
+
+val LocalColorMode = staticCompositionLocalOf { 0 }
+val LocalUiMode = staticCompositionLocalOf { UiMode.Material }
+val LocalEnableBlur = staticCompositionLocalOf { false }

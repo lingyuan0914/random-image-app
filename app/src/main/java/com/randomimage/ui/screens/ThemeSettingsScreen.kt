@@ -1,5 +1,6 @@
 package com.randomimage.ui.screens
 
+import android.os.Build
 import android.widget.Toast
 import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.background
@@ -47,6 +48,8 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import com.randomimage.ui.theme.ColorMode
+import com.randomimage.ui.theme.UiMode
 import com.randomimage.util.ThemeManager
 
 @OptIn(ExperimentalMaterial3Api::class, ExperimentalLayoutApi::class)
@@ -57,9 +60,16 @@ fun ThemeSettingsScreen(
     BackHandler { onBack() }
     val context = LocalContext.current
 
-    val themeMode by ThemeManager.themeModeFlow.collectAsState()
+    val colorMode by ThemeManager.colorModeFlow.collectAsState()
     val keyColor by ThemeManager.keyColorFlow.collectAsState()
     val amoled by ThemeManager.amoledFlow.collectAsState()
+    val uiStyle by ThemeManager.uiStyleFlow.collectAsState()
+
+    val selectedTabIndex = when (colorMode) {
+        ColorMode.LIGHT, ColorMode.MONET_LIGHT -> 1
+        ColorMode.DARK, ColorMode.DARK_AMOLED, ColorMode.MONET_DARK -> 2
+        else -> 0
+    }
 
     Column(modifier = Modifier.fillMaxSize()) {
         TopAppBar(
@@ -73,26 +83,58 @@ fun ThemeSettingsScreen(
                 .verticalScroll(rememberScrollState())
                 .padding(16.dp)
         ) {
+            // 界面风格选择
+            Card(modifier = Modifier.fillMaxWidth(), elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)) {
+                Column(modifier = Modifier.padding(16.dp)) {
+                    Text("界面风格", style = MaterialTheme.typography.titleMedium)
+                    Text("切换后需要重启应用生效", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                    Spacer(modifier = Modifier.height(8.dp))
+
+                    Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                        StyleChip(
+                            label = "Miuix",
+                            selected = uiStyle == UiMode.Miuix.value,
+                            onClick = {
+                                ThemeManager.setUiStyle(context, UiMode.Miuix.value)
+                                Toast.makeText(context, "请重启应用以应用 Miuix 风格", Toast.LENGTH_LONG).show()
+                            },
+                            modifier = Modifier.weight(1f)
+                        )
+                        StyleChip(
+                            label = "Material",
+                            selected = uiStyle == UiMode.Material.value,
+                            onClick = {
+                                ThemeManager.setUiStyle(context, UiMode.Material.value)
+                                Toast.makeText(context, "请重启应用以应用 Material 风格", Toast.LENGTH_LONG).show()
+                            },
+                            modifier = Modifier.weight(1f)
+                        )
+                    }
+                }
+            }
+
+            Spacer(modifier = Modifier.height(16.dp))
+
             // 主题模式
             Card(modifier = Modifier.fillMaxWidth(), elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)) {
                 Column(modifier = Modifier.padding(16.dp)) {
                     Text("主题模式", style = MaterialTheme.typography.titleMedium)
                     Spacer(modifier = Modifier.height(8.dp))
 
-                    TabRow(selectedTabIndex = themeMode) {
+                    TabRow(selectedTabIndex = selectedTabIndex) {
                         Tab(
-                            selected = themeMode == ThemeManager.MODE_SYSTEM,
-                            onClick = { ThemeManager.setThemeMode(context, ThemeManager.MODE_SYSTEM) },
+                            selected = selectedTabIndex == 0,
+                            onClick = { ThemeManager.setColorMode(context, ColorMode.SYSTEM) },
                             text = { Text("跟随系统") }
                         )
                         Tab(
-                            selected = themeMode == ThemeManager.MODE_LIGHT,
-                            onClick = { ThemeManager.setThemeMode(context, ThemeManager.MODE_LIGHT) },
+                            selected = selectedTabIndex == 1,
+                            onClick = { ThemeManager.setColorMode(context, ColorMode.LIGHT) },
                             text = { Text("浅色") }
                         )
                         Tab(
-                            selected = themeMode == ThemeManager.MODE_DARK,
-                            onClick = { ThemeManager.setThemeMode(context, ThemeManager.MODE_DARK) },
+                            selected = selectedTabIndex == 2,
+                            onClick = { ThemeManager.setColorMode(context, ColorMode.DARK) },
                             text = { Text("深色") }
                         )
                     }
@@ -127,12 +169,37 @@ fun ThemeSettingsScreen(
             Card(modifier = Modifier.fillMaxWidth(), elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)) {
                 Column(modifier = Modifier.padding(16.dp)) {
                     Text("主题色", style = MaterialTheme.typography.titleMedium)
+                    Text("选择 0 表示使用系统动态颜色", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
                     Spacer(modifier = Modifier.height(12.dp))
 
                     FlowRow(
                         horizontalArrangement = Arrangement.spacedBy(8.dp),
                         verticalArrangement = Arrangement.spacedBy(8.dp)
                     ) {
+                        // 系统动态颜色选项
+                        Box(
+                            modifier = Modifier
+                                .size(48.dp)
+                                .clip(CircleShape)
+                                .background(MaterialTheme.colorScheme.surfaceVariant)
+                                .border(
+                                    if (keyColor == 0) 3.dp else 0.dp,
+                                    MaterialTheme.colorScheme.onSurface,
+                                    CircleShape
+                                )
+                                .clickable { ThemeManager.setKeyColor(context, 0) },
+                            contentAlignment = Alignment.Center
+                        ) {
+                            if (keyColor == 0) {
+                                Icon(
+                                    Icons.Default.Check,
+                                    contentDescription = "选中",
+                                    tint = MaterialTheme.colorScheme.onSurface,
+                                    modifier = Modifier.size(20.dp)
+                                )
+                            }
+                        }
+
                         ThemeManager.keyColorOptions.forEach { color ->
                             Box(
                                 modifier = Modifier
@@ -163,5 +230,38 @@ fun ThemeSettingsScreen(
 
             Spacer(modifier = Modifier.height(32.dp))
         }
+    }
+}
+
+@Composable
+private fun StyleChip(
+    label: String,
+    selected: Boolean,
+    onClick: () -> Unit,
+    modifier: Modifier = Modifier
+) {
+    Box(
+        modifier = modifier
+            .height(48.dp)
+            .clip(RoundedCornerShape(12.dp))
+            .background(
+                if (selected) MaterialTheme.colorScheme.primary
+                else MaterialTheme.colorScheme.surfaceVariant
+            )
+            .border(
+                width = if (selected) 2.dp else 1.dp,
+                color = if (selected) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.outline,
+                shape = RoundedCornerShape(12.dp)
+            )
+            .clickable { onClick() },
+        contentAlignment = Alignment.Center
+    ) {
+        Text(
+            text = label,
+            color = if (selected) MaterialTheme.colorScheme.onPrimary
+            else MaterialTheme.colorScheme.onSurfaceVariant,
+            style = MaterialTheme.typography.bodyLarge,
+            fontWeight = if (selected) FontWeight.Bold else FontWeight.Normal
+        )
     }
 }
