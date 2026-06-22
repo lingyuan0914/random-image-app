@@ -34,6 +34,20 @@ enum class ColorMode(val value: Int) {
     val isDark: Boolean get() = value == 2 || value == 5 || value == 6
     val isAmoled: Boolean get() = value == 6
     val isMonet: Boolean get() = value >= 3
+
+    fun toMonetMode(): Int = when (this) {
+        SYSTEM -> MONET_SYSTEM.value
+        LIGHT -> MONET_LIGHT.value
+        DARK, DARK_AMOLED -> MONET_DARK.value
+        else -> value
+    }
+
+    fun toNonMonetMode(): Int = when (this) {
+        MONET_SYSTEM -> SYSTEM.value
+        MONET_LIGHT -> LIGHT.value
+        MONET_DARK, DARK_AMOLED -> DARK.value
+        else -> value
+    }
 }
 
 @Composable

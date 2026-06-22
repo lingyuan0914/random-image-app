@@ -23,15 +23,18 @@ fun MiuixRandomImageTheme(
     val systemDarkTheme = isSystemInDarkTheme()
     val darkTheme = colorMode.isDark || (colorMode.isSystem && systemDarkTheme)
 
+    val colorSchemeMode = when (colorMode) {
+        ColorMode.SYSTEM -> ColorSchemeMode.System
+        ColorMode.LIGHT -> ColorSchemeMode.Light
+        ColorMode.DARK -> ColorSchemeMode.Dark
+        ColorMode.MONET_SYSTEM -> ColorSchemeMode.MonetSystem
+        ColorMode.MONET_LIGHT -> ColorSchemeMode.MonetLight
+        ColorMode.MONET_DARK -> ColorSchemeMode.MonetDark
+        ColorMode.DARK_AMOLED -> ColorSchemeMode.Dark
+    }
+
     val controller = ThemeController(
-        when (colorMode) {
-            ColorMode.SYSTEM -> ColorSchemeMode.System
-            ColorMode.LIGHT -> ColorSchemeMode.Light
-            ColorMode.DARK -> ColorSchemeMode.Dark
-            ColorMode.MONET_SYSTEM -> ColorSchemeMode.MonetSystem
-            ColorMode.MONET_LIGHT -> ColorSchemeMode.MonetLight
-            ColorMode.MONET_DARK, ColorMode.DARK_AMOLED -> ColorSchemeMode.MonetDark
-        },
+        colorSchemeMode = colorSchemeMode,
         keyColor = if (keyColor == 0) null else Color(keyColor),
         isDark = darkTheme,
     )
