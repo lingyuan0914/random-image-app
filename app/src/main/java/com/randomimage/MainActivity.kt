@@ -51,6 +51,7 @@ class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
+        ThemeManager.init(this)
         setContent {
             val uiStyle by ThemeManager.uiStyleFlow.collectAsState()
 
