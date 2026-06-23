@@ -33,6 +33,7 @@ object AppModule {
         return OkHttpClient.Builder().apply {
             connectTimeout(15, java.util.concurrent.TimeUnit.SECONDS)
             readTimeout(15, java.util.concurrent.TimeUnit.SECONDS)
+            writeTimeout(15, java.util.concurrent.TimeUnit.SECONDS)
             if (com.randomimage.BuildConfig.DEBUG) {
                 addInterceptor(HttpLoggingInterceptor().apply {
                     level = HttpLoggingInterceptor.Level.BODY

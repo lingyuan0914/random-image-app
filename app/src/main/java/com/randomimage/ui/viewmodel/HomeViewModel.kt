@@ -90,6 +90,8 @@ class HomeViewModel @Inject constructor(
 
     private val favoriteIdsCache = mutableSetOf<String>()
     private val followingCache = mutableSetOf<String>()
+    private val artistsFlow = repository.getFollowedArtists()
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
 
     init {
         StatsManager.updateFirstOpenTime(getApplication())
@@ -114,6 +116,12 @@ class HomeViewModel @Inject constructor(
         viewModelScope.launch {
             recentSearchesFlow.collect { searches ->
                 _uiState.value = _uiState.value.copy(recentSearches = searches)
+            }
+        }
+        viewModelScope.launch {
+            artistsFlow.collect { artists ->
+                followingCache.clear()
+                followingCache.addAll(artists.map { it.uid })
             }
         }
 
@@ -447,9 +455,7 @@ class HomeViewModel @Inject constructor(
                     getApplication(),
                     currentImage.urls.raw
                 )
-                if (success) {
-                    StatsManager.incrementDownloadCount(getApplication())
-                }
+                // Note: StatsManager.incrementDownloadCount is called inside DownloadManager
                 _uiState.value = _uiState.value.copy(isDownloading = false)
                 Timber.d("Download ${if (success) "success" else "failed"}")
             } catch (e: Exception) {

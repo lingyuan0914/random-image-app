@@ -87,7 +87,8 @@ class ImageRepository @Inject constructor(
 
     fun getFavoritesByGroup(groupId: String): Flow<List<ImageModel>> {
         return dataStore.getFavorites().map { favorites ->
-            favorites.filter { it.groupId.toString() == groupId }.map { it.toImageModel() }
+            val numericId = groupId.removePrefix("group_").toLongOrNull() ?: 0L
+            favorites.filter { it.groupId == numericId }.map { it.toImageModel() }
         }
     }
 

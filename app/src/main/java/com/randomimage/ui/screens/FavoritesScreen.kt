@@ -13,9 +13,11 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.foundation.lazy.grid.items
+import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
@@ -66,29 +68,34 @@ fun FavoritesScreen(
     } else {
         val group = uiState.groups.getOrNull(selectedGroupIndex - 1)
         if (group != null) {
-            uiState.favorites.filter { it.groupId.toString() == group.id }
+            val groupId = group.id.removePrefix("group_").toLongOrNull() ?: 0L
+            uiState.favorites.filter { it.groupId == groupId }
         } else {
             uiState.favorites
         }
     }
 
     Column(modifier = Modifier.fillMaxSize()) {
-        // 分组标签
+        // 分组标签 - 可滚动
         Row(
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(horizontal = 16.dp, vertical = 8.dp),
+                .padding(horizontal = 8.dp, vertical = 8.dp),
             verticalAlignment = Alignment.CenterVertically
         ) {
-            groups.forEachIndexed { index, groupName ->
-                Button(
-                    onClick = { selectedGroupIndex = index },
-                    modifier = Modifier.padding(end = 8.dp)
-                ) {
-                    Text(groupName, fontSize = 14.sp)
+            LazyRow(
+                modifier = Modifier.weight(1f),
+                horizontalArrangement = Arrangement.spacedBy(4.dp)
+            ) {
+                itemsIndexed(groups) { index, groupName ->
+                    Button(
+                        onClick = { selectedGroupIndex = index },
+                        modifier = Modifier.height(32.dp)
+                    ) {
+                        Text(groupName, fontSize = 12.sp)
+                    }
                 }
             }
-            Spacer(modifier = Modifier.weight(1f))
             IconButton(onClick = { showAddGroupDialog = true }) {
                 Icon(
                     imageVector = androidx.compose.material.icons.Icons.Default.Add,

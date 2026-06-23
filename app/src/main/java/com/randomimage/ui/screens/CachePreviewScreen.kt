@@ -1,6 +1,7 @@
 package com.randomimage.ui.screens
 
 import android.content.Context
+import android.graphics.Bitmap
 import android.graphics.BitmapFactory
 import android.widget.Toast
 import androidx.activity.compose.BackHandler
@@ -142,10 +143,20 @@ fun CachePreviewScreen(
                                     showDeleteDialog = true
                                 }
                         ) {
-                            var bitmap by remember { mutableStateOf<android.graphics.Bitmap?>(null) }
+                            var bitmap by remember { mutableStateOf<Bitmap?>(null) }
                             LaunchedEffect(cachedImage.file) {
                                 bitmap = withContext(Dispatchers.IO) {
-                                    try { BitmapFactory.decodeFile(cachedImage.file.absolutePath) } catch (_: Exception) { null }
+                                    try {
+                                        val options = BitmapFactory.Options().apply {
+                                            inJustDecodeBounds = true
+                                        }
+                                        BitmapFactory.decodeFile(cachedImage.file.absolutePath, options)
+                                        val sampleSize = (options.outWidth / 200).coerceAtLeast(1)
+                                        val decodeOptions = BitmapFactory.Options().apply {
+                                            inSampleSize = sampleSize
+                                        }
+                                        BitmapFactory.decodeFile(cachedImage.file.absolutePath, decodeOptions)
+                                    } catch (_: Exception) { null }
                                 }
                             }
                             if (bitmap != null) {

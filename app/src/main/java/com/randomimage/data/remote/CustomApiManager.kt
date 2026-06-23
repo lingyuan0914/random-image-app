@@ -4,7 +4,6 @@ import android.content.Context
 import android.content.SharedPreferences
 import com.squareup.moshi.Moshi
 import com.squareup.moshi.Types
-import com.squareup.moshi.kotlin.reflect.KotlinJsonAdapterFactory
 import timber.log.Timber
 import javax.inject.Inject
 import javax.inject.Singleton
@@ -33,11 +32,10 @@ data class PresetApi(
 )
 
 @Singleton
-class CustomApiManager @Inject constructor() {
+class CustomApiManager @Inject constructor(
+    private val moshi: Moshi
+) {
     private var prefs: SharedPreferences? = null
-    private val moshi = Moshi.Builder()
-        .addLast(KotlinJsonAdapterFactory())
-        .build()
 
     val presetApis = listOf(
         PresetApi("Lolicon", "https://api.lolicon.app/setu/v2", ApiType.LOLICON, "二次元插画API"),

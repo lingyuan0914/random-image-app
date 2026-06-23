@@ -25,7 +25,7 @@ object ThemeManager {
         0xFFFFC107.toInt(),
         0xFFFF9800.toInt(),
         0xFF795548.toInt(),
-        0xFF607D8B.toInt(),
+        0xFF607D8F.toInt(),
         0xFFFF9CA8.toInt(),
     )
 

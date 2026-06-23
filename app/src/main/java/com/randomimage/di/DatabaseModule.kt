@@ -2,6 +2,7 @@ package com.randomimage.di
 
 import android.content.Context
 import com.randomimage.data.local.AppDataStore
+import com.squareup.moshi.Moshi
 import dagger.Module
 import dagger.Provides
 import dagger.hilt.InstallIn
@@ -15,7 +16,7 @@ object DatabaseModule {
 
     @Provides
     @Singleton
-    fun provideAppDataStore(@ApplicationContext context: Context): AppDataStore {
-        return AppDataStore(context)
+    fun provideAppDataStore(@ApplicationContext context: Context, moshi: Moshi): AppDataStore {
+        return AppDataStore(context, moshi)
     }
 }

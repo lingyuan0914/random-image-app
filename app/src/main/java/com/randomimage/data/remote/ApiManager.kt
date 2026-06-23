@@ -16,6 +16,8 @@ class ApiManager @Inject constructor(
 ) {
     @Volatile
     private var customApis: List<CustomApiImageApi> = emptyList()
+    @Volatile
+    private var cachedAllApis: List<ImageApi> = emptyList()
     private val currentIndex = AtomicInteger(0)
     private var cacheDir: File? = null
 
@@ -27,10 +29,7 @@ class ApiManager @Inject constructor(
         }
 
     val allApis: List<ImageApi>
-        get() {
-            val enabledApis = customApis.filter { it.config.enabled }
-            return listOf(AggregateApi(enabledApis)) + enabledApis
-        }
+        get() = cachedAllApis
 
     val availableApis: List<ImageApi> get() = allApis
 
@@ -44,6 +43,8 @@ class ApiManager @Inject constructor(
         customApis = customApiManager.getCustomApis()
             .filter { it.enabled }
             .map { CustomApiImageApi(it, okHttpClient, cacheDir) }
+        val enabledApis = customApis.filter { it.config.enabled }
+        cachedAllApis = listOf(AggregateApi(enabledApis)) + enabledApis
         val maxIndex = allApis.size - 1
         if (currentIndex.get() > maxIndex) {
             currentIndex.set(0)

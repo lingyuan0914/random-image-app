@@ -9,6 +9,7 @@ import androidx.core.content.FileProvider
 import coil.ImageLoader
 import coil.request.ImageRequest
 import coil.request.SuccessResult
+import timber.log.Timber
 import java.io.File
 import java.io.FileOutputStream
 
@@ -47,7 +48,7 @@ object ShareUtils {
                 context.startActivity(chooserIntent)
             }
         } catch (e: Exception) {
-            // 分享失败
+            Timber.e(e, "Failed to share image")
         }
     }
 
@@ -89,7 +90,7 @@ object ShareUtils {
                 context.startActivity(intent)
             }
         } catch (e: Exception) {
-            // 微信未安装或分享失败
+            Timber.e(e, "Failed to share to WeChat")
         }
     }
 
@@ -115,7 +116,7 @@ object ShareUtils {
                 context.startActivity(intent)
             }
         } catch (e: Exception) {
-            // QQ未安装或分享失败
+            Timber.e(e, "Failed to share to QQ")
         }
     }
 

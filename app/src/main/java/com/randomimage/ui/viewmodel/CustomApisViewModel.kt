@@ -30,12 +30,10 @@ class CustomApisViewModel @Inject constructor(
     }
 
     fun loadApis() {
-        viewModelScope.launch {
-            _uiState.value = CustomApisUiState(
-                apis = customApiManager.getCustomApis(),
-                presetApis = customApiManager.presetApis
-            )
-        }
+        _uiState.value = CustomApisUiState(
+            apis = customApiManager.getCustomApis(),
+            presetApis = customApiManager.presetApis
+        )
     }
 
     fun addCustomApi(name: String, url: String, apiType: ApiType = ApiType.AUTO) {

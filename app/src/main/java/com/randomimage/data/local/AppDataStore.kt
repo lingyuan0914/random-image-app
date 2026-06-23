@@ -9,7 +9,6 @@ import androidx.datastore.preferences.preferencesDataStore
 import com.randomimage.domain.model.ImageModel
 import com.squareup.moshi.Moshi
 import com.squareup.moshi.Types
-import com.squareup.moshi.kotlin.reflect.KotlinJsonAdapterFactory
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.map
@@ -23,11 +22,9 @@ private val Context.dataStore: DataStore<Preferences> by preferencesDataStore(na
 
 @Singleton
 class AppDataStore @Inject constructor(
-    private val context: Context
+    private val context: Context,
+    private val moshi: Moshi
 ) {
-    private val moshi = Moshi.Builder()
-        .addLast(KotlinJsonAdapterFactory())
-        .build()
 
     private val favoritesAdapter by lazy {
         moshi.adapter<List<FavoriteData>>(Types.newParameterizedType(List::class.java, FavoriteData::class.java))
@@ -71,9 +68,17 @@ class AppDataStore @Inject constructor(
     ): List<T> {
         val estimatedSize = list.sumOf(sizeEstimator)
         if (estimatedSize <= MAX_JSON_SIZE) return list
-        return list.sortedBy(timeExtractor).dropWhile {
-            list.sumOf(sizeEstimator) > MAX_JSON_SIZE && list.isNotEmpty()
+        // Keep newest items that fit within MAX_JSON_SIZE
+        val sorted = list.sortedByDescending(timeExtractor)
+        val result = mutableListOf<T>()
+        var currentSize = 0
+        for (item in sorted) {
+            val itemSize = sizeEstimator(item)
+            if (currentSize + itemSize > MAX_JSON_SIZE) break
+            result.add(item)
+            currentSize += itemSize
         }
+        return result
     }
 
     // Favorites

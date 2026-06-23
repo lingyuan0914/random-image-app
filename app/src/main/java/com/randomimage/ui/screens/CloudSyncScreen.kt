@@ -16,6 +16,7 @@ import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.unit.dp
 import com.randomimage.util.CloudSyncManager
 import kotlinx.coroutines.launch
@@ -76,7 +77,8 @@ fun CloudSyncScreen(onBack: () -> Unit) {
                 TextField(
                     value = password,
                     onValueChange = { password = it },
-                    label = "密码"
+                    label = "密码",
+                    visualTransformation = PasswordVisualTransformation()
                 )
                 Spacer(modifier = Modifier.height(16.dp))
                 Button(
