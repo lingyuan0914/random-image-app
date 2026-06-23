@@ -11,14 +11,6 @@ import androidx.compose.material.icons.filled.DarkMode
 import androidx.compose.material.icons.filled.LightMode
 import androidx.compose.material.icons.filled.Refresh
 import androidx.compose.material.icons.filled.Settings
-import androidx.compose.material3.ExperimentalMaterial3Api
-import androidx.compose.material3.Icon
-import androidx.compose.material3.IconButton
-import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.Scaffold
-import androidx.compose.material3.Text
-import androidx.compose.material3.TopAppBar
-import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
@@ -44,10 +36,15 @@ import com.randomimage.ui.theme.UiMode
 import com.randomimage.ui.viewmodel.HomeViewModel
 import com.randomimage.util.ThemeManager
 import dagger.hilt.android.AndroidEntryPoint
+import top.yukonga.miuix.kmp.basic.Scaffold
+import top.yukonga.miuix.kmp.basic.TopAppBar
+import top.yukonga.miuix.kmp.basic.IconButton
+import top.yukonga.miuix.kmp.basic.Icon
+import top.yukonga.miuix.kmp.icon.MiuixIcons
+import top.yukonga.miuix.kmp.theme.MiuixTheme
 
 @AndroidEntryPoint
 class MainActivity : ComponentActivity() {
-    @OptIn(ExperimentalMaterial3Api::class)
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
@@ -62,22 +59,26 @@ class MainActivity : ComponentActivity() {
         }
     }
 
-    @OptIn(ExperimentalMaterial3Api::class)
     @Composable
     private fun MainContent() {
         val navController = rememberNavController()
         val homeViewModel: HomeViewModel = hiltViewModel()
         val homeUiState by homeViewModel.uiState.collectAsState()
+        val currentRoute = navController.currentBackStackEntryAsState().value?.destination?.route
+        val showBottomBar = currentRoute != "detail"
 
         Scaffold(
-            modifier = Modifier.fillMaxSize(),
             topBar = {
-                if (navController.currentBackStackEntryAsState().value?.destination?.route != "detail") {
+                if (currentRoute != "detail") {
                     TopAppBar(
-                        title = { Text("随机图片") },
+                        title = "随机图片",
                         actions = {
                             IconButton(onClick = { homeViewModel.loadImages() }) {
-                                Icon(Icons.Default.Refresh, contentDescription = "刷新")
+                                Icon(
+                                    imageVector = Icons.Default.Refresh,
+                                    contentDescription = "刷新",
+                                    tint = MiuixTheme.colorScheme.onBackground
+                                )
                             }
                             IconButton(onClick = {
                                 val context = this@MainActivity
@@ -92,23 +93,25 @@ class MainActivity : ComponentActivity() {
                                 val isDark = ThemeManager.isDarkMode(this@MainActivity)
                                 Icon(
                                     imageVector = if (isDark) Icons.Default.LightMode else Icons.Default.DarkMode,
-                                    contentDescription = if (isDark) "浅色模式" else "深色模式"
+                                    contentDescription = if (isDark) "浅色模式" else "深色模式",
+                                    tint = MiuixTheme.colorScheme.onBackground
                                 )
                             }
                             IconButton(onClick = { navController.navigate("settings") }) {
-                                Icon(Icons.Default.Settings, contentDescription = "设置")
+                                Icon(
+                                    imageVector = Icons.Default.Settings,
+                                    contentDescription = "设置",
+                                    tint = MiuixTheme.colorScheme.onBackground
+                                )
                             }
-                        },
-                        colors = TopAppBarDefaults.topAppBarColors(
-                            containerColor = MaterialTheme.colorScheme.primaryContainer
-                        )
+                        }
                     )
                 }
             },
             bottomBar = {
-                if (navController.currentBackStackEntryAsState().value?.destination?.route != "detail") {
+                if (showBottomBar) {
                     BottomNavBar(
-                        currentRoute = navController.currentBackStackEntryAsState().value?.destination?.route,
+                        currentRoute = currentRoute,
                         onNavigate = { route ->
                             navController.navigate(route) {
                                 popUpTo(navController.graph.startDestinationId) {

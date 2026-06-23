@@ -19,28 +19,10 @@ import androidx.compose.foundation.lazy.staggeredgrid.StaggeredGridCells
 import androidx.compose.foundation.lazy.staggeredgrid.items
 import androidx.compose.foundation.lazy.staggeredgrid.rememberLazyStaggeredGridState
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material3.Card
-import androidx.compose.material3.CardDefaults
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Search
-import androidx.compose.material3.AlertDialog
-import androidx.compose.material3.CircularProgressIndicator
-import androidx.compose.material3.DropdownMenuItem
-import androidx.compose.material3.ExperimentalMaterial3Api
-import androidx.compose.material3.ExposedDropdownMenuBox
-import androidx.compose.material3.ExposedDropdownMenuDefaults
-import androidx.compose.material3.Icon
-import androidx.compose.material3.IconButton
-import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.OutlinedTextField
-import androidx.compose.material3.SuggestionChip
-import androidx.compose.material3.Switch
-import androidx.compose.material3.Text
-import androidx.compose.material3.TextButton
-import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
-import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -55,14 +37,26 @@ import androidx.compose.ui.layout.positionInRoot
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.paging.LoadState
 import androidx.paging.compose.collectAsLazyPagingItems
 import coil.compose.AsyncImage
 import coil.request.ImageRequest
 import com.randomimage.ui.viewmodel.HomeViewModel
+import top.yukonga.miuix.kmp.basic.Button
+import top.yukonga.miuix.kmp.basic.Card
+import top.yukonga.miuix.kmp.basic.CircularProgressIndicator
+import top.yukonga.miuix.kmp.basic.Icon
+import top.yukonga.miuix.kmp.basic.IconButton
+import top.yukonga.miuix.kmp.basic.Switch
+import top.yukonga.miuix.kmp.basic.Text
+import top.yukonga.miuix.kmp.basic.TextField
+import top.yukonga.miuix.kmp.extra.SuperDropdown
+import top.yukonga.miuix.kmp.theme.MiuixTheme
+import top.yukonga.miuix.kmp.utils.PressFeedbackType
 
-@OptIn(ExperimentalMaterial3Api::class, ExperimentalLayoutApi::class)
+@OptIn(ExperimentalLayoutApi::class)
 @Composable
 fun WaterfallScreen(
     viewModel: HomeViewModel = hiltViewModel(),
@@ -72,53 +66,35 @@ fun WaterfallScreen(
     val pagingImages = viewModel.pagingImages.collectAsLazyPagingItems()
     val context = LocalContext.current
     val configuration = LocalConfiguration.current
-    var expanded by remember { mutableStateOf(false) }
     var showNsfwDialog by remember { mutableStateOf(false) }
     val gridState = rememberLazyStaggeredGridState()
+    val colorScheme = MiuixTheme.colorScheme
 
     Column(modifier = Modifier.fillMaxSize()) {
+        // 数据源选择 + NSFW 开关
         Row(
             modifier = Modifier
                 .fillMaxWidth()
                 .padding(horizontal = 12.dp, vertical = 4.dp),
             verticalAlignment = Alignment.CenterVertically
         ) {
-            ExposedDropdownMenuBox(
-                expanded = expanded,
-                onExpandedChange = { expanded = it },
+            SuperDropdown(
+                title = "数据源",
+                summary = uiState.currentApiName,
+                items = uiState.availableApis,
+                selectedIndex = uiState.availableApis.indexOf(uiState.currentApiName).coerceAtLeast(0),
+                onSelectedIndexChange = { viewModel.switchApi(it) },
                 modifier = Modifier.weight(1f)
-            ) {
-                OutlinedTextField(
-                    value = uiState.currentApiName,
-                    onValueChange = {},
-                    readOnly = true,
-                    label = { Text("数据源", style = MaterialTheme.typography.labelSmall) },
-                    trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = expanded) },
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .height(56.dp),
-                    textStyle = MaterialTheme.typography.bodyMedium
-                )
-                ExposedDropdownMenu(
-                    expanded = expanded,
-                    onDismissRequest = { expanded = false }
-                ) {
-                    uiState.availableApis.forEachIndexed { index, apiName ->
-                        DropdownMenuItem(
-                            text = { Text(apiName) },
-                            onClick = {
-                                viewModel.switchApi(index)
-                                expanded = false
-                            }
-                        )
-                    }
-                }
-            }
+            )
 
             Spacer(modifier = Modifier.width(8.dp))
 
             Row(verticalAlignment = Alignment.CenterVertically) {
-                Text("NSFW", style = MaterialTheme.typography.labelSmall)
+                Text(
+                    text = "NSFW",
+                    fontSize = 12.sp,
+                    color = colorScheme.onSurface
+                )
                 Spacer(modifier = Modifier.width(4.dp))
                 Switch(
                     checked = uiState.isNSFW,
@@ -127,22 +103,18 @@ fun WaterfallScreen(
             }
         }
 
+        // 搜索框
         Row(
             modifier = Modifier
                 .fillMaxWidth()
                 .padding(horizontal = 12.dp, vertical = 2.dp),
             verticalAlignment = Alignment.CenterVertically
         ) {
-            OutlinedTextField(
+            TextField(
                 value = uiState.searchQuery,
                 onValueChange = { viewModel.setSearchQuery(it) },
-                label = { Text("搜索标签", style = MaterialTheme.typography.labelSmall) },
-                placeholder = { Text("输入关键词...", style = MaterialTheme.typography.bodySmall) },
-                modifier = Modifier
-                    .weight(1f)
-                    .height(56.dp),
-                singleLine = true,
-                textStyle = MaterialTheme.typography.bodyMedium
+                label = "搜索标签",
+                modifier = Modifier.weight(1f)
             )
 
             Spacer(modifier = Modifier.width(8.dp))
@@ -154,10 +126,15 @@ fun WaterfallScreen(
                     }
                 }
             ) {
-                Icon(Icons.Default.Search, contentDescription = "搜索")
+                Icon(
+                    imageVector = Icons.Default.Search,
+                    contentDescription = "搜索",
+                    tint = colorScheme.onBackground
+                )
             }
         }
 
+        // 历史搜索标签
         if (uiState.recentSearches.isNotEmpty()) {
             Row(
                 modifier = Modifier
@@ -166,7 +143,11 @@ fun WaterfallScreen(
                     .height(36.dp),
                 verticalAlignment = Alignment.CenterVertically
             ) {
-                Text("历史:", style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                Text(
+                    text = "历史:",
+                    fontSize = 12.sp,
+                    color = colorScheme.onSurface
+                )
                 Spacer(modifier = Modifier.width(8.dp))
                 FlowRow(
                     modifier = Modifier.weight(1f),
@@ -174,15 +155,18 @@ fun WaterfallScreen(
                     verticalArrangement = Arrangement.spacedBy(2.dp)
                 ) {
                     uiState.recentSearches.take(6).forEach { query ->
-                        SuggestionChip(
+                        Button(
                             onClick = { viewModel.setSearchQuery(query); viewModel.searchPagingImages(query) },
-                            label = { Text(query, style = MaterialTheme.typography.labelSmall) }
-                        )
+                            modifier = Modifier.height(28.dp)
+                        ) {
+                            Text(query, fontSize = 11.sp)
+                        }
                     }
                 }
             }
         }
 
+        // 推荐标签
         if (uiState.recommendedTags.isNotEmpty()) {
             Row(
                 modifier = Modifier
@@ -191,7 +175,11 @@ fun WaterfallScreen(
                     .height(36.dp),
                 verticalAlignment = Alignment.CenterVertically
             ) {
-                Text("推荐:", style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                Text(
+                    text = "推荐:",
+                    fontSize = 12.sp,
+                    color = colorScheme.onSurface
+                )
                 Spacer(modifier = Modifier.width(8.dp))
                 FlowRow(
                     modifier = Modifier.weight(1f),
@@ -199,10 +187,12 @@ fun WaterfallScreen(
                     verticalArrangement = Arrangement.spacedBy(2.dp)
                 ) {
                     uiState.recommendedTags.take(6).forEach { tag ->
-                        SuggestionChip(
+                        Button(
                             onClick = { viewModel.setSearchQuery(tag.name); viewModel.searchPagingImages(tag.name) },
-                            label = { Text(tag.displayName, style = MaterialTheme.typography.labelSmall) }
-                        )
+                            modifier = Modifier.height(28.dp)
+                        ) {
+                            Text(tag.displayName, fontSize = 11.sp)
+                        }
                     }
                 }
             }
@@ -210,6 +200,7 @@ fun WaterfallScreen(
 
         Spacer(modifier = Modifier.height(4.dp))
 
+        // 图片网格
         Box(modifier = Modifier.weight(1f)) {
             when {
                 pagingImages.loadState.refresh is LoadState.Loading -> {
@@ -217,8 +208,11 @@ fun WaterfallScreen(
                 }
                 pagingImages.loadState.refresh is LoadState.Error -> {
                     val error = (pagingImages.loadState.refresh as LoadState.Error).error
-                    TextButton(onClick = { pagingImages.retry() }, modifier = Modifier.align(Alignment.Center)) {
-                        Text(error.message ?: "错误，点击重试", style = MaterialTheme.typography.bodyLarge)
+                    Button(
+                        onClick = { pagingImages.retry() },
+                        modifier = Modifier.align(Alignment.Center)
+                    ) {
+                        Text(error.message ?: "错误，点击重试")
                     }
                 }
                 pagingImages.itemCount > 0 -> {
@@ -260,8 +254,8 @@ fun WaterfallScreen(
                                         )
                                         onImageClick(image)
                                     },
-                                shape = RoundedCornerShape(4.dp),
-                                elevation = CardDefaults.cardElevation(defaultElevation = 0.dp)
+                                showIndication = true,
+                                pressFeedbackType = PressFeedbackType.Sink
                             ) {
                                 AsyncImage(
                                     model = ImageRequest.Builder(context)
@@ -298,16 +292,17 @@ fun WaterfallScreen(
         }
     }
 
+    // NSFW 确认对话框
     if (showNsfwDialog) {
-        AlertDialog(
+        androidx.compose.material3.AlertDialog(
             onDismissRequest = { showNsfwDialog = false },
             title = { Text("NSFW 模式") },
             text = { Text("开启后将显示成人内容，确定要继续吗？") },
             confirmButton = {
-                TextButton(onClick = { viewModel.toggleNSFW(); showNsfwDialog = false }) { Text("确定") }
+                Button(onClick = { viewModel.toggleNSFW(); showNsfwDialog = false }) { Text("确定") }
             },
             dismissButton = {
-                TextButton(onClick = { showNsfwDialog = false }) { Text("取消") }
+                Button(onClick = { showNsfwDialog = false }) { Text("取消") }
             }
         )
     }

@@ -5,8 +5,6 @@ import androidx.compose.material.icons.filled.Favorite
 import androidx.compose.material.icons.filled.Home
 import androidx.compose.material.icons.outlined.FavoriteBorder
 import androidx.compose.material.icons.outlined.Home
-import androidx.compose.material3.Badge
-import androidx.compose.material3.BadgedBox
 import androidx.compose.material3.Icon
 import androidx.compose.material3.NavigationBar
 import androidx.compose.material3.NavigationBarItem
@@ -37,25 +35,10 @@ fun BottomNavBar(
             val selected = currentRoute == screen.route
             NavigationBarItem(
                 icon = {
-                    if (screen is Screen.Favorites && favoriteCount > 0) {
-                        BadgedBox(
-                            badge = {
-                                Badge {
-                                    Text(favoriteCount.toString())
-                                }
-                            }
-                        ) {
-                            Icon(
-                                imageVector = if (selected) screen.selectedIcon else screen.unselectedIcon,
-                                contentDescription = screen.title
-                            )
-                        }
-                    } else {
-                        Icon(
-                            imageVector = if (selected) screen.selectedIcon else screen.unselectedIcon,
-                            contentDescription = screen.title
-                        )
-                    }
+                    Icon(
+                        imageVector = if (selected) screen.selectedIcon else screen.unselectedIcon,
+                        contentDescription = screen.title
+                    )
                 },
                 label = { Text(screen.title) },
                 selected = selected,

@@ -2,6 +2,7 @@ package com.randomimage.ui.screens
 
 import android.widget.Toast
 import androidx.activity.compose.BackHandler
+import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.rememberScrollState
@@ -10,13 +11,6 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.Share
-import androidx.compose.material3.ExperimentalMaterial3Api
-import androidx.compose.material3.Icon
-import androidx.compose.material3.IconButton
-import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.Scaffold
-import androidx.compose.material3.Text
-import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -29,32 +23,58 @@ import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.randomimage.util.LogManager
+import top.yukonga.miuix.kmp.basic.Icon
+import top.yukonga.miuix.kmp.basic.IconButton
+import top.yukonga.miuix.kmp.basic.Text
+import top.yukonga.miuix.kmp.theme.MiuixTheme
 
-@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun LogScreen(onBack: () -> Unit) {
     val context = LocalContext.current
     var logs by remember { mutableStateOf("") }
+    val colorScheme = MiuixTheme.colorScheme
 
     BackHandler { onBack() }
 
     LaunchedEffect(Unit) { logs = LogManager.getLogs() }
 
-    Scaffold(
-        topBar = {
-            TopAppBar(
-                title = { Text("应用日志") },
-                navigationIcon = { IconButton(onClick = onBack) { Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "返回") } },
-                actions = {
-                    IconButton(onClick = { LogManager.shareLogs(context) }) { Icon(Icons.Default.Share, contentDescription = "分享") }
-                    IconButton(onClick = { LogManager.clearLogs(); logs = ""; Toast.makeText(context, "日志已清除", Toast.LENGTH_SHORT).show() }) {
-                        Icon(Icons.Default.Delete, contentDescription = "清除")
-                    }
-                }
+    Column(modifier = Modifier.fillMaxSize()) {
+        // TopBar
+        IconButton(onClick = onBack) {
+            Icon(
+                imageVector = Icons.AutoMirrored.Filled.ArrowBack,
+                contentDescription = "返回",
+                tint = colorScheme.onBackground
             )
         }
-    ) { paddingValues ->
-        Text(text = logs.ifEmpty { "暂无日志" }, modifier = Modifier.fillMaxSize().padding(paddingValues).padding(16.dp).verticalScroll(rememberScrollState()),
-            style = MaterialTheme.typography.bodySmall.copy(fontFamily = FontFamily.Monospace, fontSize = 11.sp, lineHeight = 16.sp))
+        IconButton(onClick = { LogManager.shareLogs(context) }) {
+            Icon(
+                imageVector = Icons.Default.Share,
+                contentDescription = "分享",
+                tint = colorScheme.onBackground
+            )
+        }
+        IconButton(onClick = {
+            LogManager.clearLogs()
+            logs = ""
+            Toast.makeText(context, "日志已清除", Toast.LENGTH_SHORT).show()
+        }) {
+            Icon(
+                imageVector = Icons.Default.Delete,
+                contentDescription = "清除",
+                tint = colorScheme.onBackground
+            )
+        }
+
+        Text(
+            text = logs.ifEmpty { "暂无日志" },
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(16.dp)
+                .verticalScroll(rememberScrollState()),
+            fontSize = 11.sp,
+            fontFamily = FontFamily.Monospace,
+            lineHeight = 16.sp
+        )
     }
 }

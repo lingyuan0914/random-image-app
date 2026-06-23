@@ -5,12 +5,13 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.ExperimentalLayoutApi
 import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.padding
-import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import com.randomimage.data.local.TagData
+import top.yukonga.miuix.kmp.basic.Text
+import top.yukonga.miuix.kmp.theme.MiuixTheme
 
 @OptIn(ExperimentalLayoutApi::class)
 @Composable
@@ -19,6 +20,8 @@ fun TagCloud(
     onTagClick: (String) -> Unit,
     modifier: Modifier = Modifier
 ) {
+    val colorScheme = MiuixTheme.colorScheme
+
     FlowRow(
         modifier = modifier,
         horizontalArrangement = Arrangement.spacedBy(6.dp),
@@ -27,8 +30,8 @@ fun TagCloud(
         tags.take(20).forEach { tag ->
             Text(
                 text = tag.name,
-                style = MaterialTheme.typography.labelSmall,
-                color = MaterialTheme.colorScheme.primary,
+                fontSize = 12.sp,
+                color = colorScheme.primary,
                 modifier = Modifier
                     .clickable { onTagClick(tag.name) }
                     .padding(horizontal = 8.dp, vertical = 4.dp)

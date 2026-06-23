@@ -17,21 +17,6 @@ import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.foundation.lazy.grid.items
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Add
-import androidx.compose.material3.AlertDialog
-import androidx.compose.material3.Card
-import androidx.compose.material3.CardDefaults
-import androidx.compose.material3.CircularProgressIndicator
-import androidx.compose.material3.ExperimentalMaterial3Api
-import androidx.compose.material3.Icon
-import androidx.compose.material3.IconButton
-import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.OutlinedTextField
-import androidx.compose.material3.ScrollableTabRow
-import androidx.compose.material3.Tab
-import androidx.compose.material3.Text
-import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
@@ -45,12 +30,24 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
 import coil.compose.AsyncImage
 import com.randomimage.domain.model.ImageModel
 import com.randomimage.ui.viewmodel.FavoritesViewModel
+import top.yukonga.miuix.kmp.basic.Button
+import top.yukonga.miuix.kmp.basic.Card
+import top.yukonga.miuix.kmp.basic.CircularProgressIndicator
+import top.yukonga.miuix.kmp.basic.Text
+import top.yukonga.miuix.kmp.basic.TextField
+import top.yukonga.miuix.kmp.extra.SuperArrow
+import top.yukonga.miuix.kmp.theme.MiuixTheme
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Add
+import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
 
-@OptIn(ExperimentalFoundationApi::class, ExperimentalMaterial3Api::class)
+@OptIn(ExperimentalFoundationApi::class)
 @Composable
 fun FavoritesScreen(
     viewModel: FavoritesViewModel = hiltViewModel(),
@@ -61,6 +58,7 @@ fun FavoritesScreen(
     var selectedGroupIndex by remember { mutableIntStateOf(0) }
     var showAddGroupDialog by remember { mutableStateOf(false) }
     var newGroupName by remember { mutableStateOf("") }
+    val colorScheme = MiuixTheme.colorScheme
 
     val groups = listOf("全部") + uiState.groups.map { it.name }
     val filteredFavorites = if (selectedGroupIndex == 0) {
@@ -75,26 +73,28 @@ fun FavoritesScreen(
     }
 
     Column(modifier = Modifier.fillMaxSize()) {
+        // 分组标签
         Row(
-            modifier = Modifier.fillMaxWidth(),
-            verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.SpaceBetween
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(horizontal = 16.dp, vertical = 8.dp),
+            verticalAlignment = Alignment.CenterVertically
         ) {
-            ScrollableTabRow(
-                selectedTabIndex = selectedGroupIndex,
-                modifier = Modifier.weight(1f),
-                edgePadding = 8.dp
-            ) {
-                groups.forEachIndexed { index, groupName ->
-                    Tab(
-                        selected = selectedGroupIndex == index,
-                        onClick = { selectedGroupIndex = index },
-                        text = { Text(groupName) }
-                    )
+            groups.forEachIndexed { index, groupName ->
+                Button(
+                    onClick = { selectedGroupIndex = index },
+                    modifier = Modifier.padding(end = 8.dp)
+                ) {
+                    Text(groupName, fontSize = 14.sp)
                 }
             }
+            Spacer(modifier = Modifier.weight(1f))
             IconButton(onClick = { showAddGroupDialog = true }) {
-                Icon(Icons.Default.Add, contentDescription = "添加分组")
+                Icon(
+                    imageVector = androidx.compose.material.icons.Icons.Default.Add,
+                    contentDescription = "添加分组",
+                    tint = colorScheme.onBackground
+                )
             }
         }
 
@@ -108,8 +108,12 @@ fun FavoritesScreen(
                         modifier = Modifier.fillMaxWidth().padding(16.dp),
                         horizontalAlignment = Alignment.CenterHorizontally
                     ) {
-                        Text("还没有收藏", style = MaterialTheme.typography.headlineSmall)
-                        Text("在首页点击收藏按钮即可添加", style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                        Text("还没有收藏", fontSize = 20.sp)
+                        Text(
+                            text = "在首页点击收藏按钮即可添加",
+                            fontSize = 14.sp,
+                            color = colorScheme.onSurface
+                        )
                     }
                 }
                 else -> {
@@ -127,8 +131,7 @@ fun FavoritesScreen(
                                         onClick = { onImageClick(image) },
                                         onLongClick = { selectedImage = image }
                                     ),
-                                shape = RoundedCornerShape(8.dp),
-                                elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
+                                showIndication = true
                             ) {
                                 AsyncImage(
                                     model = coil.request.ImageRequest.Builder(LocalContext.current)
@@ -149,20 +152,20 @@ fun FavoritesScreen(
         }
     }
 
+    // 新建分组对话框
     if (showAddGroupDialog) {
-        AlertDialog(
+        androidx.compose.material3.AlertDialog(
             onDismissRequest = { showAddGroupDialog = false },
             title = { Text("新建分组") },
             text = {
-                OutlinedTextField(
+                TextField(
                     value = newGroupName,
                     onValueChange = { newGroupName = it },
-                    label = { Text("分组名称") },
-                    singleLine = true
+                    label = "分组名称"
                 )
             },
             confirmButton = {
-                TextButton(onClick = {
+                Button(onClick = {
                     if (newGroupName.isNotBlank()) {
                         viewModel.addGroup(newGroupName)
                         newGroupName = ""
@@ -171,44 +174,42 @@ fun FavoritesScreen(
                 }) { Text("创建") }
             },
             dismissButton = {
-                TextButton(onClick = { showAddGroupDialog = false; newGroupName = "" }) { Text("取消") }
+                Button(onClick = { showAddGroupDialog = false; newGroupName = "" }) { Text("取消") }
             }
         )
     }
 
+    // 收藏操作对话框
     selectedImage?.let { image ->
-        AlertDialog(
+        androidx.compose.material3.AlertDialog(
             onDismissRequest = { selectedImage = null },
             title = { Text("收藏操作") },
             text = {
                 Column {
-                    Text("选择操作：")
-                    Spacer(modifier = Modifier.height(8.dp))
                     if (uiState.groups.isNotEmpty()) {
-                        Text("移动到分组：", style = MaterialTheme.typography.bodySmall)
+                        Text("移动到分组：", fontSize = 12.sp, color = colorScheme.onSurface)
+                        Spacer(modifier = Modifier.height(8.dp))
                         uiState.groups.forEach { group ->
-                            TextButton(
+                            SuperArrow(
+                                title = group.name,
+                                summary = "",
                                 onClick = {
                                     viewModel.moveImageToGroup(image.id, group.id)
                                     selectedImage = null
-                                },
-                                modifier = Modifier.fillMaxWidth()
-                            ) {
-                                Text(group.name)
-                            }
+                                }
+                            )
                         }
-                        Spacer(modifier = Modifier.height(8.dp))
                     }
                 }
             },
             confirmButton = {
-                TextButton(onClick = {
+                Button(onClick = {
                     viewModel.removeFavorite(image.id)
                     selectedImage = null
-                }) { Text("删除", color = MaterialTheme.colorScheme.error) }
+                }) { Text("删除") }
             },
             dismissButton = {
-                TextButton(onClick = { selectedImage = null }) { Text("取消") }
+                Button(onClick = { selectedImage = null }) { Text("取消") }
             }
         )
     }
