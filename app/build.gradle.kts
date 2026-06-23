@@ -10,14 +10,14 @@ plugins {
 
 android {
     namespace = "com.randomimage"
-    compileSdk = 36
+    compileSdk = 37
 
     defaultConfig {
         applicationId = "com.randomimage"
         minSdk = 26
         targetSdk = 36
-        versionCode = 35
-        versionName = "26.06.23-03"
+        versionCode = 36
+        versionName = "26.06.23-04"
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
 
@@ -55,8 +55,10 @@ android {
         targetCompatibility = JavaVersion.VERSION_17
     }
 
-    kotlinOptions {
-        jvmTarget = "17"
+    kotlin {
+        compilerOptions {
+            jvmTarget.set(org.jetbrains.kotlin.gradle.dsl.JvmTarget.JVM_17)
+        }
     }
 
     buildFeatures {
@@ -109,11 +111,13 @@ dependencies {
     implementation("io.coil-kt:coil-compose:2.7.0")
 
     // Miuix UI (KSU style)
-    implementation("top.yukonga.miuix.kmp:miuix:0.7.2")
+    implementation("top.yukonga.miuix.kmp:miuix:0.8.8")
+    implementation("top.yukonga.miuix.kmp:miuix-blur:0.9.2")
 
     // DI
-    implementation("com.google.dagger:hilt-android:2.53.1")
-    ksp("com.google.dagger:hilt-compiler:2.53.1")
+    implementation("com.google.dagger:hilt-android:2.57.2")
+    ksp("com.google.dagger:hilt-compiler:2.57.2")
+    ksp("org.jetbrains.kotlin:kotlin-metadata-jvm:2.3.0-Beta1")
     implementation("androidx.hilt:hilt-navigation-compose:1.2.0")
 
     // Logging
