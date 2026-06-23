@@ -90,7 +90,7 @@ fun ThemeSettingsScreen(
                         .fillMaxWidth()
                 ) {
                     Column(modifier = Modifier.padding(16.dp)) {
-                        Text("界面风格", fontSize = 18.sp)
+                        Text("界面风格", style = MiuixTheme.textStyles.headline2)
                         Text(
                             text = "切换后需要重启应用生效",
                             fontSize = 12.sp,

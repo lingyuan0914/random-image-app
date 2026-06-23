@@ -88,7 +88,7 @@ fun BottomNavBar(
                 modifier = Modifier
                     .fillMaxHeight()
                     .fillMaxWidth(0.5f)
-                    .offset(x = (indicatorOffset * 50).dp)
+                    .offset(x = (indicatorOffset * 50 + 0).dp)
                     .padding(4.dp)
                     .clip(CircleShape)
                     .background(colorScheme.primary.copy(alpha = 0.15f))

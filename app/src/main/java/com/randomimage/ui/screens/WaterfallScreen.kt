@@ -21,6 +21,10 @@ import androidx.compose.foundation.lazy.staggeredgrid.rememberLazyStaggeredGridS
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Search
+import androidx.compose.material3.DropdownMenuItem
+import androidx.compose.material3.ExposedDropdownMenuBox
+import androidx.compose.material3.ExposedDropdownMenuDefaults
+import androidx.compose.material3.OutlinedTextField
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
@@ -52,11 +56,10 @@ import top.yukonga.miuix.kmp.basic.IconButton
 import top.yukonga.miuix.kmp.basic.Switch
 import top.yukonga.miuix.kmp.basic.Text
 import top.yukonga.miuix.kmp.basic.TextField
-import top.yukonga.miuix.kmp.extra.SuperDropdown
 import top.yukonga.miuix.kmp.theme.MiuixTheme
 import top.yukonga.miuix.kmp.utils.PressFeedbackType
 
-@OptIn(ExperimentalLayoutApi::class)
+@OptIn(ExperimentalLayoutApi::class, androidx.compose.material3.ExperimentalMaterial3Api::class)
 @Composable
 fun WaterfallScreen(
     viewModel: HomeViewModel = hiltViewModel(),
@@ -67,6 +70,7 @@ fun WaterfallScreen(
     val context = LocalContext.current
     val configuration = LocalConfiguration.current
     var showNsfwDialog by remember { mutableStateOf(false) }
+    var expanded by remember { mutableStateOf(false) }
     val gridState = rememberLazyStaggeredGridState()
     val colorScheme = MiuixTheme.colorScheme
 
@@ -78,14 +82,37 @@ fun WaterfallScreen(
                 .padding(horizontal = 12.dp, vertical = 4.dp),
             verticalAlignment = Alignment.CenterVertically
         ) {
-            SuperDropdown(
-                title = "数据源",
-                summary = uiState.currentApiName,
-                items = uiState.availableApis,
-                selectedIndex = uiState.availableApis.indexOf(uiState.currentApiName).coerceAtLeast(0),
-                onSelectedIndexChange = { viewModel.switchApi(it) },
+            // API 下拉选择 - 使用 Material3 ExposedDropdownMenu
+            ExposedDropdownMenuBox(
+                expanded = expanded,
+                onExpandedChange = { expanded = it },
                 modifier = Modifier.weight(1f)
-            )
+            ) {
+                OutlinedTextField(
+                    value = uiState.currentApiName,
+                    onValueChange = {},
+                    readOnly = true,
+                    label = { Text("数据源") },
+                    trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = expanded) },
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .menuAnchor()
+                )
+                ExposedDropdownMenu(
+                    expanded = expanded,
+                    onDismissRequest = { expanded = false }
+                ) {
+                    uiState.availableApis.forEachIndexed { index, apiName ->
+                        DropdownMenuItem(
+                            text = { Text(apiName) },
+                            onClick = {
+                                viewModel.switchApi(index)
+                                expanded = false
+                            }
+                        )
+                    }
+                }
+            }
 
             Spacer(modifier = Modifier.width(8.dp))
 
